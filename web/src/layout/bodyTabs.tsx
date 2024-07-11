@@ -1,28 +1,37 @@
+import useTabRouter from "@/hooks/tabRouter";
 import { Tabs } from "antd";
-import React, { useEffect, useRef, useState } from 'react';
-import { useOutlet } from "react-router-dom";
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from "react-router-dom";
 
 type TargetKey = React.MouseEvent | React.KeyboardEvent | string;
 
 
-const BodyTabs = () => {
-    const defaultPanes = new Array(2).fill(null).map((_, index) => {
-        const id = String(index + 1);
-        return { label: `Tab ${id}`, children: `Content of Tab Pane ${index + 1}`, key: id };
-    });
-    const [activeKey, setActiveKey] = useState(defaultPanes[0].key);
-    const [items, setItems] = useState(defaultPanes);
+const BodyTabs: React.FC = () => {
 
-    const outlet = useOutlet();
-    useEffect(()=>{
-        console.log('outlet change',outlet);
-    },[outlet])
+    const navigate = useNavigate();
+
+    const { tabs, activeKeyFromMatch } = useTabRouter();
+    const [activeKey, setActiveKey] = useState(activeKeyFromMatch);
+    const [items, setItems] = useState(tabs);
+
+    useEffect(() => {
+        setItems([
+            ...tabs
+        ])
+    }, [tabs])
+    useEffect(() => {
+        setActiveKey(activeKeyFromMatch);
+    }, [activeKeyFromMatch])
     const onChange = (key: string) => {
         setActiveKey(key);
+        const tab = tabs.find(x=>x.key == key);
+        if (tab &&tab.path) {
+            navigate(tab.path);
+        }
     };
-    const remove = (targetKey: TargetKey) => {
-        const targetIndex = items.findIndex((pane) => pane.key === targetKey);
-        const newPanes = items.filter((pane) => pane.key !== targetKey);
+    const removeTab = (targetKey: TargetKey) => {
+        const targetIndex = items!.findIndex((pane) => pane.key === targetKey);
+        const newPanes = items!.filter((pane) => pane.key !== targetKey);
         if (newPanes.length && targetKey === activeKey) {
             const { key } = newPanes[targetIndex === newPanes.length ? targetIndex - 1 : targetIndex];
             setActiveKey(key);
@@ -33,12 +42,12 @@ const BodyTabs = () => {
         if (action === 'add') {
             //   add();
         } else {
-            remove(targetKey);
+            removeTab(targetKey);
         }
     };
-    return (
-        <div>
 
+    return (
+        <div className="h-full">
             <Tabs
                 hideAdd
                 onChange={onChange}
@@ -46,6 +55,7 @@ const BodyTabs = () => {
                 type="editable-card"
                 onEdit={onEdit}
                 items={items}
+                className="h-full"
             />
         </div>
     );
