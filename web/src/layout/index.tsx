@@ -5,7 +5,7 @@ import {
 } from '@ant-design/icons';
 import MenuLayout from './menu';
 import { Button, Layout, theme } from 'antd';
-import { Outlet } from 'react-router-dom';
+// import { Outlet } from 'react-router-dom';
 import BodyTabs from './bodyTabs';
 
 const { Header, Sider, Content } = Layout;
@@ -42,8 +42,8 @@ const App: React.FC = () => {
             // borderRadius: borderRadiusLG,
           }}
         >
-          <Outlet />
-          {/* <BodyTabs></BodyTabs> */}
+          {/* <Outlet /> */}
+          <BodyTabs></BodyTabs>
         </Content>
       </Layout>
     </Layout>

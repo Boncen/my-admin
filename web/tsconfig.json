@@ -35,14 +35,12 @@
   "include": [
     "src",
     "types/**/*.ts",
-    "**.ts",
-    "*.json",
-    "**.*js"
   ],
   "exclude": [
     "node_modules",
     "dist",
-    "build/**/*"
   ],
-  "references": []
+  "references": [
+   
+  ]
 }
