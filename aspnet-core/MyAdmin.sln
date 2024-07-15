@@ -1,0 +1,62 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{048E4B11-4EAA-4031-8DFF-C6BAF421B9A6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyAdmin.Core", "src\MyAdmin.Core\MyAdmin.Core.csproj", "{A25A3783-F3AE-49E9-B796-24055D89309B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyAdmin.Application", "src\MyAdmin.Application\MyAdmin.Application.csproj", "{BBAB1D04-BC89-4B32-8962-2CBC874605EE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyAdmin.Db", "src\MyAdmin.Db\MyAdmin.Db.csproj", "{66182A99-28BA-4E81-BB10-9DA74B3851FD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyAdmin.Domain", "src\MyAdmin.Domain\MyAdmin.Domain.csproj", "{D56ED303-D52F-40C1-908A-DDBA53C0120B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyAdmin.Infrastructure", "src\MyAdmin.Infrastructure\MyAdmin.Infrastructure.csproj", "{EA52C7AD-CBFD-4F1A-8AD0-E7FA1FB5553B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyAdmin.ApiHost", "src\MyAdmin.ApiHost\MyAdmin.ApiHost.csproj", "{CD5A8607-DDBF-4723-87E3-00977190A9B4}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A25A3783-F3AE-49E9-B796-24055D89309B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A25A3783-F3AE-49E9-B796-24055D89309B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A25A3783-F3AE-49E9-B796-24055D89309B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A25A3783-F3AE-49E9-B796-24055D89309B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BBAB1D04-BC89-4B32-8962-2CBC874605EE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BBAB1D04-BC89-4B32-8962-2CBC874605EE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BBAB1D04-BC89-4B32-8962-2CBC874605EE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BBAB1D04-BC89-4B32-8962-2CBC874605EE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{66182A99-28BA-4E81-BB10-9DA74B3851FD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{66182A99-28BA-4E81-BB10-9DA74B3851FD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{66182A99-28BA-4E81-BB10-9DA74B3851FD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{66182A99-28BA-4E81-BB10-9DA74B3851FD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D56ED303-D52F-40C1-908A-DDBA53C0120B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D56ED303-D52F-40C1-908A-DDBA53C0120B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D56ED303-D52F-40C1-908A-DDBA53C0120B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D56ED303-D52F-40C1-908A-DDBA53C0120B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EA52C7AD-CBFD-4F1A-8AD0-E7FA1FB5553B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EA52C7AD-CBFD-4F1A-8AD0-E7FA1FB5553B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EA52C7AD-CBFD-4F1A-8AD0-E7FA1FB5553B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EA52C7AD-CBFD-4F1A-8AD0-E7FA1FB5553B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CD5A8607-DDBF-4723-87E3-00977190A9B4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CD5A8607-DDBF-4723-87E3-00977190A9B4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CD5A8607-DDBF-4723-87E3-00977190A9B4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CD5A8607-DDBF-4723-87E3-00977190A9B4}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{A25A3783-F3AE-49E9-B796-24055D89309B} = {048E4B11-4EAA-4031-8DFF-C6BAF421B9A6}
+		{BBAB1D04-BC89-4B32-8962-2CBC874605EE} = {048E4B11-4EAA-4031-8DFF-C6BAF421B9A6}
+		{66182A99-28BA-4E81-BB10-9DA74B3851FD} = {048E4B11-4EAA-4031-8DFF-C6BAF421B9A6}
+		{D56ED303-D52F-40C1-908A-DDBA53C0120B} = {048E4B11-4EAA-4031-8DFF-C6BAF421B9A6}
+		{EA52C7AD-CBFD-4F1A-8AD0-E7FA1FB5553B} = {048E4B11-4EAA-4031-8DFF-C6BAF421B9A6}
+		{CD5A8607-DDBF-4723-87E3-00977190A9B4} = {048E4B11-4EAA-4031-8DFF-C6BAF421B9A6}
+	EndGlobalSection
+EndGlobal
