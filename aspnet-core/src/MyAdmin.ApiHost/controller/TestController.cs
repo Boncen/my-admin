@@ -10,7 +10,9 @@ public class TestController: ControllerBase
     [HttpGet(ApiEndpoints.Test.TestMethod)]
     [MapToApiVersion("1.0")]
     public Task<string> TestGet(){
-        return Task.FromResult("v1");
+        int a = 0;
+        int k = 100 / a;
+        return Task.FromResult("v1" + k);
     }
 
    [HttpGet(ApiEndpoints.Test.TestMethod2)]

@@ -1,4 +1,5 @@
 using Asp.Versioning;
+using MyAdmin.ApiHost;
 using MyAdmin.ApiHost.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -20,7 +21,7 @@ if (app.Environment.IsDevelopment())
     app.SetupSwaggerUI(builder.Configuration);
 }
 
-
+app.UseMiddleware<ErrorHandlerMiddleware>();
 app.UseHttpsRedirection();
 app.MapControllers();
 
