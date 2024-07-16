@@ -1,14 +1,21 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Asp.Versioning;
+using Microsoft.AspNetCore.Mvc;
 
 namespace MyAdmin.ApiHost;
 
 [ApiController]
-[Route("api/[controller]/[action]")]
+[ApiVersion("1.0")]
 public class TestController: ControllerBase
 {
+    [HttpGet(ApiEndpoints.Test.TestMethod)]
+    [MapToApiVersion("1.0")]
+    public Task<string> TestGet(){
+        return Task.FromResult("v1");
+    }
 
-    [HttpGet]
-    public void TestGet(){
-
+   [HttpGet(ApiEndpoints.Test.TestMethod2)]
+   [MapToApiVersion("1.0")]
+    public Task<string> TestGetv2(){
+        return Task.FromResult("v1-1");
     }
 }
