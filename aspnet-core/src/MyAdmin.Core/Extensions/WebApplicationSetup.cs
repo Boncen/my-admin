@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
+using MyAdmin.Core.Middleware;
 
 namespace MyAdmin.Core.Extensions;
 
@@ -22,4 +23,7 @@ public static class WebApplicationSetup
         });
     }
 
+    public static void UseErrorHandleMiddleware(this WebApplication app){
+        app.UseMiddleware<ErrorHandlerMiddleware>();
+    }
 }

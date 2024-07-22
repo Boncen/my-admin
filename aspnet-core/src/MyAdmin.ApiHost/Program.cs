@@ -16,7 +16,7 @@ if (app.Environment.IsDevelopment())
     app.SetupSwaggerUI(builder.Configuration);
 }
 
-app.UseMiddleware<ErrorHandlerMiddleware>();
+app.UseErrorHandleMiddleware();
 app.UseHttpsRedirection();
 app.MapControllers();
 
