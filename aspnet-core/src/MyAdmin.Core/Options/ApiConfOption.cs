@@ -1,4 +1,4 @@
-﻿namespace MyAdmin.ApiHost.Options;
+﻿namespace MyAdmin.Core.Options;
 
 public class ApiVersioningConfOption
 {

@@ -1,6 +1,8 @@
-﻿using MyAdmin.ApiHost.Options;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using MyAdmin.Core.Options;
 
-namespace MyAdmin.ApiHost.Extensions;
+namespace MyAdmin.Core.Extensions;
 
 public static class OptionsConf
 {

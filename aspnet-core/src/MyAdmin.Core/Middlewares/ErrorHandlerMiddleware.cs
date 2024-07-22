@@ -1,7 +1,8 @@
 ﻿using System.Text.Json;
+using Microsoft.AspNetCore.Http;
 using MyAdmin.Core;
 
-namespace MyAdmin.ApiHost;
+namespace MyAdmin.Core.Middleware;
 
 public class ErrorHandlerMiddleware
 {

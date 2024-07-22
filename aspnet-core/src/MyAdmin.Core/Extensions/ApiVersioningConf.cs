@@ -1,9 +1,11 @@
 ﻿using Asp.Versioning;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using MyAdmin.ApiHost.Swagger;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
-namespace MyAdmin.ApiHost.Extensions;
+namespace MyAdmin.Core.Extensions;
 
 public static class ApiVersioningConf
 {

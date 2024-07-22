@@ -1,4 +1,7 @@
-namespace MyAdmin.ApiHost.Extensions;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.Configuration;
+
+namespace MyAdmin.Core.Extensions;
 
 public static class WebApplicationSetup
 {
