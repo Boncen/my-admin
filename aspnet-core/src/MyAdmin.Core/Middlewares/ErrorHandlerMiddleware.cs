@@ -1,16 +1,19 @@
 ﻿using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using MyAdmin.Core;
+using MyAdmin.Core.Logger;
 
 namespace MyAdmin.Core.Middleware;
 
 public class ErrorHandlerMiddleware
 {
     private readonly RequestDelegate _next;
+    private readonly ILogger _logger;
 
-    public ErrorHandlerMiddleware(RequestDelegate next)
+    public ErrorHandlerMiddleware(RequestDelegate next, ILogger logger)
     {
         _next = next;
+        _logger = logger;
     }
 
     public async Task Invoke(HttpContext context)
@@ -22,6 +25,7 @@ public class ErrorHandlerMiddleware
         catch (System.Exception error)
         {
             // todo log
+            _logger.LogError(error);
             var result = new ApiResult { Msg = error?.Message, Code = StatusCodes.Status500InternalServerError };
             switch (error)
             {

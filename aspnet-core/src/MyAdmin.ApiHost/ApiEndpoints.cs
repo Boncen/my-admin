@@ -7,7 +7,6 @@ public static class ApiEndpoints
     public static class Test
     {
         private const string GroupName = $"{ApiBase}/test";
-
         public const string TestMethod = $"{GroupName}/test";
         public const string TestMethod2 = $"{GroupName}/test2";
     }

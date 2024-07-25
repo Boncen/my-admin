@@ -1,11 +1,11 @@
 using MyAdmin.Core.Extensions;
-using MyAdmin.Core.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.SetupOptions(builder.Configuration);
 builder.Services.UseApiVersioning(builder.Configuration);
+builder.Services.UseLogger();
 
 var app = builder.Build();
 

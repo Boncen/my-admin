@@ -11,7 +11,7 @@ public static class ApiVersioningConf
 {
     public static void UseApiVersioning(this IServiceCollection service, ConfigurationManager configuration)
     {
-        var useVersioningStr = configuration[$"{Core.Conf.ConstKey.ApiVersioning}:{Core.Conf.ConstKey.UseApiVersioning}"];
+        var useVersioningStr = configuration[$"{nameof(Core.Conf.Setting.ApiVersioning)}:{nameof(Core.Conf.Setting.ApiVersioning.UseApiVersioning)}"];
         if (string.IsNullOrEmpty(useVersioningStr) || !bool.TryParse(useVersioningStr, out bool useApiVersioning) || !useApiVersioning)
         {
             service.AddEndpointsApiExplorer();
