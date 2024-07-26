@@ -12,8 +12,10 @@
 </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="DDD/Application/" />
     <Folder Include="logger/" />
     <Folder Include="Middlewares/" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.7" />
     <PackageReference Include="Asp.Versioning.Http" Version="8.1.0" />
     <PackageReference Include="Asp.Versioning.Mvc" Version="8.1.0" />
     <PackageReference Include="Asp.Versioning.Mvc.ApiExplorer" Version="8.1.0" />
