@@ -5,6 +5,10 @@ namespace MyAdmin.Core.Entity;
 public abstract class Entity<TKey> : IEntity<TKey>
 {
     public virtual required TKey Id { get; set; }
+    public object?[] GetKeys()
+    {
+        return new object[] { Id };
+    }
 }
 
 [Serializable]

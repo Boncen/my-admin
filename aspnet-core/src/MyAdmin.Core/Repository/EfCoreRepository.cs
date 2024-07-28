@@ -1,24 +1,19 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using MyAdmin.Core.Entity;
 
 namespace MyAdmin.Core.Repository;
 
 public abstract class EfCoreRepository<TDbContext, TEntity> : IEfCoreRepository<TEntity> where TEntity : class, IEntity where TDbContext : DbContext
 {
-
-    //  protected virtual Task<TDbContext> GetDbContextAsync()
-    // {
-    //     // Multi-tenancy unaware entities should always use the host connection string
-    //     if (!EntityHelper.IsMultiTenant<TEntity>())
-    //     {
-    //         using (CurrentTenant.Change(null))
-    //         {
-    //             return _dbContextProvider.GetDbContextAsync();
-    //         }
-    //     }
-
-    //     return _dbContextProvider.GetDbContextAsync();
-    // }
+    private readonly IServiceProvider _serviceProvider;
+    private readonly TDbContext _dbContext;
+    private DbSet<TEntity> _dbSet;
+    public EfCoreRepository(IServiceProvider serviceProvider)
+    {
+        _dbContext = _serviceProvider.GetRequiredService<TDbContext>();
+        _dbSet = _dbContext.Set<TEntity>();
+    }
     public Task DeleteAsync(TEntity entity, bool autoSave = false, CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
@@ -49,9 +44,15 @@ public abstract class EfCoreRepository<TDbContext, TEntity> : IEfCoreRepository<
         throw new NotImplementedException();
     }
 
-    public Task<TEntity> InsertAsync(TEntity entity, bool autoSave = false, CancellationToken cancellationToken = default)
+    public async Task<TEntity> InsertAsync(TEntity entity, bool autoSave = false, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+         await _dbContext.AddAsync(entity, cancellationToken: cancellationToken);
+         if (autoSave)
+         {
+            await _dbContext.SaveChangesAsync();
+         }
+
+         return entity;
     }
 
     public Task InsertManyAsync(IEnumerable<TEntity> entities, bool autoSave = false, CancellationToken cancellationToken = default)
@@ -74,6 +75,15 @@ public abstract class EfCoreRepository<TDbContext, TEntity, TKey> : IEfCoreRepos
     where TEntity : class, IEntity<TKey> 
     where TDbContext : DbContext
 {
+    private readonly IServiceProvider _serviceProvider;
+    private readonly TDbContext _dbContext;
+    private DbSet<TEntity> _dbSet;
+    public EfCoreRepository(IServiceProvider serviceProvider)
+    {
+        _serviceProvider = serviceProvider;
+        _dbContext = _serviceProvider.GetRequiredService<TDbContext>();
+        _dbSet = _dbContext.Set<TEntity>();
+    }
     public Task DeleteAsync(TKey id, bool autoSave = false, CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
@@ -124,9 +134,15 @@ public abstract class EfCoreRepository<TDbContext, TEntity, TKey> : IEfCoreRepos
         throw new NotImplementedException();
     }
 
-    public Task<TEntity> InsertAsync(TEntity entity, bool autoSave = false, CancellationToken cancellationToken = default)
+    public async Task<TEntity> InsertAsync(TEntity entity, bool autoSave = false, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        await _dbContext.AddAsync(entity, cancellationToken: cancellationToken);
+        if (autoSave)
+        {
+            await _dbContext.SaveChangesAsync();
+        }
+
+        return entity;
     }
 
     public Task InsertManyAsync(IEnumerable<TEntity> entities, bool autoSave = false, CancellationToken cancellationToken = default)

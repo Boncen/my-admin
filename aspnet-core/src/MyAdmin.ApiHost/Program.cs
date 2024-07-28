@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using MyAdmin.ApiHost;
+using MyAdmin.ApiHost.db;
 using MyAdmin.Core.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -17,7 +18,7 @@ builder.Services.AddDbContext<MaDbContext>(
                .EnableSensitiveDataLogging()
                .EnableDetailedErrors()
        );
-
+builder.Services.AddTransient<ILogRepository, LogRepository>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
