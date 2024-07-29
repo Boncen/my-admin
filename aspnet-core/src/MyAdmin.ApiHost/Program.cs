@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Console;
 using MyAdmin.ApiHost;
 using MyAdmin.ApiHost.db;
 using MyAdmin.Core.Extensions;
@@ -9,6 +10,11 @@ builder.Services.AddControllers();
 builder.Services.SetupOptions(builder.Configuration);
 builder.Services.UseApiVersioning(builder.Configuration);
 builder.Services.UseLogger();
+
+builder.Services.UseMAFrameWork((o)=>{
+    Console.WriteLine(o);   
+});
+
 // db
 var serverVersion = new MySqlServerVersion(new Version(9, 0, 0));
 builder.Services.AddDbContext<MaDbContext>(
@@ -18,6 +24,8 @@ builder.Services.AddDbContext<MaDbContext>(
                .EnableSensitiveDataLogging()
                .EnableDetailedErrors()
        );
+builder.Services.AddTransient<Microsoft.EntityFrameworkCore.DbContext, MaDbContext>();
+builder.Services.UseEfCoreRepository();
 builder.Services.AddTransient<ILogRepository, LogRepository>();
 var app = builder.Build();
 

@@ -2,7 +2,7 @@
 
 namespace MyAdmin.Core.Extensions;
 
-public static class CommonExtention
+public static class CommonExtension
 {
     public static string FullMessage(this Exception exception)
     {

@@ -1,25 +1,79 @@
 
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using MyAdmin.Core.Entity;
 
 namespace MyAdmin.Core.Repository;
 
-public class Repository<TEntity, TKey> : IRepository<TEntity, TKey> where TEntity : class, IEntity
+public class RepositoryBase : IRepository
 {
-    public Repository()
+    protected DbContext _dbContext;
+    public RepositoryBase(IServiceProvider serviceProvider)
     {
-        
+        _dbContext = serviceProvider.GetRequiredService<DbContext>();
+    }
+}
+
+public class RepositoryBase<TEntity> : RepositoryBase, IRepository<TEntity> where TEntity : class, IEntity
+{
+    public RepositoryBase(IServiceProvider serviceProvider) : base(serviceProvider)
+    {
+
     }
     public Task DeleteAsync(TEntity entity, bool autoSave = false, CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }
 
-    public Task DeleteAsync(TKey id, bool autoSave = false, CancellationToken cancellationToken = default)
+    public Task DeleteManyAsync(IEnumerable<TEntity> entities, bool autoSave = false, CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }
 
-    public Task DeleteManyAsync(IEnumerable<TEntity> entities, bool autoSave = false, CancellationToken cancellationToken = default)
+    public Task<List<TEntity>> GetListAsync(bool includeDetails = false, CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<List<TEntity>> GetPagedListAsync(int skipCount, int maxResultCount, string sorting, bool includeDetails = false, CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException();
+    }
+
+    public async Task<TEntity> InsertAsync(TEntity entity, bool autoSave = false, CancellationToken cancellationToken = default)
+    {
+        await _dbContext.AddAsync(entity, cancellationToken: cancellationToken);
+        if (autoSave)
+        {
+            await _dbContext.SaveChangesAsync();
+        }
+
+        return entity;
+    }
+
+    public Task InsertManyAsync(IEnumerable<TEntity> entities, bool autoSave = false, CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<TEntity> UpdateAsync(TEntity entity, bool autoSave = false, CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task UpdateManyAsync(IEnumerable<TEntity> entities, bool autoSave = false, CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException();
+    }
+}
+
+public class RepositoryBase<TEntity, TKey> : RepositoryBase<TEntity>, IRepository<TEntity, TKey> where TEntity : class, IEntity
+{
+    public RepositoryBase(IServiceProvider serviceProvider) : base(serviceProvider)
+    {
+
+    }
+    public Task DeleteAsync(TKey id, bool autoSave = false, CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }
@@ -38,34 +92,14 @@ public class Repository<TEntity, TKey> : IRepository<TEntity, TKey> where TEntit
     {
         throw new NotImplementedException();
     }
+}
 
-    public Task<List<TEntity>> GetListAsync(bool includeDetails = false, CancellationToken cancellationToken = default)
+public class RepositoryBase<TEntity, TKey, TDbContext> : RepositoryBase<TEntity, TKey> 
+    where TEntity : class, IEntity
+    where TDbContext : DbContext
+{
+    public RepositoryBase(IServiceProvider serviceProvider) : base(serviceProvider)
     {
-        throw new NotImplementedException();
-    }
-
-    public Task<List<TEntity>> GetPagedListAsync(int skipCount, int maxResultCount, string sorting, bool includeDetails = false, CancellationToken cancellationToken = default)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<TEntity> InsertAsync(TEntity entity, bool autoSave = false, CancellationToken cancellationToken = default)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task InsertManyAsync(IEnumerable<TEntity> entities, bool autoSave = false, CancellationToken cancellationToken = default)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<TEntity> UpdateAsync(TEntity entity, bool autoSave = false, CancellationToken cancellationToken = default)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task UpdateManyAsync(IEnumerable<TEntity> entities, bool autoSave = false, CancellationToken cancellationToken = default)
-    {
-        throw new NotImplementedException();
+        _dbContext = serviceProvider.GetRequiredService<TDbContext>();
     }
 }

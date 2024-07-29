@@ -2,7 +2,6 @@ namespace MyAdmin.Core.Entity.Auditing;
 
 public interface IAuditedObject<TKey> : ICreationAuditedObject<TKey>, IModificationAuditedObject<TKey>
 {
-    TKey? LastModifierId { get; }
 }
 
 public interface ICreationAuditedObject<TKey> : IHasCreationTime, IMayHaveCreator<TKey>

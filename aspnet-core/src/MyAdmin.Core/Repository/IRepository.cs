@@ -3,9 +3,8 @@ using MyAdmin.Core.Entity;
 namespace MyAdmin.Core.Repository;
 public interface IRepository
 {
-    bool? IsChangeTrackingEnabled { get; }
 }
-public interface IRepository<TEntity> where TEntity : class, IEntity
+public interface IRepository<TEntity> : IRepository where TEntity : class, IEntity
 {
     Task<TEntity> InsertAsync(TEntity entity, bool autoSave = false, CancellationToken cancellationToken = default);
     Task InsertManyAsync(IEnumerable<TEntity> entities, bool autoSave = false, CancellationToken cancellationToken = default);
@@ -28,6 +27,5 @@ public interface IRepository<TEntity, TKey> : IRepository<TEntity> where TEntity
     Task DeleteAsync(TKey id, bool autoSave = false, CancellationToken cancellationToken = default);
     Task DeleteManyAsync(IEnumerable<TKey> ids, bool autoSave = false, CancellationToken cancellationToken = default);
     Task<TEntity> GetAsync(TKey id, bool includeDetails = true, CancellationToken cancellationToken = default);
-
     Task<TEntity?> FindAsync(TKey id, bool includeDetails = true, CancellationToken cancellationToken = default);
 }
