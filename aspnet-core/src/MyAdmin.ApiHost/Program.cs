@@ -7,12 +7,9 @@ using MyAdmin.Core.Extensions;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
-builder.Services.SetupOptions(builder.Configuration);
-builder.Services.UseApiVersioning(builder.Configuration);
-builder.Services.UseLogger();
 
-builder.Services.UseMAFrameWork((o)=>{
-    Console.WriteLine(o);   
+builder.Services.AddMaFramework( builder.Configuration, (o)=>{
+    o.UseApiVersioning(builder.Configuration);
 });
 
 // db
@@ -25,7 +22,6 @@ builder.Services.AddDbContext<MaDbContext>(
                .EnableDetailedErrors()
        );
 builder.Services.AddTransient<Microsoft.EntityFrameworkCore.DbContext, MaDbContext>();
-builder.Services.UseEfCoreRepository();
 builder.Services.AddTransient<ILogRepository, LogRepository>();
 var app = builder.Build();
 

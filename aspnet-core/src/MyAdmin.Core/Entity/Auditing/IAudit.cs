@@ -28,12 +28,12 @@ public interface IModificationAuditedObject<TKey> : IHasModificationTime
 }
 public interface ISoftDelete
 {
-    bool IsDeleted { get; }
+    bool IsDeleted { get; set; }
 }
 
 public interface IHasDeletionTime : ISoftDelete
 {
-    DateTime? DeletionTime { get; }
+    DateTime? DeletionTime { get; set; }
 }
 public interface IDeletionAuditedObject<TKey> : IHasDeletionTime
 {
