@@ -8,8 +8,10 @@ public interface IEntity
     /// </summary>
     /// <returns></returns>
     object?[] GetKeys();
+    
 }
 public interface IEntity<TKey>: IEntity
 {
     public TKey Id { get; set; }
+
 }

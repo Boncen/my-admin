@@ -10,50 +10,79 @@ namespace MyAdmin.ApiHost;
 [ApiVersion("1.0")]
 public class TestController : ControllerBase
 {
-    // private readonly ILogger<TestController> _logger;
     private readonly ILogger _logger;
     private readonly IRepository<Log,Guid> _logRepository;
-    private readonly ILogRepository _logRe;
-    public TestController(ILogger logger, IRepository<Log,Guid> logRepository,ILogRepository logRe)
+    public TestController(ILogger logger, IRepository<Log,Guid> logRepository)
     {
         _logger = logger;
         _logRepository = logRepository;
-        _logRe = logRe;
     }
 
 
-    [HttpGet(ApiEndpoints.Test.TestMethod)]
-    [MapToApiVersion("1.0")]
-    public Task<string> TestGet()
-    {
-        _logger.LogDebug("测试日志打印到控制台的样子");
-        _logger.LogCritical("测试日志打印到控制台的样子");
-        _logger.LogInformation("测试日志打印到控制台的样子");
-        _logger.LogTrace("测试日志打印到控制台的样子");
-        _logger.LogWarning("测试日志打印到控制台的样子");
-        
-        _logRe.InsertAsync(new Log()
-        {
-            Id = Guid.NewGuid(),
-            Content = "Test2"
-        }, true);
-        // int a = 0;
-        // int k = 100 / a;
- 
-        var s =  string.Format("level: {0}", new {level="llle"});
-
-        return Task.FromResult("v1" + s);
-    }
-
-    [HttpGet(ApiEndpoints.Test.TestMethod2)]
-    [MapToApiVersion("1.0")]
-    public Task<string> TestGetv2(CancellationToken cancellationToken)
+    [HttpPost(ApiEndpoints.Test.TestAdd)]
+    public Task<string> TestAdd(string content)
     {
         _logRepository.InsertAsync(new Log()
         {
             Id = Guid.NewGuid(),
-            Content = "Test"
-        }, true, cancellationToken);
-        return Task.FromResult("v1-1");
+            Content = content,
+            LogTime = DateTime.Now
+        }, true);
+        return Task.FromResult("ok");
+    }
+
+    [HttpDelete(ApiEndpoints.Test.TestDelete)]
+    public async Task<string> TestDelete(Guid id, CancellationToken cancellationToken)
+    { 
+        await _logRepository.DeleteAsync(id, true, cancellationToken);
+        return "ok";
+    }
+
+    [HttpDelete("deletemany")]
+    public async Task TestDeleteMany(Guid[] ids, CancellationToken cancellationToken)
+    {
+        await _logRepository.DeleteManyAsync(ids, true, cancellationToken);
+    }
+    
+    [HttpPut("update")]
+    public async Task TestUpdate(Guid id,string content, CancellationToken cancellationToken)
+    {
+        var log = await _logRepository.GetAsync(id);
+
+        log.Content = content;
+        await _logRepository.UpdateAsync(log, true, cancellationToken);
+    }
+    
+    [HttpPut("updatemany")]
+    public async Task TestUpdateMany(Guid[] ids,string content, CancellationToken cancellationToken)
+    {
+        var logs = await _logRepository.GetListAsync((log1 => ids.Contains(log1.Id)), string.Empty, SortOrder.Unspecified);
+        foreach (var log in logs)
+        {
+            log.Content = content;
+        }
+        await _logRepository.UpdateManyAsync(logs, true, cancellationToken);
+    }
+    
+    [HttpGet("getone")]
+    public async Task<Log> TestGetOne(Guid id, CancellationToken cancellationToken)
+    {
+        var log = await _logRepository.GetAsync(id);
+
+        return log;
+    }
+    
+    [HttpGet("getlist")]
+    public async Task<List<Log>> TestGetMany(string keyword, CancellationToken cancellationToken)
+    {
+        var logs = await _logRepository.GetListAsync((log1 => log1.Content.Contains(keyword)));
+        return logs;
+    }
+    
+    [HttpGet("getpagelist")]
+    public async Task<List<Log>> TestGetPageMany(string keyword,int pageIndex, int pageSize, CancellationToken cancellationToken)
+    {
+        var logs = await _logRepository.GetPagedListAsync((log1 => log1.Content.Contains(keyword)), (log => log.LogTime), SortOrder.Descending, pageIndex, pageSize);
+        return logs;
     }
 }

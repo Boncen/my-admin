@@ -26,4 +26,8 @@ public static class WebApplicationSetup
     public static void UseErrorHandleMiddleware(this WebApplication app){
         app.UseMiddleware<ErrorHandlerMiddleware>();
     }
+    
+    public static void UseMaFramework(this WebApplication app)
+    {
+    }
 }

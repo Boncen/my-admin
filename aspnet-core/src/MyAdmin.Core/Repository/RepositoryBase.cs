@@ -1,15 +1,19 @@
 
+using System.Linq;
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using MyAdmin.Core.Entity;
 using MyAdmin.Core.Entity.Auditing;
+using MyAdmin.Core.Extensions;
 
 namespace MyAdmin.Core.Repository;
 
 public class RepositoryBase(IServiceProvider serviceProvider) : IRepository
 {
     protected DbContext _dbContext = serviceProvider.GetRequiredService<DbContext>();
+
+    public bool? IsChangeTrackingEnabled { get; set; } = true;
 }
 
 public class RepositoryBase<TEntity>(IServiceProvider serviceProvider)
@@ -34,33 +38,61 @@ public class RepositoryBase<TEntity>(IServiceProvider serviceProvider)
     {
         if (typeof(IHasCreationTime).IsAssignableFrom(typeof(TEntity)))
             return entity => ((IHasCreationTime)entity).CreationTime;
+
         return null;
     }
+
+    protected DbContext GetDbContext()
+    {
+        return _dbContext;
+    }
+
+    protected DbSet<TEntity> GetDbSet()
+    {
+        return _dbContext.Set<TEntity>();
+    }
+    protected IQueryable<TEntity> GetQueryable()
+    {
+        return GetDbSet().AsQueryable().AsNoTrackingIf(IsChangeTrackingEnabled == false);
+    }
+
     private IQueryable<TEntity> SortByField(IQueryable<TEntity> queryable, string? sortField, SortOrder sortOrder)
     {
         if (!Check.HasValue(sortField))
         {
             // sortField = GetDefaultSortField();
+            return queryable;
         }
-
-        return null;
+        ParameterExpression parameterExpression = Expression.Parameter(typeof(TEntity), "x");
+        MemberExpression memberExpression = Expression.Property(parameterExpression, sortField);
+        Expression<Func<TEntity, object>> expression = Expression.Lambda<Func<TEntity, object>>(memberExpression, parameterExpression);
+        switch (sortOrder)
+        {
+            case SortOrder.Ascending:
+                return queryable.OrderBy(expression);
+            case SortOrder.Descending:
+                return queryable.OrderByDescending(expression);
+            default:
+                break;
+        }
+        return queryable;
     }
-    public async Task DeleteAsync(TEntity entity, bool autoSave = false)
+    public async Task DeleteAsync(TEntity entity, bool autoSave = false, CancellationToken cancellationToken = default)
     {
         if (entity is ISoftDelete)
         {
             (entity as IDeletionAuditedObject<TEntity>).IsDeleted = true;
             (entity as IDeletionAuditedObject<TEntity>).DeletionTime = DateTime.Now;
-            _dbContext.Set<TEntity>().Update(entity);
+            GetDbSet().Update(entity);
         }
         else
         {
-            _dbContext.Remove(entity);
+            GetDbContext().Remove(entity);
         }
 
         if (autoSave)
         {
-            await _dbContext.SaveChangesAsync();
+            await GetDbContext().SaveChangesAsync(cancellationToken);
         }
     }
 
@@ -72,77 +104,131 @@ public class RepositoryBase<TEntity>(IServiceProvider serviceProvider)
         }
     }
 
-    public Task<List<TEntity>> GetListAsync(Expression<Func<TEntity, bool>> queryPredicate, string? sortField, SortOrder sortOrder,
+    public async Task<List<TEntity>> GetListAsync(Expression<Func<TEntity, bool>> queryPredicate, string? sortField, SortOrder sortOrder,
         params Expression<Func<TEntity, dynamic>>[] eagerLoadingProperties)
     {
-        var query = _dbContext.Set<TEntity>().AsQueryable();
+        var query = GetQueryable();
         query = IncludeDetails(query, eagerLoadingProperties);
         query = query.Where(queryPredicate);
         query = SortByField(query, sortField, sortOrder);
 
-        return null;
+        return await query.ToListAsync();
     }
 
-    public Task<List<TEntity>> GetPagedListAsync<TSortKey>(Expression<Func<TEntity, bool>> queryPredicate, Expression<Func<TEntity, TSortKey>>? sortPredicate, SortOrder sortOrder,
+    public async Task<List<TEntity>> GetPagedListAsync<TSortKey>(Expression<Func<TEntity, bool>> queryPredicate, Expression<Func<TEntity, TSortKey>>? sortPredicate, SortOrder sortOrder,
         int pageNumber, int pageSize, params Expression<Func<TEntity, dynamic>>[] eagerLoadingProperties)
     {
-        throw new NotImplementedException();
+        var query = GetQueryable();
+        query = IncludeDetails(query, eagerLoadingProperties);
+        query = query.Where(queryPredicate);
+        if (sortPredicate != null)
+        {
+            switch (sortOrder)
+            {
+                case SortOrder.Ascending:
+                    query = query.OrderBy(sortPredicate);
+                    break;
+                case SortOrder.Descending:
+                    query = query.OrderByDescending(sortPredicate);
+                    break;
+                default:
+                    break;
+            }
+        }
+        return await query.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
     }
 
     public async Task<TEntity> InsertAsync(TEntity entity, bool autoSave = false, CancellationToken cancellationToken = default)
     {
-        await _dbContext.AddAsync(entity, cancellationToken: cancellationToken);
+        await GetDbContext().AddAsync(entity, cancellationToken: cancellationToken);
         if (autoSave)
         {
-            await _dbContext.SaveChangesAsync(cancellationToken);
+            await GetDbContext().SaveChangesAsync(cancellationToken);
         }
 
         return entity;
     }
 
-    public Task InsertManyAsync(IEnumerable<TEntity> entities, bool autoSave = false, CancellationToken cancellationToken = default)
+    public async Task InsertManyAsync(IEnumerable<TEntity> entities, bool autoSave = false, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        await GetDbSet().AddRangeAsync(entities, cancellationToken);
+        if (autoSave)
+        {
+            await GetDbContext().SaveChangesAsync(cancellationToken);
+        }
     }
 
-    public Task<TEntity> UpdateAsync(TEntity entity, bool autoSave = false, CancellationToken cancellationToken = default)
+
+    public async Task<TEntity> UpdateAsync(TEntity entity, bool autoSave = false, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        GetDbSet().Update(entity);
+        if (autoSave)
+        {
+            await GetDbContext().SaveChangesAsync(cancellationToken);
+        }
+        return entity;
     }
 
-    public Task UpdateManyAsync(IEnumerable<TEntity> entities, bool autoSave = false, CancellationToken cancellationToken = default)
+    public async Task UpdateManyAsync(IEnumerable<TEntity> entities, bool autoSave = false, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        GetDbContext().UpdateRange(entities);
+        if (autoSave)
+        {
+            await GetDbContext().SaveChangesAsync(cancellationToken);
+        }
     }
 }
 
 public class RepositoryBase<TEntity, TKey>(IServiceProvider serviceProvider)
     : RepositoryBase<TEntity>(serviceProvider), IRepository<TEntity, TKey>
-    where TEntity : class, IEntity
+    where TEntity : class, IEntity<TKey>
 {
-    public Task DeleteAsync(TKey id, bool autoSave = false, CancellationToken cancellationToken = default)
+    public async Task DeleteAsync(TKey id, bool autoSave = false, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        var entity = await GetAsync(id, cancellationToken);
+        if (entity == null)
+        {
+            return;
+        }
+        await DeleteAsync(entity, autoSave, cancellationToken);
     }
 
-    public Task DeleteManyAsync(IEnumerable<TKey> ids, bool autoSave = false, CancellationToken cancellationToken = default)
+    public async Task DeleteManyAsync(IEnumerable<TKey> ids, bool autoSave = false, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        foreach (var id in ids)
+        {
+            await DeleteAsync(id, cancellationToken: cancellationToken);
+        }
+
+        if (autoSave)
+        {
+            await GetDbContext().SaveChangesAsync(cancellationToken);
+        }
     }
 
-    public Task<TEntity?> FindAsync(TKey id, bool includeDetails = true, CancellationToken cancellationToken = default)
+    public async Task<TEntity?> FindAsync(TKey id, CancellationToken cancellationToken = default,
+         params Expression<Func<TEntity, dynamic>>[] eagerLoadingProperties)
     {
-        throw new NotImplementedException();
+        var query = GetQueryable();
+        query = IncludeDetails(query, eagerLoadingProperties);
+        var entity = await query.FirstOrDefaultAsync(e => e.Id.Equals(id), cancellationToken);
+        return entity;
     }
 
-    public Task<TEntity> GetAsync(TKey id, bool includeDetails = true, CancellationToken cancellationToken = default)
+    public async Task<TEntity> GetAsync(TKey id, CancellationToken cancellationToken = default,
+         params Expression<Func<TEntity, dynamic>>[] eagerLoadingProperties)
     {
-        throw new NotImplementedException();
+        var entity = await FindAsync(id, cancellationToken, eagerLoadingProperties);
+        if (entity == null)
+        {
+            throw new EntityNotFoundException();
+        }
+        return entity;
     }
 }
 
-public class RepositoryBase<TEntity, TKey, TDbContext> : RepositoryBase<TEntity, TKey> 
-    where TEntity : class, IEntity
+public class RepositoryBase<TEntity, TKey, TDbContext> : RepositoryBase<TEntity, TKey>
+    where TEntity : class, IEntity<TKey>
     where TDbContext : DbContext
 {
     protected RepositoryBase(IServiceProvider serviceProvider) : base(serviceProvider)

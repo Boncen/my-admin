@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Http;
 using MyAdmin.Core;
 using MyAdmin.Core.Logger;
+using MyAdmin.Core.Model;
 
 namespace MyAdmin.Core.Middleware;
 

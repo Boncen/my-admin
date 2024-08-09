@@ -6,6 +6,7 @@ namespace MyAdmin.ApiHost;
 [Table("Log")]
 public class Log : Entity<Guid>
 {
+    
     public Guid? UserId { get; set; }
     public LogLevel Level { get; set; }
     public string? UserName { get; set; }

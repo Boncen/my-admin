@@ -12,9 +12,11 @@
 </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Attribute\" />
     <Folder Include="DDD/Application/" />
     <Folder Include="logger/" />
     <Folder Include="Middlewares/" />
+    <PackageReference Include="Mapster" Version="7.4.1-pre01" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.7" />
     <PackageReference Include="Asp.Versioning.Http" Version="8.1.0" />
     <PackageReference Include="Asp.Versioning.Mvc" Version="8.1.0" />

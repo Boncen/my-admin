@@ -17,12 +17,12 @@ var serverVersion = new MySqlServerVersion(new Version(9, 0, 0));
 builder.Services.AddDbContext<MaDbContext>(
            dbContextOptions => dbContextOptions
                .UseMySql(builder.Configuration["ConnectionStrings:MySQL"], serverVersion)
+               .ConfigureWarnings((configurationBuilder => configurationBuilder.Throw()))
                .LogTo(Console.WriteLine, LogLevel.Information)
                .EnableSensitiveDataLogging()
                .EnableDetailedErrors()
        );
 builder.Services.AddTransient<Microsoft.EntityFrameworkCore.DbContext, MaDbContext>();
-builder.Services.AddTransient<ILogRepository, LogRepository>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -32,10 +32,9 @@ if (app.Environment.IsDevelopment())
     app.SetupSwaggerUI(builder.Configuration);
 }
 
+app.UseMaFramework(); // todo
 app.UseErrorHandleMiddleware();
 app.UseHttpsRedirection();
 app.MapControllers();
-
-
 
 app.Run();
