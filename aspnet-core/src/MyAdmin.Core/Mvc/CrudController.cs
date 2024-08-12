@@ -8,14 +8,9 @@ namespace MyAdmin.Core.Mvc;
 public class CrudController<TEntity, TKey, TAdd, TResponse>: ControllerBase where TEntity: class, IEntity
 {
     private readonly IRepository<TEntity,TKey> _repository;
-    // private static string EntityName;
-    public CrudController(IRepository<TEntity,TKey> repository, string entityName)
+    public CrudController(IRepository<TEntity,TKey> repository)
     {
         _repository = repository;
-        // EntityName = entityName;
-        // Type type = _repository.GetType();
-        // var genericArguments = type.GetGenericArguments();
-        // TypeName = genericArguments.FirstOrDefault()?.Name;
     }
     
     [HttpPost()]

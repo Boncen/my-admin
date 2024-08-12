@@ -21,5 +21,9 @@
     <ProjectReference Include="..\MyAdmin.Core\MyAdmin.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="models\" />
+  </ItemGroup>
+
 
 </Project>

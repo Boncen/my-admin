@@ -1,7 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MyAdmin.Core;
+using MyAdmin.Core.Model.BuildIn;
 
-namespace MyAdmin.ApiHost;
+namespace MyAdmin.ApiHost.Db;
 
 public class MaDbContext : DbContext
 {

@@ -1,24 +1,34 @@
 using System.Diagnostics;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using MyAdmin.Core.Entity;
 using MyAdmin.Core.Extensions;
+using MyAdmin.Core.Model.BuildIn;
+using MyAdmin.Core.Repository;
 
 namespace MyAdmin.Core.Logger;
 
 public class Logger : ILogger
 {
-    private const string LogBasePath = "logs";
-    private string DefaultTemplate = @"
-{0} {1} : 
-stackTrace: {2}
-    {3}
+    protected const string LogBasePath = "logs";
+    protected string DefaultTemplate = @"{0}: 
+stackTrace: {1}
+    {2}
     ";
-    private readonly LoggerOption _loggerOption;
-    public Logger(IOptions<LoggerOption> loggerOption)
+    protected readonly LoggerOption _loggerOption;
+    private readonly IRepository<Log> _repository;
+    public Logger(IOptions<LoggerOption> loggerOption, IServiceScopeFactory serviceScopeFactory) //, IRepository<Log> repository)
     {
         _loggerOption = loggerOption.Value;
+        // _repository = repository;
+        if (_loggerOption.SaveToDatabase == true)
+        {
+            var scope = serviceScopeFactory.CreateScope();
+            _repository = scope.ServiceProvider.GetRequiredService<IRepository<Log>>();
+        }
     }
-    private string GetLocation()
+    protected string GetLocation()
     {
         var stackTrace = new StackTrace(true);
         var frame = stackTrace.GetFrame(3); // 获取调用 Log 方法的那一帧
@@ -37,9 +47,9 @@ stackTrace: {2}
         return className + "|" + methodName + "|" + line;
     }
 
-    private string FormatContent(string content, LogLevel level, string stackTrace)
+    protected string FormatContent(string content, LogLevel level, string stackTrace)
     {
-        return string.Format(DefaultTemplate, level.ToString(), DateTime.Now.ToCommonString(), stackTrace, content);
+        return string.Format(DefaultTemplate, level.ToString(), stackTrace, content);
     }
 
     public void LogCritical(string content)
@@ -66,21 +76,21 @@ stackTrace: {2}
 
     public void LogInformation(string content)
     {
-        Log(LogLevel.Information, string.Empty, exception: null);
+        Log(LogLevel.Information, content, exception: null);
     }
 
     public void LogTrace(string content)
     {
-        Log(LogLevel.Trace, string.Empty, exception: null);
+        Log(LogLevel.Trace, content, exception: null);
     }
 
     public void LogWarning(string content)
     {
-        Log(LogLevel.Warning, string.Empty, exception: null);
+        Log(LogLevel.Warning, content, exception: null);
     }
 
 
-    private void WriteToConsole(string content, LogLevel logLevel)
+    protected void WriteToConsole(string content, LogLevel logLevel)
     {
         switch (logLevel)
         {
@@ -105,29 +115,23 @@ stackTrace: {2}
         Console.ResetColor();
     }
 
-    public void Log(LogLevel level, string content, Exception? exception = null)
+    public virtual void Log(LogLevel level, string content, Exception? exception = null)
     {
         string location = GetLocation();
-        string log = FormatContent(content + Environment.NewLine + exception == null ? string.Empty : exception!.FullMessage(), level, location);
+        string log = FormatContent(exception == null ? content : content + Environment.NewLine + exception!.FullMessage(), level, location);
         WriteToConsole(log, level);
-        switch (_loggerOption.LogStorageType)
+        
+        if (_loggerOption.SaveToFile == true)
         {
-            case StorageType.File:
-                SaveLogToFileAsync(log, level);
-                break;
-            case StorageType.Database:
-
-                break;
-            case StorageType.MongoDB:
-
-                break;
-            default:
-                break;
-        }
-
+            SaveLogToFileAsync(log, level);
+        } 
+        if (_loggerOption.SaveToDatabase == true)
+        {
+            SaveLogToDatabaseAsync(log, level);
+        } 
     }
 
-    private void SaveLogToFileAsync(string log, LogLevel level)
+    protected void SaveLogToFileAsync(string log, LogLevel level)
     {
         if (!Check.HasValue(log))
         {
@@ -150,4 +154,22 @@ stackTrace: {2}
         }
         File.AppendAllText(filePath, log);
     }
+
+    protected void SaveLogToDatabaseAsync(string log, LogLevel level)
+    {
+        if (!Check.HasValue(log))
+        {
+            return;
+        }
+
+        _repository.InsertAsync(new Log()
+        {
+            Id = Guid.NewGuid(),
+            Content = log,
+            Level = level,
+            LogTime = DateTime.Now
+        }, true);
+    }
 }
+
+ 

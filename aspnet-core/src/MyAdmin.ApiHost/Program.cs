@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Console;
 using MyAdmin.ApiHost;
-using MyAdmin.ApiHost.db;
+using MyAdmin.ApiHost.Db;
 using MyAdmin.Core.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);

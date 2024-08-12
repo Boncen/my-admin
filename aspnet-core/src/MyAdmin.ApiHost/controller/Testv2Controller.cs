@@ -1,17 +1,17 @@
 ﻿using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
 using MyAdmin.ApiHost.Dto;
+using MyAdmin.Core.Model.BuildIn;
 using MyAdmin.Core.Mvc;
 using MyAdmin.Core.Repository;
 
-namespace MyAdmin.ApiHost;
+namespace MyAdmin.ApiHost.Controller;
 
 [ApiController]
-[ApiVersion("2.0")]
 [Route("api/[controller]/[action]")]
 public class Testv2Controller: CrudController<Log, Guid, AddLogDto,LogDto>
 {
-    public Testv2Controller(IRepository<Log,Guid> repository):base(repository, nameof(Log))
+    public Testv2Controller(IRepository<Log,Guid> repository):base(repository)
     {
         
     }
