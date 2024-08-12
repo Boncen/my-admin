@@ -115,12 +115,15 @@ public class RepositoryBase<TEntity>(IServiceProvider serviceProvider)
         return await query.ToListAsync();
     }
 
-    public async Task<List<TEntity>> GetPagedListAsync<TSortKey>(Expression<Func<TEntity, bool>> queryPredicate, Expression<Func<TEntity, TSortKey>>? sortPredicate, SortOrder sortOrder,
+    public async Task<List<TEntity>> GetPagedListAsync<TSortKey>(Expression<Func<TEntity, bool>>? queryPredicate, Expression<Func<TEntity, TSortKey>>? sortPredicate, SortOrder sortOrder,
         int pageNumber, int pageSize, params Expression<Func<TEntity, dynamic>>[] eagerLoadingProperties)
     {
         var query = GetQueryable();
         query = IncludeDetails(query, eagerLoadingProperties);
-        query = query.Where(queryPredicate);
+        if (queryPredicate != null)
+        {
+            query = query.Where(queryPredicate);
+        }
         if (sortPredicate != null)
         {
             switch (sortOrder)

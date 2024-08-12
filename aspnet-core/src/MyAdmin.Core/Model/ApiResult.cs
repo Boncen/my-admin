@@ -7,7 +7,6 @@ public class ApiResultBase
 }
 public class ApiResult :ApiResultBase
 {
-    
     public string? Msg { get; set; }
     
 }

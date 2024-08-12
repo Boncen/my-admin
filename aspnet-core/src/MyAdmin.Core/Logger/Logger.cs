@@ -14,7 +14,6 @@ public class Logger : ILogger
     protected const string LogBasePath = "logs";
     protected string DefaultTemplate = @"{0}: 
 stackTrace: {1}
-    {2}
     ";
     protected readonly LoggerOption _loggerOption;
     private readonly IRepository<Log> _repository;
@@ -47,9 +46,9 @@ stackTrace: {1}
         return className + "|" + methodName + "|" + line;
     }
 
-    protected string FormatContent(string content, LogLevel level, string stackTrace)
+    protected string FormatExtraInfo(LogLevel level, string stackTrace)
     {
-        return string.Format(DefaultTemplate, level.ToString(), stackTrace, content);
+        return string.Format(DefaultTemplate, level.ToString(), stackTrace);
     }
 
     public void LogCritical(string content)
@@ -118,12 +117,13 @@ stackTrace: {1}
     public virtual void Log(LogLevel level, string content, Exception? exception = null)
     {
         string location = GetLocation();
-        string log = FormatContent(exception == null ? content : content + Environment.NewLine + exception!.FullMessage(), level, location);
-        WriteToConsole(log, level);
+        string extraInfo = FormatExtraInfo(level, location);
+        string log = exception == null ? content : content + Environment.NewLine + exception!.FullMessage();
+        WriteToConsole(extraInfo + log, level);
         
         if (_loggerOption.SaveToFile == true)
         {
-            SaveLogToFileAsync(log, level);
+            SaveLogToFileAsync(extraInfo + log, level);
         } 
         if (_loggerOption.SaveToDatabase == true)
         {

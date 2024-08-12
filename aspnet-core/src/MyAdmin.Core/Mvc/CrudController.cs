@@ -1,6 +1,8 @@
 using Mapster;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using MyAdmin.Core.Entity;
+using MyAdmin.Core.Model;
 using MyAdmin.Core.Repository;
 
 namespace MyAdmin.Core.Mvc;
@@ -13,7 +15,7 @@ public class CrudController<TEntity, TKey, TAdd, TResponse>: ControllerBase wher
         _repository = repository;
     }
     
-    [HttpPost()]
+    [HttpPost]
     public async Task<TResponse> Add([FromBody]TAdd addInput, CancellationToken cancellationToken)
     {
         var entity = addInput.Adapt<TEntity>();
@@ -21,31 +23,31 @@ public class CrudController<TEntity, TKey, TAdd, TResponse>: ControllerBase wher
         return entity.Adapt<TResponse>();
     }
     
-    [HttpDelete()]
+    [HttpDelete]
     public async Task Delete(TKey id, CancellationToken cancellationToken)
     {
         await _repository.DeleteAsync(id, true, cancellationToken);
     }
     
-    [HttpDelete()]
+    [HttpDelete]
     public async Task DeleteRange(TKey[] ids, CancellationToken cancellationToken)
     {
         await _repository.DeleteManyAsync(ids, true, cancellationToken);
     }
     
-    [HttpPut()]
+    [HttpPut]
     public async Task Update([FromBody]TEntity entity, CancellationToken cancellationToken)
     {
         await _repository.UpdateAsync(entity, true, cancellationToken);
     }
     
-    [HttpPut()]
-    public async Task UpdateRange([FromBody]TEntity[] entities, CancellationToken cancellationToken)
+    [HttpPut]
+    public async Task UpdateMany([FromBody]TEntity[] entities, CancellationToken cancellationToken)
     {
         await _repository.UpdateManyAsync(entities, true, cancellationToken);
     }
     
-    [HttpGet()]
+    [HttpGet]
     public async Task<TResponse> GetOne(TKey id, CancellationToken cancellationToken)
     {
         var entity = await _repository.GetAsync(id, cancellationToken);
@@ -53,11 +55,18 @@ public class CrudController<TEntity, TKey, TAdd, TResponse>: ControllerBase wher
         return rsp;
     }
     
-    // [HttpGet($"{nameof(TEntity)}s")]
-    // public async Task<TResponse> GetAll(TKey id, CancellationToken cancellationToken)
-    // {
-    //     var entity = await _repository.GetListAsync(id, cancellationToken);
-    //     var rsp = entity.Adapt<TResponse>();
-    //     return rsp;
-    // }
+    [HttpGet]
+    public async Task<ApiResultWithData> PageList([FromQuery]PageRequest request, CancellationToken cancellationToken)
+    {
+        var entity = await _repository.GetPagedListAsync<TEntity>(null, null, SortOrder.Unspecified, request.PageIndex, request.PageSize);
+        var rsp = entity.Adapt<IList<TResponse>>();
+        
+        ApiResultWithData res = new ApiResultWithData()
+        {
+            Data = new {list=rsp},
+            Code = StatusCodes.Status200OK,
+            Success = true,
+        };
+        return res;
+    }
 }
