@@ -1,4 +1,6 @@
-namespace MyAdmin.ApiHost.Dto;
+using Microsoft.Extensions.Logging;
+
+namespace MyAdmin.Core.Model.Dto;
 
 public class LogDto
 {

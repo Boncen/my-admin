@@ -56,14 +56,27 @@ public class CrudController<TEntity, TKey, TAdd, TResponse>: ControllerBase wher
     }
     
     [HttpGet]
-    public async Task<ApiResultWithData> PageList([FromQuery]PageRequest request, CancellationToken cancellationToken)
+    public async Task<ApiResult<PageResult<TResponse>>> PageList([FromQuery]PageRequest request, CancellationToken cancellationToken)
     {
-        var entity = await _repository.GetPagedListAsync<TEntity>(null, null, SortOrder.Unspecified, request.PageIndex, request.PageSize);
-        var rsp = entity.Adapt<IList<TResponse>>();
-        
-        ApiResultWithData res = new ApiResultWithData()
+        List<TEntity> entities = default;
+        int total = 0;
+        if (request.ReturnTotal == true)
         {
-            Data = new {list=rsp},
+            var entitiesWithTotal = await _repository.GetPagedListWithTotalAsync<TEntity>(null, null, SortOrder.Unspecified, 
+                request.PageIndex, request.PageSize);
+            entities = entitiesWithTotal.Item1;
+            total = entitiesWithTotal.Item2;
+        }
+        else
+        {
+            entities = await _repository.GetPagedListAsync<TEntity>(null, null, SortOrder.Unspecified, 
+                request.PageIndex, request.PageSize);
+        }
+        
+        var rsp = entities.Adapt<List<TResponse>>();
+        ApiResult<PageResult<TResponse>> res = new ApiResult<PageResult<TResponse>>()
+        {
+            Data = new PageResult<TResponse>(){List=rsp, Total = total},
             Code = StatusCodes.Status200OK,
             Success = true,
         };

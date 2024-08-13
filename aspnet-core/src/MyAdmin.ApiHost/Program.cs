@@ -1,3 +1,4 @@
+using System.Reflection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Console;
 using MyAdmin.ApiHost;
@@ -10,7 +11,7 @@ builder.Services.AddControllers();
 
 builder.Services.AddMaFramework( builder.Configuration, (o)=>{
     o.UseApiVersioning(builder.Configuration);
-});
+}, Assembly.GetExecutingAssembly());
 
 // db
 var serverVersion = new MySqlServerVersion(new Version(9, 0, 0));

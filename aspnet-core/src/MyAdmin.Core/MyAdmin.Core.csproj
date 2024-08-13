@@ -13,7 +13,6 @@
 
   <ItemGroup>
     <Folder Include="Attribute\" />
-    <Folder Include="DDD/Application/" />
     <Folder Include="logger/" />
     <Folder Include="Middlewares/" />
     <PackageReference Include="Mapster" Version="7.4.1-pre01" />

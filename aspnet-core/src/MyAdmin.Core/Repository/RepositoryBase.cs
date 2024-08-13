@@ -124,6 +124,7 @@ public class RepositoryBase<TEntity>(IServiceProvider serviceProvider)
         {
             query = query.Where(queryPredicate);
         }
+
         if (sortPredicate != null)
         {
             switch (sortOrder)
@@ -139,6 +140,35 @@ public class RepositoryBase<TEntity>(IServiceProvider serviceProvider)
             }
         }
         return await query.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
+    }
+
+    public async Task<(List<TEntity>, int)> GetPagedListWithTotalAsync<TSortKey>(Expression<Func<TEntity, bool>> queryPredicate, Expression<Func<TEntity, TSortKey>>? sortPredicate,
+        SortOrder sortOrder, int pageNumber, int pageSize, params Expression<Func<TEntity, dynamic>>[] eagerLoadingProperties)
+    {
+        var query = GetQueryable();
+        query = IncludeDetails(query, eagerLoadingProperties);
+        if (queryPredicate != null)
+        {
+            query = query.Where(queryPredicate);
+        }
+
+        var total = await query.CountAsync();
+        if (sortPredicate != null)
+        {
+            switch (sortOrder)
+            {
+                case SortOrder.Ascending:
+                    query = query.OrderBy(sortPredicate);
+                    break;
+                case SortOrder.Descending:
+                    query = query.OrderByDescending(sortPredicate);
+                    break;
+                default:
+                    break;
+            }
+        }
+        var list = await query.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
+        return (list, total);
     }
 
     public async Task<TEntity> InsertAsync(TEntity entity, bool autoSave = false, CancellationToken cancellationToken = default)

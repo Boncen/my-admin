@@ -1,6 +1,6 @@
 ﻿using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
-using MyAdmin.ApiHost.Dto;
+using MyAdmin.Core.Model.Dto;
 using MyAdmin.Core.Model.BuildIn;
 using MyAdmin.Core.Mvc;
 using MyAdmin.Core.Repository;

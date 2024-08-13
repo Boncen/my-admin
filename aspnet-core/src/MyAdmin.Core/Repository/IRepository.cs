@@ -19,6 +19,10 @@ public interface IRepository<TEntity> : IRepository where TEntity : class, IEnti
     Task<List<TEntity>> GetPagedListAsync<TSortKey>(
         Expression<Func<TEntity, bool>> queryPredicate, Expression<Func<TEntity, TSortKey>>? sortPredicate, SortOrder sortOrder, int pageNumber, int pageSize,
         params Expression<Func<TEntity, dynamic>>[] eagerLoadingProperties);
+
+    Task<(List<TEntity>, int)> GetPagedListWithTotalAsync<TSortKey>(
+        Expression<Func<TEntity, bool>> queryPredicate, Expression<Func<TEntity, TSortKey>>? sortPredicate, SortOrder sortOrder, int pageNumber, int pageSize,
+        params Expression<Func<TEntity, dynamic>>[] eagerLoadingProperties);
 }
 
 public interface IRepository<TEntity, TKey> : IRepository<TEntity> where TEntity : class, IEntity

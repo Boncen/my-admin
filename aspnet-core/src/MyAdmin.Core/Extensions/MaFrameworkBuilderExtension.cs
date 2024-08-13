@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using MyAdmin.ApiHost.Swagger;
+using MyAdmin.Core.Framework;
 using MyAdmin.Core.Logger;
 using MyAdmin.Core.Options;
 using MyAdmin.Core.Repository;
@@ -14,7 +15,8 @@ namespace MyAdmin.Core.Extensions;
 
 public static class MaFrameworkBuilderExtension
 {
-    public static IServiceCollection AddMaFramework(this IServiceCollection service, ConfigurationManager configuration, Action<MaFrameworkBuilder> builderAction = null, params Assembly[] assemblies)
+    public static IServiceCollection AddMaFramework(this IServiceCollection service, ConfigurationManager configuration,
+        Action<MaFrameworkBuilder> builderAction = null, params Assembly[] assemblies)
     {
         if (assemblies.Length == 0) 
             assemblies = new[] { Assembly.GetEntryAssembly() };
@@ -28,10 +30,39 @@ public static class MaFrameworkBuilderExtension
 
         #endregion
         
+        // 自动扫描注册
+        foreach (var assem in assemblies)
+        {
+            var allTypes = assem.GetTypes();
+            foreach (var t in allTypes)
+            {
+                if (t.IsInterface)
+                {
+                    continue;
+                }
+                var interfs = t.GetInterfaces();
+                foreach (var i in interfs)
+                {
+                    if (i == typeof(ITransient))
+                    {
+                        service.AddTransient(t);
+                    }
+                    if (i == typeof(IScoped))
+                    {
+                        service.AddScoped(t);
+                    }
+                    if (i == typeof(ISingleton))
+                    {
+                        service.AddSingleton(t);
+                    }
+                }
+               
+            }
+        }
+        
         #region log
 
         service.TryAddSingleton<MyAdmin.Core.Logger.ILogger, MyAdmin.Core.Logger.Logger>();
-
         #endregion
 
         #region options
@@ -39,8 +70,6 @@ public static class MaFrameworkBuilderExtension
         service.Configure<LoggerOption>(configuration.GetSection(nameof(Core.Conf.Setting.Logger)));
         #endregion
         return service;
-        // service.Configure<ApiVersioningConfOption>(configuration.GetSection(nameof(Core.Conf.Setting.ApiVersioning)));
-        // service.Configure<LoggerOption>(configuration.GetSection(nameof(Core.Conf.Setting.Logger)));
     }
     
     public static void UseApiVersioning(this MaFrameworkBuilder builder, ConfigurationManager configuration)
