@@ -23,6 +23,8 @@
 
   <ItemGroup>
     <Folder Include="Dto\" />
+    <Folder Include="logs\" />
+    <Folder Include="Migrations\" />
     <Folder Include="models\" />
   </ItemGroup>
 

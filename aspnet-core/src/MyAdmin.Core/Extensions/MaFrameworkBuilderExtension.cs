@@ -66,15 +66,16 @@ public static class MaFrameworkBuilderExtension
         #endregion
 
         #region options
-        service.Configure<ApiVersioningConfOption>(configuration.GetSection(nameof(Core.Conf.Setting.ApiVersioning)));
+        // service.Configure<ApiVersioningConfOption>(configuration.GetSection(nameof(Core.Conf.Setting.ApiVersioning)));
         service.Configure<LoggerOption>(configuration.GetSection(nameof(Core.Conf.Setting.Logger)));
+        service.Configure<MaFrameworkOptions>(configuration.GetSection(nameof(Core.Conf.Setting.MaFrameworkOptions)));
         #endregion
         return service;
     }
     
     public static void UseApiVersioning(this MaFrameworkBuilder builder, ConfigurationManager configuration)
     {
-        var useVersioningStr = configuration[$"{nameof(Core.Conf.Setting.ApiVersioning)}:{nameof(Core.Conf.Setting.ApiVersioning.UseApiVersioning)}"];
+        var useVersioningStr = configuration[$"{nameof(Core.Conf.Setting.MaFrameworkOptions)}:{nameof(Core.Conf.Setting.MaFrameworkOptions.UseApiVersioning)}"];
         if (string.IsNullOrEmpty(useVersioningStr) || !bool.TryParse(useVersioningStr, out bool useApiVersioning) || !useApiVersioning)
         {
             builder.Services.AddEndpointsApiExplorer();

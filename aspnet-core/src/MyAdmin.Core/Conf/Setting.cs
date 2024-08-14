@@ -5,6 +5,7 @@ namespace MyAdmin.Core.Conf;
 
 public class Setting {
     public LoggerOption? Logger { get; set; }
-    public ApiVersioningConfOption? ApiVersioning { get; set; }
+    // public ApiVersioningConfOption? ApiVersioning { get; set; }
+    public MaFrameworkOptions? MaFrameworkOptions { get; set; }
     
 }

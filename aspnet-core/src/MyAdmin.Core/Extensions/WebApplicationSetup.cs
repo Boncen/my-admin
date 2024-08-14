@@ -1,14 +1,17 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
-using MyAdmin.Core.Middleware;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
+using MyAdmin.Core.Middlewares;
+using MyAdmin.Core.Options;
 
 namespace MyAdmin.Core.Extensions;
 
 public static class WebApplicationSetup
 {
-    public static void SetupSwaggerUI(this WebApplication app, ConfigurationManager configuration)
+    public static void SetupSwaggerUi(this WebApplication app, ConfigurationManager configuration)
     {
-        var useVersioningStr = configuration[$"{nameof(Core.Conf.Setting.ApiVersioning)}:{nameof(Core.Conf.Setting.ApiVersioning.UseApiVersioning)}"];
+        var useVersioningStr = configuration[$"{nameof(Conf.Setting.MaFrameworkOptions)}:{nameof(Conf.Setting.MaFrameworkOptions.UseApiVersioning)}"];
         if (string.IsNullOrEmpty(useVersioningStr) || !bool.TryParse(useVersioningStr, out bool useApiVersioning ) || !useApiVersioning)
         {
             app.UseSwaggerUI();
@@ -26,8 +29,34 @@ public static class WebApplicationSetup
     public static void UseErrorHandleMiddleware(this WebApplication app){
         app.UseMiddleware<ErrorHandlerMiddleware>();
     }
-    
-    public static void UseMaFramework(this WebApplication app)
+
+    public static void UseRequestMonitorMiddleware(this WebApplication app)
     {
+        app.UseMiddleware<RequestMonitorMiddleware>();
+    }
+    
+    public static void UseMaFramework(this WebApplication app, ConfigurationManager configurationManager)
+    {
+        // swagger
+        if (app.Environment.IsDevelopment())
+        {
+            app.UseSwagger();
+            app.SetupSwaggerUi(configurationManager);
+        }
+
+        var maframeworkOptions = app.Services.GetService(typeof(IOptions<MaFrameworkOptions>)) as IOptions<MaFrameworkOptions>;
+        if (maframeworkOptions!=null)
+        {
+            if (maframeworkOptions.Value.UseGlobalErrorHandler == true)
+            {
+                app.UseErrorHandleMiddleware();
+            }
+        
+            if (maframeworkOptions.Value.UseRequestLog == true)
+            {
+                app.UseRequestMonitorMiddleware();
+            }
+        }
+       
     }
 }

@@ -6,3 +6,9 @@ public enum StorageType {
     Database, // todo
     MongoDB // todo
 }
+
+public enum LogType
+{
+    Default = 1,
+    Request = 2,
+}

@@ -17,7 +17,16 @@ public class TestController : ControllerBase
         _logger = logger;
         _testService = testService;
     }
-
+    [HttpGet("test1")]
+    public Task<string> Test1(string content, int a)
+    {
+        return Task.FromResult(content + a);
+    }
+    [HttpPost("test2")]
+    public async Task<object> Test2([FromBody]Param1 obj)
+    {
+        return obj;
+    }
 
     [HttpPost("testlog")]
     public Task<string> TestAddLog(string content)
@@ -36,4 +45,10 @@ public class TestController : ControllerBase
     {
         return Task.FromResult(serv.GetServiceName());
     }
+}
+
+public class Param1
+{
+    public string P1 { get; set; }
+    public string P2 { get; set; }
 }

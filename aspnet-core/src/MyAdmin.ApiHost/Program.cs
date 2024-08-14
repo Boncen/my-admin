@@ -1,9 +1,8 @@
 using System.Reflection;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging.Console;
-using MyAdmin.ApiHost;
 using MyAdmin.ApiHost.Db;
 using MyAdmin.Core.Extensions;
+using MyAdmin.Core.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,22 +18,14 @@ builder.Services.AddDbContext<MaDbContext>(
            dbContextOptions => dbContextOptions
                .UseMySql(builder.Configuration["ConnectionStrings:MySQL"], serverVersion)
                .ConfigureWarnings((configurationBuilder => configurationBuilder.Throw()))
-               .LogTo(Console.WriteLine, LogLevel.Information)
+               // .LogTo(Console.WriteLine, LogLevel.Information)
                .EnableSensitiveDataLogging()
                .EnableDetailedErrors()
        );
 builder.Services.AddTransient<Microsoft.EntityFrameworkCore.DbContext, MaDbContext>();
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.SetupSwaggerUI(builder.Configuration);
-}
-
-app.UseMaFramework(); // todo
-app.UseErrorHandleMiddleware();
+app.UseMaFramework(builder.Configuration);
 app.UseHttpsRedirection();
 app.MapControllers();
 
