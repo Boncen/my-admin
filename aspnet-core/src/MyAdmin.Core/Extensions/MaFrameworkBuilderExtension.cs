@@ -62,13 +62,18 @@ public static class MaFrameworkBuilderExtension
         
         #region log
 
-        service.TryAddSingleton<MyAdmin.Core.Logger.ILogger, MyAdmin.Core.Logger.Logger>();
+        service.TryAddSingleton<ILogger, MyAdmin.Core.Logger.Logger>();
         #endregion
 
         #region options
-        // service.Configure<ApiVersioningConfOption>(configuration.GetSection(nameof(Core.Conf.Setting.ApiVersioning)));
         service.Configure<LoggerOption>(configuration.GetSection(nameof(Core.Conf.Setting.Logger)));
         service.Configure<MaFrameworkOptions>(configuration.GetSection(nameof(Core.Conf.Setting.MaFrameworkOptions)));
+        #endregion
+
+        #region dapper
+
+        service.AddScoped(typeof(DBHelper));
+
         #endregion
         return service;
     }

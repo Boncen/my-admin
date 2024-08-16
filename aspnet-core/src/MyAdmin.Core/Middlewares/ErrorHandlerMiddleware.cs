@@ -24,7 +24,6 @@ public class ErrorHandlerMiddleware
         }
         catch (System.Exception error)
         {
-            // todo log
             _logger.LogError(error);
             var result = new ApiResult { Msg = error?.Message, Code = StatusCodes.Status500InternalServerError };
             switch (error)

@@ -47,14 +47,14 @@ public static class WebApplicationSetup
         var maframeworkOptions = app.Services.GetService(typeof(IOptions<MaFrameworkOptions>)) as IOptions<MaFrameworkOptions>;
         if (maframeworkOptions!=null)
         {
-            if (maframeworkOptions.Value.UseGlobalErrorHandler == true)
-            {
-                app.UseErrorHandleMiddleware();
-            }
-        
             if (maframeworkOptions.Value.UseRequestLog == true)
             {
                 app.UseRequestMonitorMiddleware();
+            }
+
+            if (maframeworkOptions.Value.UseGlobalErrorHandler == true)
+            {
+                app.UseErrorHandleMiddleware();
             }
         }
        

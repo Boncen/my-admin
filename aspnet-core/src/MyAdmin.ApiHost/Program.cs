@@ -16,7 +16,7 @@ builder.Services.AddMaFramework( builder.Configuration, (o)=>{
 var serverVersion = new MySqlServerVersion(new Version(9, 0, 0));
 builder.Services.AddDbContext<MaDbContext>(
            dbContextOptions => dbContextOptions
-               .UseMySql(builder.Configuration["ConnectionStrings:MySQL"], serverVersion)
+               .UseMySql(builder.Configuration["ConnectionStrings:Default"], serverVersion)
                .ConfigureWarnings((configurationBuilder => configurationBuilder.Throw()))
                // .LogTo(Console.WriteLine, LogLevel.Information)
                .EnableSensitiveDataLogging()

@@ -6,6 +6,7 @@ using MyAdmin.Core.Entity;
 using MyAdmin.Core.Extensions;
 using MyAdmin.Core.Model.BuildIn;
 using MyAdmin.Core.Repository;
+using MyAdmin.Core.Utilities;
 
 namespace MyAdmin.Core.Logger;
 
@@ -114,20 +115,36 @@ stackTrace: {1}
         Console.ResetColor();
     }
 
+    public void Log(Log log)
+    {
+        if (log == null)
+        {
+            return;
+        }
+        if (_loggerOption.SaveToFile == true)
+        {
+            SaveLogToFileAsync(log.ToJsonString(), LogLevel.Trace);
+        }
+
+        if (_loggerOption.SaveToDatabase == true)
+        {
+            _repository.InsertAsync(log, true);
+        }
+    }
+
     public virtual void Log(LogLevel level, string content, Exception? exception = null)
     {
         string location = GetLocation();
         string extraInfo = FormatExtraInfo(level, location);
-        string log = exception == null ? content : content + Environment.NewLine + exception!.FullMessage();
-        WriteToConsole(extraInfo + log, level);
+        WriteToConsole(extraInfo + content, level);
         
         if (_loggerOption.SaveToFile == true)
         {
-            SaveLogToFileAsync(extraInfo + log, level);
+            SaveLogToFileAsync(extraInfo + content + exception?.FullMessage(), level);
         } 
         if (_loggerOption.SaveToDatabase == true)
         {
-            SaveLogToDatabaseAsync(log, level);
+            SaveLogToDatabaseAsync(content, level, exception);
         } 
     }
 
@@ -155,7 +172,7 @@ stackTrace: {1}
         File.AppendAllText(filePath, log);
     }
 
-    protected void SaveLogToDatabaseAsync(string log, LogLevel level)
+    protected void SaveLogToDatabaseAsync(string log, LogLevel level, Exception? exception)
     {
         if (!Check.HasValue(log))
         {
@@ -167,7 +184,8 @@ stackTrace: {1}
             Id = Guid.NewGuid(),
             Content = log,
             Level = level,
-            LogTime = DateTime.Now
+            LogTime = DateTime.Now,
+            Exceptions = exception?.FullMessage()
         }, true);
     }
 }

@@ -6,7 +6,6 @@ namespace MyAdmin.Core.Utilities;
 
 public static class StreamHandler
 {
-    // todo 读取了两遍 
     /// <summary>
     /// 使用管道读取内容, 默认leaveOpen为true,使用之后需要手动关闭流
     /// </summary>
@@ -32,7 +31,7 @@ public static class StreamHandler
                     sb.Append(Encoding.UTF8.GetString(buffer));
                 }
 
-                reader.AdvanceTo(buffer.Start, buffer.End);
+                reader.AdvanceTo(buffer.End);
                 if (readResult.IsCompleted || readResult.IsCanceled)
                 {
                     break;

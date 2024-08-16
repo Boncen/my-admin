@@ -1,6 +1,8 @@
 ﻿using Asp.Versioning;
+using Dapper;
 using Microsoft.AspNetCore.Mvc;
 using MyAdmin.ApiHost.Service;
+using MyAdmin.Core.Model.BuildIn;
 using MyAdmin.Core.Repository;
 using ILogger = MyAdmin.Core.Logger.ILogger;
 
@@ -44,6 +46,13 @@ public class TestController : ControllerBase
     public Task<string> TestService2([FromServices]TestSingtonService serv)
     {
         return Task.FromResult(serv.GetServiceName());
+    }
+    
+    [HttpPost("dapper2")]
+    public void TestDapper2([FromServices]DBHelper helper, Guid id)
+    {
+        var count = helper.InsertAsync<Log>(new Log(){Id = Guid.NewGuid()});
+        return;
     }
 }
 
