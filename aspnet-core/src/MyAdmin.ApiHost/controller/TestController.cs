@@ -49,10 +49,10 @@ public class TestController : ControllerBase
     }
     
     [HttpPost("dapper2")]
-    public void TestDapper2([FromServices]DBHelper helper, Guid id)
+    public async Task<int> TestDapper2([FromServices]DBHelper helper, Guid id)
     {
-        var count = helper.InsertAsync<Log>(new Log(){Id = Guid.NewGuid()});
-        return;
+        var count = await helper.InsertAsync<Log>(new Log(){Id = Guid.NewGuid(), Content = "test", LogTime = DateTime.Now});
+        return count;
     }
 }
 

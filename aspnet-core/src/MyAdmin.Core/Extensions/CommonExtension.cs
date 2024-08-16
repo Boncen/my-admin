@@ -30,4 +30,48 @@ public static class CommonExtension
     public static string ToCommonString(this DateTime dateTime){
         return dateTime.ToString("yyyy-MM-dd HH:mm:ss");
     }
+
+    public static IDictionary<string, Object> ToDictionary(this Object obj, bool sort = false)
+    {
+        IDictionary<string, Object> dic;
+        if (sort)
+        {
+            dic = new SortedDictionary<string, Object>();
+        }
+        else
+        {
+            dic = new Dictionary<string, object>();
+        }
+        var type = obj.GetType();
+        var properties = type.GetProperties();
+        foreach (var prop in properties)
+        {
+            var name = prop.Name;
+            var value = prop.GetValue(obj);
+            dic.Add(name, value);
+        }
+        return dic;
+    }
+    /// <summary>
+    /// a=1&b=2&c=3 etc.
+    /// </summary>
+    /// <param name="dic"></param>
+    /// <param name="ignoreNull"></param>
+    /// <returns></returns>
+    public static string ToUrlString(this IDictionary<string, Object> dic,char seperator = '&', bool ignoreNull = true)
+    {
+        StringBuilder sb = new StringBuilder();
+        foreach (var key in dic.Keys)
+        {
+            var val = dic[key];
+            if (val == null && ignoreNull)
+            {
+                continue;
+            }
+
+            sb.AppendJoin(key + "=" + val?.ToString(), seperator);
+        }
+        return sb.ToString();
+    }
+    
 }
