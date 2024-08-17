@@ -47,13 +47,13 @@ public class TestController : ControllerBase
     {
         return Task.FromResult(serv.GetServiceName());
     }
-    
-    [HttpPost("dapper2")]
-    public async Task<int> TestDapper2([FromServices]DBHelper helper, Guid id)
-    {
-        var count = await helper.InsertAsync<Log>(new Log(){Id = Guid.NewGuid(), Content = "test", LogTime = DateTime.Now});
-        return count;
-    }
+    //
+    // [HttpPost("dapper2")]
+    // public async Task<int> TestDapper2([FromServices]DBHelper helper, Guid id)
+    // {
+    //     var count = await helper.InsertAsync<Log>(new Log(){Id = Guid.NewGuid(), Content = "test", LogTime = DateTime.Now});
+    //     return count;
+    // }
 }
 
 public class Param1

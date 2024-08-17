@@ -16,7 +16,6 @@ CREATE TABLE `Log` (
                        `Origin` varchar(100) DEFAULT NULL,
                        `Referer` varchar(100) DEFAULT NULL,
                        `Url` varchar(100) DEFAULT NULL,
-                       `Trace` varchar(100) DEFAULT NULL,
                        `RequestBody` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci,
                        `ResponseStatusCode` varchar(100) DEFAULT NULL,
                        `ResponseBody` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci,

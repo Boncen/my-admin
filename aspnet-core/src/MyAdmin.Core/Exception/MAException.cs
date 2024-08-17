@@ -1,6 +1,6 @@
-namespace MyAdmin.Core;
+namespace MyAdmin.Core.Exception;
 
-public class MAException:Exception
+public class MAException:System.Exception
 {
     public MAException()
     {
@@ -13,7 +13,7 @@ public class MAException:Exception
 
     }
 
-    public MAException(string? message, Exception? innerException)
+    public MAException(string? message, System.Exception? innerException)
         : base(message, innerException)
     {
 

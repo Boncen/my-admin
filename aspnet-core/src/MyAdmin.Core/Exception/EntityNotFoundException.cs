@@ -1,4 +1,4 @@
-namespace MyAdmin.Core;
+namespace MyAdmin.Core.Exception;
 
 public class EntityNotFoundException: MAException
 {
@@ -39,7 +39,7 @@ public class EntityNotFoundException: MAException
     /// <summary>
     /// Creates a new <see cref="EntityNotFoundException"/> object.
     /// </summary>
-    public EntityNotFoundException(Type entityType, object? id, Exception? innerException)
+    public EntityNotFoundException(Type entityType, object? id, System.Exception? innerException)
         : base(
             id == null
                 ? $"There is no such an entity given id. Entity type: {entityType.FullName}"
@@ -64,7 +64,7 @@ public class EntityNotFoundException: MAException
     /// </summary>
     /// <param name="message">Exception message</param>
     /// <param name="innerException">Inner exception</param>
-    public EntityNotFoundException(string message, Exception innerException)
+    public EntityNotFoundException(string message, System.Exception innerException)
         : base(message, innerException)
     {
 

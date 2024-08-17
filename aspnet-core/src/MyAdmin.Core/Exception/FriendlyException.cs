@@ -1,5 +1,5 @@
-﻿namespace MyAdmin.Core;
+﻿namespace MyAdmin.Core.Exception;
 
-public class FriendlyException: Exception
+public class FriendlyException: System.Exception
 {
 }

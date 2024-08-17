@@ -1,32 +1,131 @@
+using System.ComponentModel.DataAnnotations;
 using System.Data;
+using System.Reflection;
 using Dapper;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
+using MyAdmin.Core.Entity;
+using MyAdmin.Core.Exception;
 using MyAdmin.Core.Extensions;
 using MyAdmin.Core.Framework;
+using MyAdmin.Core.Options;
+using MyAdmin.Core.Utilities;
 using MySql.Data.MySqlClient;
+using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace MyAdmin.Core.Repository;
 
 public class DBHelper: IDisposable
 {
     public readonly IDbConnection Connection;
-    public DBHelper(IConfiguration configuration)
+    // private readonly DBType dbType;
+    // private readonly string TableSchema;
+    public DBHelper(IConfiguration configuration, IOptions<MaFrameworkOptions> options)
     {
-        Connection = new MySqlConnection(configuration["ConnectionStrings:Default"]);
+        var connectionString = configuration["ConnectionStrings:Default"];
+        // dbType = options.Value.DBType;
+        // TableSchema = GetTableSchema(connectionString);
+        Connection = new MySqlConnection(connectionString);
     }
 
-    public async Task<int> InsertAsync<T>(T entity, string[]? columns = null)
-    {
-        if (entity == null)
-        {
-            return 0;
-        }
-        var dic = entity.ToDictionary();
-        var valueString = dic.ToUrlString(ignoreNull:true, seperator:',');
-        string sql = $"insert into {typeof(T).Name} values({valueString})";
-        return await Connection.ExecuteAsync(sql);
-    }
+    // private string? GetTableSchema(string connectionString)
+    // {
+    //     var result = StringUtils.GetConnectionStringItem(connectionString, "Database");
+    //     if (!Check.HasValue(result))
+    //     {
+    //         result = StringUtils.GetConnectionStringItem(connectionString, "Initial Catalog");
+    //     }
+    //
+    //     return result;
+    // }
     
+    // public void UpdateDatabase(Assembly assembly)
+    // {
+    //     var types = assembly.GetTypes();
+    //     foreach (var t in types)
+    //     {
+    //         if (t.IsInterface)
+    //         {
+    //             continue;
+    //         }
+    //
+    //         if (t is IEntity)
+    //         {
+    //             UpdateTable(t);
+    //         }
+    //     }
+    // }
+    //
+    // private void UpdateTable(Type type)
+    // {
+    //     var tableName = type.Name;
+    //     var properties = type.GetProperties();
+    //
+    //     if (properties.Length < 1)
+    //     {
+    //         return;
+    //     }
+    //
+    //     List<TableEntityPropertyInfo> propertyInfos = new List<TableEntityPropertyInfo>();
+    //     // 获取当前类型的属性名，类型，数据库名类型
+    //     foreach (var prop in properties)
+    //     {
+    //         var propType = prop.PropertyType;
+    //         var propMinLength = 0;
+    //         var propMaxLength = 0;
+    //         var lengthAttr = prop.GetCustomAttribute<LengthAttribute>();
+    //         if (lengthAttr != null)
+    //         {
+    //             propMinLength = lengthAttr.MinimumLength;
+    //             propMaxLength = lengthAttr.MaximumLength;
+    //         }
+    //         
+    //         var propDbTypeName = DBTypeMapper(propType, propMinLength, propMaxLength);
+    //         var isNull = propType.IsReferenceOrNullableType();
+    //         var desc = prop.GetDescription();
+    //         propertyInfos.Add(new TableEntityPropertyInfo()
+    //         {
+    //             Name = prop.Name,
+    //             DbType = propDbTypeName,
+    //             MinLength = propMinLength,
+    //             MaxLength = propMaxLength,
+    //             IsNull = isNull,
+    //             Desc = desc
+    //         });
+    //     }
+    //     // 判断表是否存在
+    //     // 存在，从数据库获取表所有字段
+    //     //比较差异，补充字段，更新字段，删除字段
+    //     //不存在，创建表
+    // }
+    //
+    // private string DBTypeMapper(Type propType, int minLength, int maxLength)
+    // {
+    //     var result = string.Empty;
+    //     var typeName = propType.Name;
+    //
+    //     switch (dbType)
+    //     {
+    //         case DBType.MySql:
+    //             result = MapMysqlDBType(typeName, minLength, maxLength);
+    //             break;
+    //         case DBType.Postgre:
+    //             throw new UnSupposedFeatureException();
+    //             break;
+    //         case DBType.MsSql:
+    //             throw new UnSupposedFeatureException();
+    //             break;
+    //     }
+    //
+    //     return result;
+    // }
+    //
+    // private string MapMysqlDBType(string typeName,int minLength, int maxLength)
+    // {
+    //     
+    //     return string.Empty;
+    // }
+
     public void Dispose()
     {
         if (Connection != null)
@@ -36,4 +135,13 @@ public class DBHelper: IDisposable
         }
     }
 }
- 
+
+// public class TableEntityPropertyInfo
+// {
+//     public string Name { get; set; }
+//     public string DbType { get; set; }
+//     public int MinLength { get; set; }
+//     public int MaxLength { get; set; }
+//     public bool IsNull { get; set; } = false;
+//     public string? Desc { get; set; }
+// }

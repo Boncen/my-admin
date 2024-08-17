@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using MyAdmin.Core.Entity;
 using MyAdmin.Core.Entity.Auditing;
+using MyAdmin.Core.Exception;
 using MyAdmin.Core.Extensions;
 
 namespace MyAdmin.Core.Repository;

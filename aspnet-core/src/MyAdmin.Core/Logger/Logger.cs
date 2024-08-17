@@ -64,12 +64,12 @@ stackTrace: {1}
     }
 
 
-    public void LogError(string content, Exception? exception = null)
+    public void LogError(string content, System.Exception? exception = null)
     {
         Log(LogLevel.Error, content, exception: exception);
     }
 
-    public void LogError(Exception exception)
+    public void LogError(System.Exception exception)
     {
         Log(LogLevel.Error, string.Empty, exception: exception);
     }
@@ -132,7 +132,7 @@ stackTrace: {1}
         }
     }
 
-    public virtual void Log(LogLevel level, string content, Exception? exception = null)
+    public virtual void Log(LogLevel level, string content, System.Exception? exception = null)
     {
         string location = GetLocation();
         string extraInfo = FormatExtraInfo(level, location);
@@ -172,7 +172,7 @@ stackTrace: {1}
         File.AppendAllText(filePath, log);
     }
 
-    protected void SaveLogToDatabaseAsync(string log, LogLevel level, Exception? exception)
+    protected void SaveLogToDatabaseAsync(string log, LogLevel level, System.Exception? exception)
     {
         if (!Check.HasValue(log))
         {

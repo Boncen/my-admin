@@ -1,16 +1,19 @@
-﻿using System.Text;
+﻿using System.ComponentModel;
+using System.Reflection;
+using System.Text;
+
 
 namespace MyAdmin.Core.Extensions;
 
 public static class CommonExtension
 {
-    public static string FullMessage(this Exception exception)
+    public static string FullMessage(this System.Exception exception)
     {
         if (exception == null)
         {
             return string.Empty;
         }
-        string getInfoFromException(Exception ex){
+        string getInfoFromException(System.Exception ex){
             return ex.Message + Environment.NewLine + ex.Source + Environment.NewLine + ex.StackTrace;
         }
         StringBuilder sb = new StringBuilder();
@@ -60,7 +63,7 @@ public static class CommonExtension
     /// <returns></returns>
     public static string ToUrlString(this IDictionary<string, Object> dic,char seperator = '&', bool ignoreNull = true)
     {
-        StringBuilder sb = new StringBuilder();
+        List<string> strings = new List<string>();
         foreach (var key in dic.Keys)
         {
             var val = dic[key];
@@ -68,10 +71,22 @@ public static class CommonExtension
             {
                 continue;
             }
-
-            sb.AppendJoin(key + "=" + val?.ToString(), seperator);
+            strings.Add(key + "=" + val?.ToString());
         }
-        return sb.ToString();
+        return String.Join(seperator, strings);
     }
-    
+
+    #region reflection
+
+    public static string GetDescription(this PropertyInfo propertyInfo)
+    {
+        var descriptionAttr = propertyInfo.GetCustomAttribute<DescriptionAttribute>();
+        if (descriptionAttr!= null)
+        {
+            return descriptionAttr.Description;
+        }
+        return String.Empty;
+    }
+
+    #endregion
 }
