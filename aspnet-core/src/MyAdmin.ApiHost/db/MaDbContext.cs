@@ -1,10 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using MyAdmin.ApiHost.models;
+using MyAdmin.Core.Model.BuildIn;
 
 namespace MyAdmin.ApiHost.Db;
 
 public class MaDbContext : DbContext
 {
+    public DbSet<Log> Logs { get; set; }
     // public DbSet<MaUser> Users { get; set; }
     // public DbSet<MaRole> MaRoles { get; set; }
     // public DbSet<MaPermission> MaPermissions { get; set; }
@@ -25,10 +26,10 @@ public class MaDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-        modelBuilder.Entity<UserRole>()
-            .HasKey(ur => new { ur.UserId, ur.RoleId });
-        modelBuilder.Entity<RolePermission>()
-            .HasKey(rp => new { rp.RoleId, rp.PermissionId });
+        // modelBuilder.Entity<UserRole>()
+        //     .HasKey(ur => new { ur.UserId, ur.RoleId });
+        // modelBuilder.Entity<RolePermission>()
+        //     .HasKey(rp => new { rp.RoleId, rp.PermissionId });
         //
         // modelBuilder.Entity<UserRole>()
         //

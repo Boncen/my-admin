@@ -1,17 +1,9 @@
 using System.ComponentModel.DataAnnotations;
 using System.Data;
-using System.Reflection;
-using Dapper;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
-using MyAdmin.Core.Entity;
-using MyAdmin.Core.Exception;
-using MyAdmin.Core.Extensions;
-using MyAdmin.Core.Framework;
 using MyAdmin.Core.Options;
-using MyAdmin.Core.Utilities;
 using MySql.Data.MySqlClient;
-using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace MyAdmin.Core.Repository;
 

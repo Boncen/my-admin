@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using MyAdmin.Core.Entity;
 using MyAdmin.Core.Entity.Auditing;
 
-namespace MyAdmin.ApiHost.models;
+namespace MyAdmin.Core.Model.BuildIn;
 [Table("MaRole")]
 public class MaRole:FullAuditedEntity<Guid>, IEnableObject, ITenantObject<Guid>,IEntity<Guid>
 {
