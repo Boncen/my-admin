@@ -5,24 +5,32 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using MyAdmin.ApiHost.Swagger;
-using MyAdmin.Core.Framework;
+using MyAdmin.Core.Framework.Filter;
 using MyAdmin.Core.Logger;
 using MyAdmin.Core.Options;
 using MyAdmin.Core.Repository;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
-namespace MyAdmin.Core.Extensions;
+namespace MyAdmin.Core.Framework;
 
-public static class MaFrameworkBuilderExtension
+public static class MaFrameworkBuilder
 {
     public static IServiceCollection AddMaFramework(this IServiceCollection service, ConfigurationManager configuration,
-        Action<MaFrameworkBuilder> builderAction = null, params Assembly[] assemblies)
+        Action<Core.MaFrameworkBuilder> builderAction = null, params Assembly[] assemblies)
     {
         if (assemblies.Length == 0) 
             assemblies = new[] { Assembly.GetEntryAssembly() };
-        var builder = new MaFrameworkBuilder(service, assemblies);
+        var builder = new Core.MaFrameworkBuilder(service, assemblies);
         builderAction?.Invoke(builder);
-        service.AddSingleton(builder);
+        // service.AddSingleton(builder);
+
+        #region controllers
+
+        service.AddControllers(options => options.Filters.Add(typeof(ValidationFilter)));
+        //service.AddControllers();
+
+        #endregion
+        
         #region repository
 
         service.TryAddScoped(typeof(IRepository<>), typeof(RepositoryBase<>));
@@ -75,10 +83,12 @@ public static class MaFrameworkBuilderExtension
         service.AddScoped(typeof(DBHelper));
 
         #endregion
+        
+        
         return service;
     }
     
-    public static void UseApiVersioning(this MaFrameworkBuilder builder, ConfigurationManager configuration)
+    public static void UseApiVersioning(this Core.MaFrameworkBuilder builder, ConfigurationManager configuration)
     {
         var useVersioningStr = configuration[$"{nameof(Core.Conf.Setting.MaFrameworkOptions)}:{nameof(Core.Conf.Setting.MaFrameworkOptions.UseApiVersioning)}"];
         if (string.IsNullOrEmpty(useVersioningStr) || !bool.TryParse(useVersioningStr, out bool useApiVersioning) || !useApiVersioning)

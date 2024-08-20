@@ -2,11 +2,11 @@ using System.Reflection;
 using Microsoft.EntityFrameworkCore;
 using MyAdmin.ApiHost.Db;
 using MyAdmin.Core.Extensions;
+using MyAdmin.Core.Framework;
 using MyAdmin.Core.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
 
 builder.Services.AddMaFramework( builder.Configuration, (o)=>{
     o.UseApiVersioning(builder.Configuration);

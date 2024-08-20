@@ -2,13 +2,11 @@
 
 public class Result
 {
-    public int? Code { get; set; }
-    public bool? Success { get; set; }
+    public int? Status { get; set; }
 }
 public class ApiResult :Result
 {
-    public string? Msg { get; set; }
-    
+    public string? Title { get; set; }
 }
 public class Result<T> : Result
 {

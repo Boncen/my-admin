@@ -2,10 +2,10 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
-using MyAdmin.Core.Middlewares;
+using MyAdmin.Core.Framework.Middlewares;
 using MyAdmin.Core.Options;
 
-namespace MyAdmin.Core.Extensions;
+namespace MyAdmin.Core.Framework;
 
 public static class WebApplicationSetup
 {

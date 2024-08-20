@@ -14,20 +14,16 @@ public abstract class Entity<TKey> : IEntity<TKey>
 [Serializable]
 public abstract class CreationAuditedEntity<TKey> : ICreationAuditedObject<TKey>
 {
-    /// <inheritdoc />
-    public virtual DateTime CreationTime { get; protected set; }
+    public virtual DateTime CreationTime { get; set; }
 
-    /// <inheritdoc />
-    public virtual TKey? CreatorId { get; protected set; }
+    public virtual TKey? CreatorId { get; set; }
 }
 
 [Serializable]
 public abstract class AuditedEntity<TKey> : CreationAuditedEntity<TKey>, IAuditedObject<TKey>
 {
-    /// <inheritdoc />
     public virtual DateTime? LastModificationTime { get; set; }
 
-    /// <inheritdoc />
     public virtual TKey? LastModifierId { get; set; }
 
 }

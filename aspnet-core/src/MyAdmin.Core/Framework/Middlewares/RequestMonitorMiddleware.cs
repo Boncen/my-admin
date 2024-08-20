@@ -7,7 +7,7 @@ using MyAdmin.Core.Options;
 using MyAdmin.Core.Utilities;
 using ILogger = MyAdmin.Core.Logger.ILogger;
 
-namespace MyAdmin.Core.Middlewares;
+namespace MyAdmin.Core.Framework.Middlewares;
 
 public class RequestMonitorMiddleware
 {

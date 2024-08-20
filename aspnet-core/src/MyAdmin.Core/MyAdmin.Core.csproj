@@ -12,7 +12,6 @@
 </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Attribute\" />
     <Folder Include="logger/" />
     <PackageReference Include="Dapper" Version="2.1.35" />
     <PackageReference Include="Mapster" Version="7.4.1-pre01" />

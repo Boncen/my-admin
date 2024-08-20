@@ -1,16 +1,15 @@
-﻿using Asp.Versioning;
-using Dapper;
+﻿using System.ComponentModel.DataAnnotations;
+using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
 using MyAdmin.ApiHost.Service;
-using MyAdmin.Core.Model.BuildIn;
-using MyAdmin.Core.Repository;
+using MyAdmin.Core.Mvc;
 using ILogger = MyAdmin.Core.Logger.ILogger;
 
 namespace MyAdmin.ApiHost.Controller;
 
-[ApiController]
+
 [ApiVersion("1.0")]
-public class TestController : ControllerBase
+public class TestController : MAController
 {
     private readonly ILogger _logger;
     private readonly TestService _testService;
@@ -27,6 +26,7 @@ public class TestController : ControllerBase
     [HttpPost("test2")]
     public async Task<object> Test2([FromBody]Param1 obj)
     {
+        Console.WriteLine("Test2 Test2");
         return obj;
     }
 
@@ -58,6 +58,7 @@ public class TestController : ControllerBase
 
 public class Param1
 {
+    [Required(ErrorMessage = "need P1")]
     public string P1 { get; set; }
     public string P2 { get; set; }
 }

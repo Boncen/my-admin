@@ -7,7 +7,7 @@ using MyAdmin.Core.Repository;
 
 namespace MyAdmin.Core.Mvc;
 
-public class CrudController<TEntity, TKey, TAdd, TResponse>: ControllerBase where TEntity: class, IEntity
+public class CrudController<TEntity, TKey, TAdd, TResponse>: MAController where TEntity: class, IEntity
 {
     private readonly IRepository<TEntity,TKey> _repository;
     public CrudController(IRepository<TEntity,TKey> repository)
@@ -77,8 +77,7 @@ public class CrudController<TEntity, TKey, TAdd, TResponse>: ControllerBase wher
         ApiResult<PageResult<TResponse>> res = new ApiResult<PageResult<TResponse>>()
         {
             Data = new PageResult<TResponse>(){List=rsp, Total = total},
-            Code = StatusCodes.Status200OK,
-            Success = true,
+            Status = StatusCodes.Status200OK,
         };
         return res;
     }
