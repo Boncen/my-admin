@@ -17,7 +17,7 @@ public class Logger : ILogger
 stackTrace: {1}
     ";
     protected readonly LoggerOption _loggerOption;
-    private readonly IRepository<Log> _repository;
+    private readonly IRepository<MaLog> _repository;
     public Logger(IOptions<LoggerOption> loggerOption, IServiceScopeFactory serviceScopeFactory) //, IRepository<Log> repository)
     {
         _loggerOption = loggerOption.Value;
@@ -25,7 +25,7 @@ stackTrace: {1}
         if (_loggerOption.SaveToDatabase == true)
         {
             var scope = serviceScopeFactory.CreateScope();
-            _repository = scope.ServiceProvider.GetRequiredService<IRepository<Log>>();
+            _repository = scope.ServiceProvider.GetRequiredService<IRepository<MaLog>>();
         }
     }
     protected string GetLocation()
@@ -115,20 +115,20 @@ stackTrace: {1}
         Console.ResetColor();
     }
 
-    public void Log(Log log)
+    public void Log(MaLog maLog)
     {
-        if (log == null)
+        if (maLog == null)
         {
             return;
         }
         if (_loggerOption.SaveToFile == true)
         {
-            SaveLogToFileAsync(log.ToJsonString(), LogLevel.Trace);
+            SaveLogToFileAsync(maLog.ToJsonString(), LogLevel.Trace);
         }
 
         if (_loggerOption.SaveToDatabase == true)
         {
-            _repository.InsertAsync(log, true);
+            _repository.InsertAsync(maLog, true);
         }
     }
 
@@ -179,7 +179,7 @@ stackTrace: {1}
             return;
         }
 
-        _repository.InsertAsync(new Log()
+        _repository.InsertAsync(new MaLog()
         {
             Id = Guid.NewGuid(),
             Content = log,

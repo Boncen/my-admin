@@ -1,8 +1,11 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
+using MyAdmin.ApiHost.Db;
+using MyAdmin.ApiHost.models;
 using MyAdmin.ApiHost.Service;
 using MyAdmin.Core.Mvc;
+using MyAdmin.Core.Repository;
 using ILogger = MyAdmin.Core.Logger.ILogger;
 
 namespace MyAdmin.ApiHost.Controller;
@@ -47,13 +50,18 @@ public class TestController : MAController
     {
         return Task.FromResult(serv.GetServiceName());
     }
-    //
-    // [HttpPost("dapper2")]
-    // public async Task<int> TestDapper2([FromServices]DBHelper helper, Guid id)
-    // {
-    //     var count = await helper.InsertAsync<Log>(new Log(){Id = Guid.NewGuid(), Content = "test", LogTime = DateTime.Now});
-    //     return count;
-    // }
+    
+    [HttpPost("order")]
+    public async Task<Order> TestDapper2([FromServices]IRepository<Order,Guid,AdminTemplateDbContext> orderRep, Guid id)
+    {
+        var count = await orderRep.InsertAsync(new Order()
+        {
+            Id = Guid.NewGuid(),
+            Amount = 199,
+            DescBody = "炸酱面"
+        },autoSave:true);
+        return count;
+    }
 }
 
 public class Param1

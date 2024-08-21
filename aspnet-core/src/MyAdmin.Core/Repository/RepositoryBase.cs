@@ -1,5 +1,4 @@
 
-using System.Linq;
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -10,17 +9,17 @@ using MyAdmin.Core.Extensions;
 
 namespace MyAdmin.Core.Repository;
 
-public class RepositoryBase(IServiceProvider serviceProvider) : IRepository
+public class RepositoryBase() : IRepository
 {
-    protected DbContext _dbContext = serviceProvider.GetRequiredService<DbContext>();
-
     public bool? IsChangeTrackingEnabled { get; set; } = true;
 }
 
 public class RepositoryBase<TEntity>(IServiceProvider serviceProvider)
-    : RepositoryBase(serviceProvider), IRepository<TEntity>
+    : RepositoryBase(), IRepository<TEntity>
     where TEntity : class, IEntity
 {
+    protected DbContext _dbContext = serviceProvider.GetRequiredKeyedService<DbContext>(nameof(MaDbContext));
+
     protected static IQueryable<TEntity> IncludeDetails(
         IQueryable<TEntity> query,
         Expression<Func<TEntity, object>>[]? propertySelectors)
@@ -261,11 +260,11 @@ public class RepositoryBase<TEntity, TKey>(IServiceProvider serviceProvider)
     }
 }
 
-public class RepositoryBase<TEntity, TKey, TDbContext> : RepositoryBase<TEntity, TKey>
+public class RepositoryBase<TEntity, TKey, TDbContext> : RepositoryBase<TEntity, TKey>, IRepository<TEntity, TKey, TDbContext>
     where TEntity : class, IEntity<TKey>
     where TDbContext : DbContext
 {
-    protected RepositoryBase(IServiceProvider serviceProvider) : base(serviceProvider)
+    public RepositoryBase(IServiceProvider serviceProvider) : base(serviceProvider)
     {
         _dbContext = serviceProvider.GetRequiredService<TDbContext>();
     }

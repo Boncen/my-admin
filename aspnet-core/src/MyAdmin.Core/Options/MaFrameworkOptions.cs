@@ -7,9 +7,9 @@ public class MaFrameworkOptions
     public bool? UseGlobalErrorHandler { get; set; } = true;
     public bool? UseRequestLog { get; set; } = false;
     public bool? UseApiVersioning { get; set; } = false;
+    // public bool? UseBuildInDbContext { get; set; }
     public bool? SaveRequestBody { get; set; }
     public bool? SaveResponseBody { get; set; }
     public DBType DBType { get; set; }
-    
-    
+    public string? DBVersion { get; set; }
 }

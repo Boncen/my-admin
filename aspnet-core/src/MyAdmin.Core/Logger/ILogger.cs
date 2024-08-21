@@ -5,7 +5,7 @@ namespace MyAdmin.Core.Logger;
 
 public interface ILogger
 {
-    void Log(Log log);
+    void Log(MaLog maLog);
     void Log(LogLevel level, string content, System.Exception? exception);
     void LogInformation(string content);
     void LogWarning(string content);

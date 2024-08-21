@@ -32,3 +32,5 @@ public interface IRepository<TEntity, TKey> : IRepository<TEntity> where TEntity
     Task<TEntity> GetAsync(TKey id, CancellationToken cancellationToken = default, params Expression<Func<TEntity, dynamic>>[] eagerLoadingProperties);
     Task<TEntity?> FindAsync(TKey id, CancellationToken cancellationToken = default, params Expression<Func<TEntity, dynamic>>[] eagerLoadingProperties);
 }
+
+public interface IRepository<TEntity, TKey, TDbcontext>:IRepository<TEntity, TKey>  where TEntity : class, IEntity{}

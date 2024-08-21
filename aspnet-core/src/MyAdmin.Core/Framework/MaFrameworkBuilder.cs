@@ -1,14 +1,17 @@
 using System.Reflection;
 using Asp.Versioning;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using MyAdmin.ApiHost.Swagger;
+using MyAdmin.Core.Exception;
 using MyAdmin.Core.Framework.Filter;
 using MyAdmin.Core.Logger;
 using MyAdmin.Core.Options;
 using MyAdmin.Core.Repository;
+using MyAdmin.Core.Utilities;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace MyAdmin.Core.Framework;
@@ -22,8 +25,13 @@ public static class MaFrameworkBuilder
             assemblies = new[] { Assembly.GetEntryAssembly() };
         var builder = new Core.MaFrameworkBuilder(service, assemblies);
         builderAction?.Invoke(builder);
-        // service.AddSingleton(builder);
+        service.AddSingleton(builder);
 
+        if (builder.UseBuildInDbContext)
+        {
+            HandleAddBuildInDbContext(service, configuration);
+        }
+        
         #region controllers
 
         service.AddControllers(options => options.Filters.Add(typeof(ValidationFilter)));
@@ -35,6 +43,7 @@ public static class MaFrameworkBuilder
 
         service.TryAddScoped(typeof(IRepository<>), typeof(RepositoryBase<>));
         service.TryAddScoped(typeof(IRepository<,>), typeof(RepositoryBase<,>));
+        service.TryAddScoped(typeof(IRepository<,,>), typeof(RepositoryBase<,,>));
 
         #endregion
         
@@ -119,5 +128,37 @@ public static class MaFrameworkBuilder
         // configure swagger
         builder.Services.AddTransient<IConfigureOptions<SwaggerGenOptions>, ConfigureSwaggerOptions>();
         builder.Services.AddSwaggerGen(x => x.OperationFilter<SwaggerDefaultValues>());
+    }
+
+    private static void HandleAddBuildInDbContext(IServiceCollection service, ConfigurationManager configuration)
+    {
+        var dbTypeStr = configuration["MaFrameworkOptions:DBType"];
+        var dbVersion = configuration["MaFrameworkOptions:DBVersion"];
+        if (!Check.HasValue(dbTypeStr))
+        {
+            return;
+        }
+    
+        if (DBType.TryParse(dbTypeStr, out DBType dbType))
+        {
+            switch (dbType)
+            {
+                case DBType.MySql:
+                    var serverVersion = new MySqlServerVersion(dbVersion);
+                    service.AddDbContext<MaDbContext>( dbContextOptions => dbContextOptions
+                        .UseMySql(configuration["ConnectionStrings:Default"],  serverVersion)
+                        .ConfigureWarnings((configurationBuilder => configurationBuilder.Throw()))
+                        .EnableSensitiveDataLogging()
+                        .EnableDetailedErrors());
+                    service.AddKeyedTransient<DbContext,MaDbContext>(nameof(MyAdmin.Core.Repository.MaDbContext));
+                    break;
+                case DBType.MsSql:
+                    throw new UnSupposedFeatureException();
+                    break;
+                case DBType.Postgre:
+                    throw new UnSupposedFeatureException();
+                    break;
+            }
+        }
     }
 }

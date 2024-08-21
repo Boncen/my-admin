@@ -23,4 +23,10 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Reference Include="Pomelo.EntityFrameworkCore.MySql">
+      <HintPath>..\..\..\..\..\.nuget\packages\pomelo.entityframeworkcore.mysql\8.0.2\lib\net8.0\Pomelo.EntityFrameworkCore.MySql.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
 </Project>

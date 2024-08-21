@@ -1,13 +1,16 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using MyAdmin.Core.Framework.Attribute;
 
 namespace MyAdmin.Core.Model.BuildIn;
 
+[BuiltIn]
 [Table("UserRole")]
 public class UserRole
 {
-    [Key]
     public Guid UserId { get; set; }
-    [Key]
     public Guid RoleId { get; set; }
+    public MaUser User { get; set; }
+
+    public MaRole Role { get; set; }
 }

@@ -37,6 +37,8 @@ public static class WebApplicationSetup
     
     public static void UseMaFramework(this WebApplication app, ConfigurationManager configurationManager)
     {
+        app.UseHttpsRedirection();
+        app.MapControllers();
         // swagger
         if (app.Environment.IsDevelopment())
         {

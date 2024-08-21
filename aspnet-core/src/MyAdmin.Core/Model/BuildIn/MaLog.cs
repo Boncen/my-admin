@@ -3,12 +3,14 @@ using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using MyAdmin.Core.Entity;
+using MyAdmin.Core.Framework.Attribute;
 using MyAdmin.Core.Logger;
 
 namespace MyAdmin.Core.Model.BuildIn;
 
-[Table("Log")]
-public class Log : Entity<Guid>
+[BuiltIn]
+[Table("MaLog")]
+public class MaLog : Entity<Guid>
 {
     public Guid? UserId { get; set; }
     public string? UserName { get; set; }

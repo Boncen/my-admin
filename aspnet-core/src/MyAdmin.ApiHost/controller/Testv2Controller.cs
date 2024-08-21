@@ -9,9 +9,9 @@ namespace MyAdmin.ApiHost.Controller;
 
 [ApiController]
 [Route("api/[controller]/[action]")]
-public class Testv2Controller: CrudController<Log, Guid, AddLogDto,LogDto>
+public class Testv2Controller: CrudController<MaLog, Guid, AddLogDto,LogDto>
 {
-    public Testv2Controller(IRepository<Log,Guid> repository):base(repository)
+    public Testv2Controller(IRepository<MaLog,Guid> repository):base(repository)
     {
         
     }
