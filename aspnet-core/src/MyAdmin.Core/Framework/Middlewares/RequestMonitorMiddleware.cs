@@ -1,8 +1,10 @@
-﻿using Dapper;
+﻿using System.IO.Pipelines;
+using Dapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using MyAdmin.Core.Framework.Attribute;
 using MyAdmin.Core.Model.BuildIn;
 using MyAdmin.Core.Options;
 using MyAdmin.Core.Repository;
@@ -29,6 +31,14 @@ public class RequestMonitorMiddleware
     public async Task Invoke(HttpContext context)
     {
         var request = context.Request;
+
+        var endpoint = context.GetEndpoint();
+        if (endpoint.Metadata.Any(x=>x.GetType() == typeof(IgnoreRequestLog)))
+        {
+            await _next(context);
+            return;
+        }
+        
         var ip = context.Connection.RemoteIpAddress?.ToString();
         var bodyContent = string.Empty;
         var memStream = new MemoryStream();
@@ -44,8 +54,6 @@ public class RequestMonitorMiddleware
         var host = request.Host.ToString();
         var url = request.GetDisplayUrl();
         var method = request.Method;
-        
-        await _next(context);
 
         var rspBodyContent = string.Empty;
         var rspMemoryStream = new MemoryStream();
@@ -54,35 +62,19 @@ public class RequestMonitorMiddleware
             var originalResponseBody = context.Response.Body;
             context.Response.Body = rspMemoryStream;
             rspMemoryStream.Position = 0;
-            rspBodyContent = rspMemoryStream.GetStringByPipe();
+            await _next(context);
+            rspBodyContent = rspMemoryStream.GetString(autoCloseStream:false);
             rspMemoryStream.Position = 0;
             await rspMemoryStream.CopyToAsync(originalResponseBody);
+        }
+        else
+        {
+            await _next(context);
         }
         
         var response = context.Response;
         var statusCode = response.StatusCode.ToString();
         // var dbHelper = context.RequestServices.GetService(typeof(DBHelper)) as DBHelper;
-        // dbHelper.Connection.Execute($"insert into {nameof(MaLog)} (Id,ContentType,Host,HttpMethod,IpAddress,Level,LogTime,Origin,Referer,Url,RequestBody,ResponseStatusCode,ResponseBody,UserAgent) values (@Id, @ContentType,@Host,@HttpMethod,@IpAddress,@Level,@LogTime,@Origin,@Referer,@Url,@RequestBody,@ResponseStatusCode,@ResponseBody,@UserAgent)",
-        //     new MaLog()
-        //     {
-        //         Id = Guid.NewGuid(),
-        //         Content = "",
-        //         ContentType = contentType,
-        //         Exceptions = String.Empty,
-        //         Host = host,
-        //         HttpMethod = method,
-        //         IpAddress = ip,
-        //         Level = LogLevel.Trace,
-        //         LogTime = DateTime.Now,
-        //         Origin = request.Headers["Origin"],
-        //         Referer = request.Headers["Referer"],
-        //         Url = url,
-        //         RequestBody = bodyContent,
-        //         ResponseStatusCode = statusCode,
-        //         ResponseBody = rspBodyContent,
-        //         UserAgent = request.Headers["User-Agent"]
-        //     }
-        //     );
         
         _logger.Log(new MaLog()
         {

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using MyAdmin.ApiHost.Db;
 using MyAdmin.ApiHost.models;
 using MyAdmin.ApiHost.Service;
+using MyAdmin.Core.Framework.Attribute;
 using MyAdmin.Core.Mvc;
 using MyAdmin.Core.Repository;
 using ILogger = MyAdmin.Core.Logger.ILogger;
@@ -30,6 +31,13 @@ public class TestController : MAController
     public async Task<object> Test2([FromBody]Param1 obj)
     {
         Console.WriteLine("Test2 Test2");
+        return obj;
+    }
+    [HttpPost("test3")]
+    [IgnoreRequestLog]
+    public async Task<object> Test3([FromBody]Param1 obj)
+    {
+        Console.WriteLine("Test3");
         return obj;
     }
 

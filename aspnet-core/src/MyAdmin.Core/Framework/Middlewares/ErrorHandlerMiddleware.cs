@@ -35,7 +35,7 @@ public class ErrorHandlerMiddleware
 
             }
             var response = context.Response;
-            response.ContentType = "application/json";
+            //response.ContentType = "application/json";
             var rsp = JsonSerializer.Serialize(result);
             await response.WriteAsync(rsp);
         }

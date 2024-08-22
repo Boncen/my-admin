@@ -13,7 +13,11 @@ public static class StreamHandler
     /// <returns></returns>
     public static string  GetStringByPipe(this Stream stream)
     {
-        if (stream.Position != 0 && stream.CanSeek)
+        if (!stream.CanRead)
+        {
+            return string.Empty;
+        }
+        if (stream.CanSeek && stream.Position != 0)
         {
             stream.Seek(0, SeekOrigin.Begin);
         }
@@ -48,7 +52,11 @@ public static class StreamHandler
 
     public static string GetString(this Stream stream, bool autoCloseStream = true)
     {
-        if (stream.Position != 0 && stream.CanSeek)
+        if (!stream.CanRead)
+        {
+            return string.Empty;
+        }
+        if (stream.CanSeek && stream.Position != 0)
         {
             stream.Seek(0, SeekOrigin.Begin);
         }
