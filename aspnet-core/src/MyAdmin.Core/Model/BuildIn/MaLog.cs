@@ -10,7 +10,7 @@ namespace MyAdmin.Core.Model.BuildIn;
 
 [BuiltIn]
 [Table("MaLog")]
-public class MaLog : Entity<Guid>
+public class MaLog : Entity<Guid>,ITenantObject<Guid>
 {
     public Guid? UserId { get; set; }
     public string? UserName { get; set; }
@@ -32,4 +32,5 @@ public class MaLog : Entity<Guid>
     public string? Content { get; set; }
     
     public LogType Type { get; set; }
+    public Guid TenantId { get; set; }
 }

@@ -18,4 +18,5 @@ public class MaRole:FullAuditedEntity<Guid>, IEnableObject, ITenantObject<Guid>,
     public string? Description { get; set; }
     public ICollection<RolePermission> RolePermissions { get; set; }
     public ICollection<UserRole> UserRoles { get; set; }
+    public MaTenant Tenant { get; set; }
 }

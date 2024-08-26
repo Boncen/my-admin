@@ -20,4 +20,5 @@ public class MaUser:FullAuditedEntity<Guid>, IEnableObject, ITenantObject<Guid>,
     public string? Mobile { get; set; }
     public Guid TenantId { get; set; }
     public ICollection<UserRole> UserRoles { get; set; }
+    public MaTenant Tenant { get; set; }
 }

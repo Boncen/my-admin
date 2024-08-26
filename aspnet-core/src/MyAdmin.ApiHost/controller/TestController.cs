@@ -66,7 +66,8 @@ public class TestController : MAController
         {
             Id = Guid.NewGuid(),
             Amount = 199,
-            DescBody = "炸酱面"
+            DescBody = "炸酱面",
+            OrderNo = "1"
         },autoSave:true);
         return count;
     }
