@@ -79,10 +79,16 @@ public class RepositoryBase<TEntity>(IServiceProvider serviceProvider)
     }
     public async Task DeleteAsync(TEntity entity, bool autoSave = false, CancellationToken cancellationToken = default)
     {
-        if (entity is ISoftDelete)
+        if (entity is ISoftDelete || entity is IHasDeletionTime)
         {
-            (entity as IDeletionAuditedObject<TEntity>).IsDeleted = true;
-            (entity as IDeletionAuditedObject<TEntity>).DeletionTime = DateTime.Now;
+            if (entity is ISoftDelete softDelEntity)
+            {
+                softDelEntity.IsDeleted = true;
+            }
+            if (entity is IHasDeletionTime hasDelTimeEntity )
+            {
+                hasDelTimeEntity.DeletionTime = DateTime.Now;
+            }
             GetDbSet().Update(entity);
         }
         else
@@ -173,6 +179,13 @@ public class RepositoryBase<TEntity>(IServiceProvider serviceProvider)
 
     public async Task<TEntity> InsertAsync(TEntity entity, bool autoSave = false, CancellationToken cancellationToken = default)
     {
+        if (entity is IHasCreationTime i)
+        {
+            if (i.CreationTime.IsDefaultValue())
+            {
+                i.CreationTime = DateTime.Now;
+            }
+        }
         await GetDbContext().AddAsync(entity, cancellationToken: cancellationToken);
         if (autoSave)
         {
@@ -184,6 +197,16 @@ public class RepositoryBase<TEntity>(IServiceProvider serviceProvider)
 
     public async Task InsertManyAsync(IEnumerable<TEntity> entities, bool autoSave = false, CancellationToken cancellationToken = default)
     {
+        foreach (var entity in entities)
+        {
+            if (entity is IHasCreationTime)
+            {
+                if ((entity as IHasCreationTime).CreationTime.IsDefaultValue())
+                {
+                    (entity as IHasCreationTime).CreationTime = DateTime.Now;
+                }
+            }
+        }
         await GetDbSet().AddRangeAsync(entities, cancellationToken);
         if (autoSave)
         {
@@ -194,6 +217,13 @@ public class RepositoryBase<TEntity>(IServiceProvider serviceProvider)
 
     public async Task<TEntity> UpdateAsync(TEntity entity, bool autoSave = false, CancellationToken cancellationToken = default)
     {
+        if (entity is IHasModificationTime u)
+        {
+            if (!u.LastModificationTime.HasValue)
+            {
+                u.LastModificationTime = DateTime.Now;
+            }
+        }
         GetDbSet().Update(entity);
         if (autoSave)
         {
@@ -204,6 +234,16 @@ public class RepositoryBase<TEntity>(IServiceProvider serviceProvider)
 
     public async Task UpdateManyAsync(IEnumerable<TEntity> entities, bool autoSave = false, CancellationToken cancellationToken = default)
     {
+        foreach (var entity in entities)
+        {
+            if (entity is IHasModificationTime)
+            {
+                if (!(entity as IHasModificationTime).LastModificationTime.HasValue)
+                {
+                    (entity as IHasModificationTime).LastModificationTime = DateTime.Now;
+                }
+            }
+        }
         GetDbContext().UpdateRange(entities);
         if (autoSave)
         {

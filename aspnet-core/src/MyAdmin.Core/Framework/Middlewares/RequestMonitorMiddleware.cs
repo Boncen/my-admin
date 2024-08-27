@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MyAdmin.Core.Framework.Attribute;
+using MyAdmin.Core.Logger;
 using MyAdmin.Core.Model.BuildIn;
 using MyAdmin.Core.Options;
 using MyAdmin.Core.Repository;
@@ -85,7 +86,7 @@ public class RequestMonitorMiddleware
             Host = host,
             HttpMethod = method,
             IpAddress = ip,
-            Level = LogLevel.Trace,
+            Level = LogLevel.None,
             LogTime = DateTime.Now,
             Origin = request.Headers["Origin"],
             Referer = request.Headers["Referer"],
@@ -93,7 +94,8 @@ public class RequestMonitorMiddleware
             RequestBody = bodyContent,
             ResponseStatusCode = statusCode,
             ResponseBody = rspBodyContent,
-            UserAgent = request.Headers["User-Agent"]
+            UserAgent = request.Headers["User-Agent"],
+            Type = LogType.Request
         });
 
         if (memStream != null)

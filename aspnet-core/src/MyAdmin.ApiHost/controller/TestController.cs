@@ -69,7 +69,7 @@ public class TestController : MAController
         return Task.FromResult(serv.GetServiceName());
     }
     [HttpPost("order")]
-    public async Task<Order> TestDapper2([FromServices]IRepository<Order,Guid,AdminTemplateDbContext> orderRep, Guid id)
+    public async Task<Order> TestDapper2([FromServices]IRepository<Order,Guid,AdminTemplateDbContext> orderRep)
     {
         var count = await orderRep.InsertAsync(new Order()
         {
@@ -79,6 +79,12 @@ public class TestController : MAController
             OrderNo = "1"
         },autoSave:true);
         return count;
+    }
+    [HttpDelete("order")]
+    public async Task TestDelete([FromServices]IRepository<Order,Guid,AdminTemplateDbContext> orderRep, Guid id, CancellationToken cancellationToken)
+    {
+        await orderRep.DeleteAsync(id, autoSave: true, cancellationToken);
+        return;
     }
 }
 

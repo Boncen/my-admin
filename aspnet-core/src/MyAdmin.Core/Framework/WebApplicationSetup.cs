@@ -25,36 +25,25 @@ public static class WebApplicationSetup
             }
         });
     }
-
-    public static void UseErrorHandleMiddleware(this WebApplication app){
-        app.UseMiddleware<ErrorHandlerMiddleware>();
-    }
-
-    public static void UseRequestMonitorMiddleware(this WebApplication app)
-    {
-        app.UseMiddleware<RequestMonitorMiddleware>();
-    }
-    
     public static void UseMaFramework(this WebApplication app, ConfigurationManager configurationManager)
     {
         app.UseHttpsRedirection();
+        app.MapControllers();
         var maframeworkOptions = app.Services.GetService(typeof(IOptions<MaFrameworkOptions>)) as IOptions<MaFrameworkOptions>;
         if (maframeworkOptions!=null && maframeworkOptions.Value.UseGlobalErrorHandler == true)
         {
-            app.UseErrorHandleMiddleware();
+            app.UseMiddleware<ErrorHandlerMiddleware>();
         }
-        app.MapControllers();
-        
         // swagger
-        // if (app.Environment.IsDevelopment())
-        // {
-        //     app.UseSwagger();
-        //     app.SetupSwaggerUi(configurationManager);
-        // }
+        if (app.Environment.IsDevelopment())
+        {
+            app.UseSwagger();
+            app.SetupSwaggerUi(configurationManager);
+        }
         
         if (maframeworkOptions!=null && maframeworkOptions.Value.UseRequestLog == true)
         {
-            app.UseRequestMonitorMiddleware();
+            app.UseMiddleware<RequestMonitorMiddleware>();
         }
     }
 }

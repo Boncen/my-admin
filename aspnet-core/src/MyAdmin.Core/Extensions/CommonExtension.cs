@@ -30,9 +30,24 @@ public static class CommonExtension
         return sb.ToString();
     }
 
+    #region Datetime
+
     public static string ToCommonString(this DateTime dateTime){
         return dateTime.ToString("yyyy-MM-dd HH:mm:ss");
     }
+
+    public static bool IsDefaultValue(this DateOnly date)
+    {
+        return date.ToString("yyyy-MM-dd").Equals("0001-01-01");
+    }
+    
+    public static bool IsDefaultValue(this DateTime dateTime)
+    {
+        return dateTime.ToString("yyyy-MM-dd HH:mm:ss").Equals("0001-01-01 00:00:00");
+    }
+    
+    #endregion
+
 
     public static IDictionary<string, Object> ToDictionary(this Object obj, bool sort = false)
     {

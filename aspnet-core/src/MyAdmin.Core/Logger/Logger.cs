@@ -187,7 +187,8 @@ stackTrace: {1}
             Content = log,
             Level = level,
             LogTime = DateTime.Now,
-            Exceptions = exception?.FullMessage()
+            Exceptions = exception?.FullMessage(),
+            Type = LogType.Default
         }, true);
     }
 }

@@ -34,6 +34,8 @@ public static class MaFrameworkBuilder
         }
         
         AddController(service);
+
+        AddSwagger(service);
         
         AddRepository(service);
 
@@ -48,6 +50,15 @@ public static class MaFrameworkBuilder
         AddDapper(service);
         
         return service;
+    }
+
+    private static void AddSwagger(IServiceCollection service)
+    {
+        service.AddEndpointsApiExplorer();
+        service.AddSwaggerGen();
+        // configure swagger
+        // service.AddTransient<IConfigureOptions<SwaggerGenOptions>, ConfigureSwaggerOptions>();
+        // service.AddSwaggerGen(x => x.OperationFilter<SwaggerDefaultValues>());
     }
 
     private static void AddDapper(IServiceCollection service)
@@ -89,9 +100,7 @@ public static class MaFrameworkBuilder
             options.GroupNameFormat = "'v'VVV";
             options.SubstituteApiVersionInUrl = true;
         });
-        // configure swagger
-        builder.Services.AddTransient<IConfigureOptions<SwaggerGenOptions>, ConfigureSwaggerOptions>();
-        builder.Services.AddSwaggerGen(x => x.OperationFilter<SwaggerDefaultValues>());
+       
     }
 
     private static void HandleAddBuildInDbContext(IServiceCollection service, ConfigurationManager configuration)
