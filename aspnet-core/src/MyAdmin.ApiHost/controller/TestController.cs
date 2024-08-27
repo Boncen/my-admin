@@ -58,7 +58,16 @@ public class TestController : MAController
     {
         return Task.FromResult(serv.GetServiceName());
     }
-    
+    [HttpPost("testattrinjectservice")]
+    public Task<string> TestService3([FromServices]TestServiceAttr serv)
+    {
+        return Task.FromResult(serv.GetServiceName());
+    }
+    [HttpPost("testattrinjectkeyedservice")]
+    public Task<string> TestService4([FromKeyedServices("HelloKeyedTest")]TestKeyedServiceAttr serv)
+    {
+        return Task.FromResult(serv.GetServiceName());
+    }
     [HttpPost("order")]
     public async Task<Order> TestDapper2([FromServices]IRepository<Order,Guid,AdminTemplateDbContext> orderRep, Guid id)
     {

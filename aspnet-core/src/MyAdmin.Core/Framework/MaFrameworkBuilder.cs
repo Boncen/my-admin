@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using MyAdmin.ApiHost.Swagger;
 using MyAdmin.Core.Exception;
+using MyAdmin.Core.Framework.Attribute;
 using MyAdmin.Core.Framework.Filter;
 using MyAdmin.Core.Logger;
 using MyAdmin.Core.Options;
@@ -32,71 +33,34 @@ public static class MaFrameworkBuilder
             HandleAddBuildInDbContext(service, configuration);
         }
         
-        #region controllers
-
-        service.AddControllers(options => options.Filters.Add(typeof(ValidationFilter)));
-        //service.AddControllers();
-
-        #endregion
+        AddController(service);
         
-        #region repository
+        AddRepository(service);
 
-        service.TryAddScoped(typeof(IRepository<>), typeof(RepositoryBase<>));
-        service.TryAddScoped(typeof(IRepository<,>), typeof(RepositoryBase<,>));
-        service.TryAddScoped(typeof(IRepository<,,>), typeof(RepositoryBase<,,>));
-
-        #endregion
-        
-        // 自动扫描注册
-        foreach (var assem in assemblies)
-        {
-            var allTypes = assem.GetTypes();
-            foreach (var t in allTypes)
-            {
-                if (t.IsInterface)
-                {
-                    continue;
-                }
-                var interfs = t.GetInterfaces();
-                foreach (var i in interfs)
-                {
-                    if (i == typeof(ITransient))
-                    {
-                        service.AddTransient(t);
-                    }
-                    if (i == typeof(IScoped))
-                    {
-                        service.AddScoped(t);
-                    }
-                    if (i == typeof(ISingleton))
-                    {
-                        service.AddSingleton(t);
-                    }
-                }
-               
-            }
-        }
+        AutoRegisterService(service, assemblies);
         
         #region log
-
         service.TryAddSingleton<ILogger, MyAdmin.Core.Logger.Logger>();
         #endregion
 
-        #region options
-        service.Configure<LoggerOption>(configuration.GetSection(nameof(Core.Conf.Setting.Logger)));
-        service.Configure<MaFrameworkOptions>(configuration.GetSection(nameof(Core.Conf.Setting.MaFrameworkOptions)));
-        #endregion
-
-        #region dapper
-
-        service.AddScoped(typeof(DBHelper));
-
-        #endregion
-        
+        AddOptions(service, configuration);
+       
+        AddDapper(service);
         
         return service;
     }
-    
+
+    private static void AddDapper(IServiceCollection service)
+    {
+        service.AddScoped(typeof(DBHelper));
+    }
+
+    private static void AddOptions(IServiceCollection service, ConfigurationManager configuration)
+    {
+        service.Configure<LoggerOption>(configuration.GetSection(nameof(Core.Conf.Setting.Logger)));
+        service.Configure<MaFrameworkOptions>(configuration.GetSection(nameof(Core.Conf.Setting.MaFrameworkOptions)));
+    }
+
     public static void UseApiVersioning(this Core.MaFrameworkBuilder builder, ConfigurationManager configuration)
     {
         var useVersioningStr = configuration[$"{nameof(Core.Conf.Setting.MaFrameworkOptions)}:{nameof(Core.Conf.Setting.MaFrameworkOptions.UseApiVersioning)}"];
@@ -158,6 +122,100 @@ public static class MaFrameworkBuilder
                 case DBType.Postgre:
                     throw new UnSupposedFeatureException();
                     break;
+            }
+        }
+    }
+
+    private static void AddController(IServiceCollection service)
+    {
+        //service.AddControllers(options => options.Filters.Add(typeof(ValidationFilter)));
+        service.AddControllers();
+    }
+    
+    private static void AddRepository(IServiceCollection service)
+    {
+        service.TryAddScoped(typeof(IRepository<>), typeof(RepositoryBase<>));
+        service.TryAddScoped(typeof(IRepository<,>), typeof(RepositoryBase<,>));
+        service.TryAddScoped(typeof(IRepository<,,>), typeof(RepositoryBase<,,>));
+    }
+    
+    private static void AutoRegisterService(IServiceCollection service, Assembly[] assemblies)
+    {
+        foreach (var assem in assemblies)
+        {
+            var allTypes = assem.GetTypes();
+            foreach (var t in allTypes)
+            {
+                if (t.IsInterface)
+                {
+                    continue;
+                }
+                var singletonAttr = t.GetCustomAttribute<SingletonAttribute>();
+                if (singletonAttr != null)
+                {
+                    var key = singletonAttr.Key;
+                    if (Check.HasValue(key))
+                    {
+                        service.TryAddKeyedSingleton<string>(t, key);
+                        continue;
+                    }
+                    else
+                    {
+                        service.TryAddSingleton(t);
+                        continue;
+                    }
+                }
+
+                var scopedAttr = t.GetCustomAttribute<ScopedAttribute>();
+                if (scopedAttr != null)
+                {
+                    var key = scopedAttr.Key;
+                    if (Check.HasValue(key))
+                    {
+                        service.TryAddKeyedScoped(t, key);
+                        continue;
+                    }
+                    else
+                    {
+                        service.TryAddScoped(t);
+                        continue;
+                    }
+                }
+                var transientAttr = t.GetCustomAttribute<TransientAttribute>();
+                if (transientAttr != null)
+                {
+                    var key = transientAttr.Key;
+                    if (Check.HasValue(key))
+                    {
+                        service.TryAddKeyedTransient(t, key);
+                        continue;
+                    }
+                    else
+                    {
+                        service.TryAddTransient(t);
+                        continue;
+                    }
+                }
+                
+                var interfs = t.GetInterfaces();
+                foreach (var i in interfs)
+                {
+                    if (i == typeof(ITransient))
+                    {
+                        service.TryAddTransient(t);
+                        continue;
+                    }
+                    if (i == typeof(IScoped))
+                    {
+                        service.TryAddScoped(t);
+                        continue;
+                    }
+                    if (i == typeof(ISingleton))
+                    {
+                        service.TryAddSingleton(t);
+                    }
+                }
+               
             }
         }
     }

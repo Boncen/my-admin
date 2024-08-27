@@ -38,27 +38,23 @@ public static class WebApplicationSetup
     public static void UseMaFramework(this WebApplication app, ConfigurationManager configurationManager)
     {
         app.UseHttpsRedirection();
-        app.MapControllers();
-        // swagger
-        if (app.Environment.IsDevelopment())
-        {
-            app.UseSwagger();
-            app.SetupSwaggerUi(configurationManager);
-        }
-
         var maframeworkOptions = app.Services.GetService(typeof(IOptions<MaFrameworkOptions>)) as IOptions<MaFrameworkOptions>;
-        if (maframeworkOptions!=null)
+        if (maframeworkOptions!=null && maframeworkOptions.Value.UseGlobalErrorHandler == true)
         {
-            if (maframeworkOptions.Value.UseGlobalErrorHandler == true)
-            {
-                app.UseErrorHandleMiddleware();
-            }
-            if (maframeworkOptions.Value.UseRequestLog == true)
-            {
-                app.UseRequestMonitorMiddleware();
-            }
-
+            app.UseErrorHandleMiddleware();
         }
-       
+        app.MapControllers();
+        
+        // swagger
+        // if (app.Environment.IsDevelopment())
+        // {
+        //     app.UseSwagger();
+        //     app.SetupSwaggerUi(configurationManager);
+        // }
+        
+        if (maframeworkOptions!=null && maframeworkOptions.Value.UseRequestLog == true)
+        {
+            app.UseRequestMonitorMiddleware();
+        }
     }
 }

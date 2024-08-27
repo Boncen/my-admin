@@ -33,7 +33,7 @@ public class RequestMonitorMiddleware
         var request = context.Request;
 
         var endpoint = context.GetEndpoint();
-        if (endpoint.Metadata.Any(x=>x.GetType() == typeof(IgnoreRequestLog)))
+        if (endpoint != null && endpoint.Metadata.Any(x=>x.GetType() == typeof(IgnoreRequestLog)))
         {
             await _next(context);
             return;

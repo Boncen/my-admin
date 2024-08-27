@@ -136,11 +136,12 @@ stackTrace: {1}
     {
         string location = GetLocation();
         string extraInfo = FormatExtraInfo(level, location);
-        WriteToConsole(extraInfo + content, level);
+        string exceptionInfo = exception?.FullMessage();
+        WriteToConsole(extraInfo + content + exceptionInfo, level);
         
         if (_loggerOption.SaveToFile == true)
         {
-            SaveLogToFileAsync(extraInfo + content + exception?.FullMessage(), level);
+            SaveLogToFileAsync(extraInfo + content + exceptionInfo, level);
         } 
         if (_loggerOption.SaveToDatabase == true)
         {
@@ -174,7 +175,8 @@ stackTrace: {1}
 
     protected void SaveLogToDatabaseAsync(string log, LogLevel level, System.Exception? exception)
     {
-        if (!Check.HasValue(log))
+        var exceptionInfo = exception?.FullMessage();
+        if (!Check.HasValue(log) && !Check.HasValue(exceptionInfo))
         {
             return;
         }

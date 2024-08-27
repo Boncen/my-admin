@@ -1,4 +1,6 @@
-﻿using System.Text.Json;
+﻿using System.Buffers;
+using System.Text;
+using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using MyAdmin.Core.Exception;
 using MyAdmin.Core.Logger;
@@ -35,9 +37,14 @@ public class ErrorHandlerMiddleware
 
             }
             var response = context.Response;
-            //response.ContentType = "application/json";
-            var rsp = JsonSerializer.Serialize(result);
-            await response.WriteAsync(rsp);
+            if (!response.HasStarted)
+            {
+                response.StatusCode = StatusCodes.Status500InternalServerError;
+                var resultStr = JsonSerializer.Serialize(result);
+                var mem = new ReadOnlyMemory<byte>(Encoding.UTF8.GetBytes(resultStr));
+                await response.Body.WriteAsync(mem);
+                await response.CompleteAsync();
+            }
         }
     }
 
