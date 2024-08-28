@@ -40,6 +40,7 @@ public class ErrorHandlerMiddleware
             if (!response.HasStarted)
             {
                 response.StatusCode = StatusCodes.Status500InternalServerError;
+                response.ContentType = "application/json";
                 var resultStr = JsonSerializer.Serialize(result);
                 var mem = new ReadOnlyMemory<byte>(Encoding.UTF8.GetBytes(resultStr));
                 await response.Body.WriteAsync(mem);

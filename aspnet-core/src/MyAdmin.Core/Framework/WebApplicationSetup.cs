@@ -30,8 +30,11 @@ public static class WebApplicationSetup
         var maframeworkOptions = new MaFrameworkOptions();
         var frameworkOptions = configurationManager.GetSection("MaFrameworkOptions");
         frameworkOptions.Bind(maframeworkOptions);
-        app.UseHttpsRedirection();
-
+        // app.UseHttpsRedirection();
+        if (maframeworkOptions.UseGlobalErrorHandler == true)
+        {
+            app.UseMiddleware<ErrorHandlerMiddleware>();
+        }
         if (maframeworkOptions.UseRateLimit == true)
         {
             app.UseRateLimiter();
@@ -41,12 +44,7 @@ public static class WebApplicationSetup
         {
             app.MapControllers();
         }
-        
-        
-        if (maframeworkOptions.UseGlobalErrorHandler == true)
-        {
-            app.UseMiddleware<ErrorHandlerMiddleware>();
-        }
+       
         // swagger
         if (app.Environment.IsDevelopment())
         {

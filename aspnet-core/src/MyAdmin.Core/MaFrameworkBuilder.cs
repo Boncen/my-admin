@@ -5,7 +5,6 @@ namespace MyAdmin.Core;
 
 public sealed class MaFrameworkBuilder
 {
-    public bool UseBuildInDbContext { get; set; } = true;
     public IServiceCollection Services { get; }
     public Assembly[] Assemblies { get; }
 

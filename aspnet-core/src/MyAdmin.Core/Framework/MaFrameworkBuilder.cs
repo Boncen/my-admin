@@ -51,7 +51,7 @@ public static class MaFrameworkBuilder
         
         AddRepository(service);
 
-        AutoRegisterService(service, assemblies);
+        // AutoRegisterService(service, assemblies);
         
         #region log
         service.TryAddSingleton<ILogger, MyAdmin.Core.Logger.Logger>();
@@ -146,10 +146,7 @@ public static class MaFrameworkBuilder
                 case DBType.MySql:
                     var serverVersion = new MySqlServerVersion(dbVersion);
                     service.AddDbContext<MaDbContext>( dbContextOptions => dbContextOptions
-                        .UseMySql(configuration["ConnectionStrings:Default"],  serverVersion)
-                        .ConfigureWarnings((configurationBuilder => configurationBuilder.Throw()))
-                        .EnableSensitiveDataLogging()
-                        .EnableDetailedErrors());
+                        .UseMySql(configuration["ConnectionStrings:Default"],  serverVersion));
                     service.AddKeyedTransient<DbContext,MaDbContext>(nameof(MyAdmin.Core.Repository.MaDbContext));
                     break;
                 case DBType.MsSql:

@@ -42,12 +42,12 @@ public class RepositoryBase<TEntity>(IServiceProvider serviceProvider)
         return null;
     }
 
-    protected DbContext GetDbContext()
+    public DbContext GetDbContext()
     {
         return _dbContext;
     }
 
-    protected DbSet<TEntity> GetDbSet()
+    public DbSet<TEntity> GetDbSet()
     {
         return _dbContext.Set<TEntity>();
     }

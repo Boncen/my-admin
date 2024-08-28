@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using Microsoft.EntityFrameworkCore;
 using MyAdmin.Core.Entity;
 
 namespace MyAdmin.Core.Repository;
@@ -8,6 +9,8 @@ public interface IRepository
 }
 public interface IRepository<TEntity> : IRepository where TEntity : class, IEntity
 {
+    DbContext GetDbContext();
+    DbSet<TEntity> GetDbSet();
     Task<TEntity> InsertAsync(TEntity entity, bool autoSave = false, CancellationToken cancellationToken = default);
     Task InsertManyAsync(IEnumerable<TEntity> entities, bool autoSave = false, CancellationToken cancellationToken = default);
     Task<TEntity> UpdateAsync(TEntity entity, bool autoSave = false, CancellationToken cancellationToken = default);

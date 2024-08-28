@@ -18,28 +18,26 @@ public class RequestMonitorMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly ILogger _logger;
-    // private readonly DBHelper _dbHelper;
     private readonly MaFrameworkOptions _maFrameworkOptions;
 
-    public RequestMonitorMiddleware(RequestDelegate next, IOptions<MaFrameworkOptions> options,ILogger logger)
+    public RequestMonitorMiddleware(RequestDelegate next, IOptions<MaFrameworkOptions> options, ILogger logger)
     {
         _next = next;
         _logger = logger;
-        // _dbHelper = dbHelper;
         _maFrameworkOptions = options.Value;
     }
 
     public async Task Invoke(HttpContext context)
     {
         var request = context.Request;
-
         var endpoint = context.GetEndpoint();
-        if (endpoint != null && endpoint.Metadata.Any(x=>x.GetType() == typeof(IgnoreRequestLog)))
+        if (endpoint != null && endpoint.Metadata.Any(x => x.GetType() == typeof(IgnoreRequestLog)))
         {
             await _next(context);
             return;
         }
-        
+
+
         var ip = context.Connection.RemoteIpAddress?.ToString();
         var bodyContent = string.Empty;
         var memStream = new MemoryStream();
@@ -50,7 +48,7 @@ public class RequestMonitorMiddleware
             memStream.Position = 0;
             request.Body = memStream;
         }
-        
+
         var contentType = request.ContentType;
         var host = request.Host.ToString();
         var url = request.GetDisplayUrl();
@@ -63,20 +61,27 @@ public class RequestMonitorMiddleware
             var originalResponseBody = context.Response.Body;
             context.Response.Body = rspMemoryStream;
             rspMemoryStream.Position = 0;
-            await _next(context);
-            rspBodyContent = rspMemoryStream.GetString(autoCloseStream:false);
-            rspMemoryStream.Position = 0;
-            await rspMemoryStream.CopyToAsync(originalResponseBody);
+            try
+            {
+                await _next(context);
+                rspBodyContent = rspMemoryStream.GetString(autoCloseStream: false);
+                rspMemoryStream.Position = 0;
+                await rspMemoryStream.CopyToAsync(originalResponseBody);
+            }
+            finally
+            {
+                rspMemoryStream.Dispose();
+                context.Response.Body = originalResponseBody;
+            }
         }
         else
         {
             await _next(context);
         }
-        
+
         var response = context.Response;
         var statusCode = response.StatusCode.ToString();
-        // var dbHelper = context.RequestServices.GetService(typeof(DBHelper)) as DBHelper;
-        
+
         _logger.Log(new MaLog()
         {
             Id = Guid.NewGuid(),
@@ -103,11 +108,11 @@ public class RequestMonitorMiddleware
             memStream.Close();
             memStream.Dispose();
         }
+
         if (rspMemoryStream != null)
         {
             rspMemoryStream.Close();
             rspMemoryStream.Dispose();
         }
     }
-
 }
