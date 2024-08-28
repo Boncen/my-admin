@@ -1,5 +1,8 @@
 using System.Reflection;
+using System.Threading.RateLimiting;
 using Asp.Versioning;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -22,17 +25,26 @@ public static class MaFrameworkBuilder
     public static IServiceCollection AddMaFramework(this IServiceCollection service, ConfigurationManager configuration,
         Action<Core.MaFrameworkBuilder> builderAction = null, params Assembly[] assemblies)
     {
+        var config = new MaFrameworkOptions();
+        var frameworkOptions = configuration.GetSection("MaFrameworkOptions");
+        frameworkOptions.Bind(config);
+        
         if (assemblies.Length == 0) 
             assemblies = new[] { Assembly.GetEntryAssembly() };
         var builder = new Core.MaFrameworkBuilder(service, assemblies);
         builderAction?.Invoke(builder);
         service.AddSingleton(builder);
-
-        if (builder.UseBuildInDbContext)
+        AddOptions(service, configuration);
+        
+        if (config.UseBuildInDbContext == true)
         {
             HandleAddBuildInDbContext(service, configuration);
         }
-        
+
+        if (config.UseRateLimit == true)
+        {
+            AddRateLimit(service, config.RateLimitOptions);
+        }
         AddController(service);
 
         AddSwagger(service);
@@ -45,11 +57,26 @@ public static class MaFrameworkBuilder
         service.TryAddSingleton<ILogger, MyAdmin.Core.Logger.Logger>();
         #endregion
 
-        AddOptions(service, configuration);
        
         AddDapper(service);
         
         return service;
+    }
+
+    private static void AddRateLimit(IServiceCollection service, MaRateLimitOptions? configRateLimitOptions)
+    {
+        if (configRateLimitOptions == null)
+        {
+            configRateLimitOptions = new MaRateLimitOptions();
+        }
+        service.AddRateLimiter(_ => _.AddSlidingWindowLimiter(policyName: Conf.ConstSettingValue.RateLimitingPolicyName, options =>
+        {
+            options.PermitLimit = configRateLimitOptions.PermitLimit;
+            options.Window = TimeSpan.FromSeconds(configRateLimitOptions.Window);
+            options.SegmentsPerWindow = configRateLimitOptions.SegmentsPerWindow;
+            options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+            options.QueueLimit = configRateLimitOptions.QueueLimit;
+        }));
     }
 
     private static void AddSwagger(IServiceCollection service)

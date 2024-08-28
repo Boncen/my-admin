@@ -27,10 +27,23 @@ public static class WebApplicationSetup
     }
     public static void UseMaFramework(this WebApplication app, ConfigurationManager configurationManager)
     {
+        var maframeworkOptions = new MaFrameworkOptions();
+        var frameworkOptions = configurationManager.GetSection("MaFrameworkOptions");
+        frameworkOptions.Bind(maframeworkOptions);
         app.UseHttpsRedirection();
-        app.MapControllers();
-        var maframeworkOptions = app.Services.GetService(typeof(IOptions<MaFrameworkOptions>)) as IOptions<MaFrameworkOptions>;
-        if (maframeworkOptions!=null && maframeworkOptions.Value.UseGlobalErrorHandler == true)
+
+        if (maframeworkOptions.UseRateLimit == true)
+        {
+            app.UseRateLimiter();
+            app.MapControllers().RequireRateLimiting(Conf.ConstSettingValue.RateLimitingPolicyName);
+        }
+        else
+        {
+            app.MapControllers();
+        }
+        
+        
+        if (maframeworkOptions.UseGlobalErrorHandler == true)
         {
             app.UseMiddleware<ErrorHandlerMiddleware>();
         }
@@ -41,7 +54,7 @@ public static class WebApplicationSetup
             app.SetupSwaggerUi(configurationManager);
         }
         
-        if (maframeworkOptions!=null && maframeworkOptions.Value.UseRequestLog == true)
+        if (maframeworkOptions.UseRequestLog == true)
         {
             app.UseMiddleware<RequestMonitorMiddleware>();
         }

@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using MyAdmin.ApiHost.Db;
 using MyAdmin.ApiHost.models;
 using MyAdmin.ApiHost.Service;
@@ -34,6 +35,7 @@ public class TestController : MAController
         return obj;
     }
     [HttpPost("test3")]
+    [DisableRateLimiting]
     [IgnoreRequestLog]
     public async Task<object> Test3([FromBody]Param1 obj)
     {
