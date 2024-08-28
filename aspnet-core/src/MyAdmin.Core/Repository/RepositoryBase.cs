@@ -177,6 +177,12 @@ public class RepositoryBase<TEntity>(IServiceProvider serviceProvider)
         return (list, total);
     }
 
+    public Task<TEntity> FindOneAsync(Expression<Func<TEntity, bool>> queryPredicate, CancellationToken cancellationToken = default)
+    {
+        // todo
+        throw new NotImplementedException();
+    }
+
     public async Task<TEntity> InsertAsync(TEntity entity, bool autoSave = false, CancellationToken cancellationToken = default)
     {
         if (entity is IHasCreationTime i)
@@ -258,7 +264,7 @@ public class RepositoryBase<TEntity, TKey>(IServiceProvider serviceProvider)
 {
     public async Task DeleteAsync(TKey id, bool autoSave = false, CancellationToken cancellationToken = default)
     {
-        var entity = await GetAsync(id, cancellationToken);
+        var entity = await GetByIdAsync(id, cancellationToken);
         if (entity == null)
         {
             return;
@@ -279,7 +285,7 @@ public class RepositoryBase<TEntity, TKey>(IServiceProvider serviceProvider)
         }
     }
 
-    public async Task<TEntity?> FindAsync(TKey id, CancellationToken cancellationToken = default,
+    public async Task<TEntity?> FindByIdAsync(TKey id, CancellationToken cancellationToken = default,
          params Expression<Func<TEntity, dynamic>>[] eagerLoadingProperties)
     {
         var query = GetQueryable();
@@ -288,10 +294,10 @@ public class RepositoryBase<TEntity, TKey>(IServiceProvider serviceProvider)
         return entity;
     }
 
-    public async Task<TEntity> GetAsync(TKey id, CancellationToken cancellationToken = default,
+    public async Task<TEntity> GetByIdAsync(TKey id, CancellationToken cancellationToken = default,
          params Expression<Func<TEntity, dynamic>>[] eagerLoadingProperties)
     {
-        var entity = await FindAsync(id, cancellationToken, eagerLoadingProperties);
+        var entity = await FindByIdAsync(id, cancellationToken, eagerLoadingProperties);
         if (entity == null)
         {
             throw new EntityNotFoundException();

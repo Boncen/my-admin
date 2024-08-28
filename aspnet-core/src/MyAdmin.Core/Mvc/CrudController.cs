@@ -24,7 +24,7 @@ public class CrudController<TEntity, TKey, TAdd, TResponse> : MAController where
     }
 
     [HttpPost]
-    public async Task<TResponse> Add([FromBody] TAdd addInput, CancellationToken cancellationToken)
+    public virtual async Task<TResponse> Add([FromBody] TAdd addInput, CancellationToken cancellationToken)
     {
         await Validate(addInput);
         var entity = addInput.Adapt<TEntity>();
@@ -59,7 +59,7 @@ public class CrudController<TEntity, TKey, TAdd, TResponse> : MAController where
     }
 
     [HttpDelete]
-    public async Task Delete(TKey id, CancellationToken cancellationToken)
+    public  async Task Delete(TKey id, CancellationToken cancellationToken)
     {
         await _repository.DeleteAsync(id, true, cancellationToken);
     }
@@ -85,7 +85,7 @@ public class CrudController<TEntity, TKey, TAdd, TResponse> : MAController where
     [HttpGet]
     public async Task<TResponse> GetOne(TKey id, CancellationToken cancellationToken)
     {
-        var entity = await _repository.GetAsync(id, cancellationToken);
+        var entity = await _repository.GetByIdAsync(id, cancellationToken);
         var rsp = entity.Adapt<TResponse>();
         return rsp;
     }

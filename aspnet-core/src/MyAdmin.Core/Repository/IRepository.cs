@@ -26,14 +26,17 @@ public interface IRepository<TEntity> : IRepository where TEntity : class, IEnti
     Task<(List<TEntity>, int)> GetPagedListWithTotalAsync<TSortKey>(
         Expression<Func<TEntity, bool>> queryPredicate, Expression<Func<TEntity, TSortKey>>? sortPredicate, SortOrder sortOrder, int pageNumber, int pageSize,
         params Expression<Func<TEntity, dynamic>>[] eagerLoadingProperties);
+
+    Task<TEntity> FindOneAsync(Expression<Func<TEntity, bool>> queryPredicate,
+        CancellationToken cancellationToken = default);
 }
 
 public interface IRepository<TEntity, TKey> : IRepository<TEntity> where TEntity : class, IEntity
 {
     Task DeleteAsync(TKey id, bool autoSave = false, CancellationToken cancellationToken = default);
     Task DeleteManyAsync(IEnumerable<TKey> ids, bool autoSave = false, CancellationToken cancellationToken = default);
-    Task<TEntity> GetAsync(TKey id, CancellationToken cancellationToken = default, params Expression<Func<TEntity, dynamic>>[] eagerLoadingProperties);
-    Task<TEntity?> FindAsync(TKey id, CancellationToken cancellationToken = default, params Expression<Func<TEntity, dynamic>>[] eagerLoadingProperties);
+    Task<TEntity> GetByIdAsync(TKey id, CancellationToken cancellationToken = default, params Expression<Func<TEntity, dynamic>>[] eagerLoadingProperties);
+    Task<TEntity?> FindByIdAsync(TKey id, CancellationToken cancellationToken = default, params Expression<Func<TEntity, dynamic>>[] eagerLoadingProperties);
 }
 
 public interface IRepository<TEntity, TKey, TDbcontext>:IRepository<TEntity, TKey>  where TEntity : class, IEntity{}
