@@ -28,7 +28,7 @@ public class ErrorHandlerMiddleware
         catch (System.Exception error)
         {
             _logger.LogError(error);
-            var result = new ApiResult { Title = error?.Message, Status = StatusCodes.Status500InternalServerError };
+            var result = new ApiResult { Title = error?.Message, ErrCode = StatusCodes.Status500InternalServerError };
             switch (error)
             {
                 case FriendlyException:

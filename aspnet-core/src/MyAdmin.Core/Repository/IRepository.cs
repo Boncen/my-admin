@@ -11,6 +11,7 @@ public interface IRepository<TEntity> : IRepository where TEntity : class, IEnti
 {
     DbContext GetDbContext();
     DbSet<TEntity> GetDbSet();
+    IQueryable<TEntity> GetQueryable();
     Task<TEntity> InsertAsync(TEntity entity, bool autoSave = false, CancellationToken cancellationToken = default);
     Task InsertManyAsync(IEnumerable<TEntity> entities, bool autoSave = false, CancellationToken cancellationToken = default);
     Task<TEntity> UpdateAsync(TEntity entity, bool autoSave = false, CancellationToken cancellationToken = default);
@@ -28,7 +29,7 @@ public interface IRepository<TEntity> : IRepository where TEntity : class, IEnti
         params Expression<Func<TEntity, dynamic>>[] eagerLoadingProperties);
 
     Task<TEntity> FindOneAsync(Expression<Func<TEntity, bool>> queryPredicate,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default, params Expression<Func<TEntity, dynamic>>[] eagerLoadingProperties);
 }
 
 public interface IRepository<TEntity, TKey> : IRepository<TEntity> where TEntity : class, IEntity

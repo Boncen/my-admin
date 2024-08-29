@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Options;
 using MyAdmin.Core.Framework.Middlewares;
 using MyAdmin.Core.Options;
 
@@ -27,15 +26,22 @@ public static class WebApplicationSetup
     }
     public static void UseMaFramework(this WebApplication app, ConfigurationManager configurationManager)
     {
-        var maframeworkOptions = new MaFrameworkOptions();
+        var config = new MaFrameworkOptions();
         var frameworkOptions = configurationManager.GetSection("MaFrameworkOptions");
-        frameworkOptions.Bind(maframeworkOptions);
+        frameworkOptions.Bind(config);
         // app.UseHttpsRedirection();
-        if (maframeworkOptions.UseGlobalErrorHandler == true)
+        if (config.UseGlobalErrorHandler == true)
         {
             app.UseMiddleware<ErrorHandlerMiddleware>();
         }
-        if (maframeworkOptions.UseRateLimit == true)
+
+        if (config.UseJwtBearer == true)
+        {
+            app.UseAuthentication();
+            app.UseAuthorization();
+        }
+        
+        if (config.UseRateLimit == true)
         {
             app.UseRateLimiter();
             app.MapControllers().RequireRateLimiting(Conf.ConstSettingValue.RateLimitingPolicyName);
@@ -52,7 +58,7 @@ public static class WebApplicationSetup
             app.SetupSwaggerUi(configurationManager);
         }
         
-        if (maframeworkOptions.UseRequestLog == true)
+        if (config.UseRequestLog == true)
         {
             app.UseMiddleware<RequestMonitorMiddleware>();
         }

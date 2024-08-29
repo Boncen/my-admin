@@ -1,43 +1,75 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using MyAdmin.Core.Model;
 using MyAdmin.Core.Model.BuildIn;
 using MyAdmin.Core.Mvc;
 using MyAdmin.Core.Repository;
 using MyAdmin.Core.Utilities;
-using ILogger = MyAdmin.Core.Logger.ILogger;
 
 namespace MyAdmin.ApiHost.Controller;
 
+[Route("/login")]
 public class LoginController : MAController
 {
-    private readonly ILogger _logger;
-    private readonly IRepository<MaUser,Guid> _repository;
-    private readonly IRepository<MaTenant,Guid> _tenantRepository;
-    public LoginController(ILogger logger, IRepository<MaUser,Guid> repository,IRepository<MaTenant,Guid> tenantRepository)
+    // private readonly ILogger _logger;
+    private readonly IRepository<MaUser, Guid> _repository;
+    private readonly IRepository<MaTenant, Guid> _tenantRepository;
+    private readonly IRepository<MaRole, Guid> _roleRepository;
+    private readonly JwtHelper _jwtHelper;
+
+    public LoginController(IRepository<MaUser, Guid> repository, IRepository<MaTenant, Guid> tenantRepository,
+        JwtHelper jwtHelper, IRepository<MaRole, Guid> roleRepository)
     {
-        _logger = logger;
+        // _logger = logger;
         _repository = repository;
         _tenantRepository = tenantRepository;
+        _jwtHelper = jwtHelper;
+        _roleRepository = roleRepository;
     }
 
     // todo 生成验证码
-    
-    public async Task Login([FromBody] LoginReq req, CancellationToken cancellationToken)
+
+    /// <summary>
+    /// 登录
+    /// </summary>
+    /// <param name="req"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    [HttpPost]
+    public async Task<ApiResult> Login([FromBody] LoginReq req, CancellationToken cancellationToken)
     {
-        if (req.tenantId.HasValue)
+        MaTenant tenant = null;
+        var user = await _repository.FindOneAsync(
+            x => x.Account == req.account && x.TenantId == req.tenantId && x.IsEnabled == true && x.IsDeleted == false,
+            cancellationToken, maUser => maUser.UserRoles);
+        if (user == null)
         {
-           var tenant = await _tenantRepository.GetByIdAsync(req.tenantId.Value, cancellationToken);
+            return ApiResult.Fail("登录名或者密码错误");
         }
 
-        var hashPasswd = PasswordHelper.HashPassword(req.password);
-        // _repository.FindByIdAsync()
-        // _repository.InsertAsync(new MaUser()
-        // {
-        //     Account = req.account,
-        //     Password = 
-        // });
-        return;
+        var hashPasswd = PasswordHelper.HashPassword(req.password, user.Salt);
+        if (!user.Password.Equals(hashPasswd))
+        {
+            return ApiResult.Fail("登录名或者密码错误!");
+        }
+
+        // get user's roles
+        var roles = await _roleRepository.GetListAsync(r => user.UserRoles.Select(x => x.RoleId).Contains(r.Id));
+        var roleNames = roles.Select(x => x.Name).ToList();
+        // generate JWT token
+        var claims = new[]
+        {
+            new Claim(ClaimTypes.Role, string.Join(',', roleNames)),
+            new Claim("account", user.Account),
+            new Claim("id", user.Id.ToString()),
+        };
+        
+        var token = _jwtHelper.CreateToken(claims);
+        return ApiResult<string>.Ok("登录成功", token);
     }
 }
 
-public record LoginReq([Required]string account, [Required]string password, Guid? tenantId);
+public record LoginReq([Required] string account, [Required] string password, Guid? tenantId);

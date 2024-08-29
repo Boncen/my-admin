@@ -1,7 +1,7 @@
 using System.Runtime.InteropServices.JavaScript;
 
 namespace MyAdmin.Test;
-[TestFixture("HelloPassword", "salt12345678")]
+[TestFixture("admin", "7894561230")]
 [TestFixture("HelloPassword", "salt87654321")]
 public class Argon2Test
 {

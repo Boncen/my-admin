@@ -1,22 +1,23 @@
 using System.Reflection;
+using System.Security.Claims;
+using System.Text;
 using System.Threading.RateLimiting;
 using Asp.Versioning;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Options;
-using MyAdmin.ApiHost.Swagger;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using MyAdmin.Core.Exception;
 using MyAdmin.Core.Framework.Attribute;
-using MyAdmin.Core.Framework.Filter;
 using MyAdmin.Core.Logger;
 using MyAdmin.Core.Options;
 using MyAdmin.Core.Repository;
 using MyAdmin.Core.Utilities;
-using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace MyAdmin.Core.Framework;
 
@@ -28,14 +29,16 @@ public static class MaFrameworkBuilder
         var config = new MaFrameworkOptions();
         var frameworkOptions = configuration.GetSection("MaFrameworkOptions");
         frameworkOptions.Bind(config);
-        
-        if (assemblies.Length == 0) 
+
+        if (assemblies.Length == 0)
             assemblies = new[] { Assembly.GetEntryAssembly() };
         var builder = new Core.MaFrameworkBuilder(service, assemblies);
         builderAction?.Invoke(builder);
-        service.AddSingleton(builder);
+
+        AddFrameworkService(service);
+        // service.AddSingleton(builder);
         AddOptions(service, configuration);
-        
+
         if (config.UseBuildInDbContext == true)
         {
             HandleAddBuildInDbContext(service, configuration);
@@ -45,22 +48,58 @@ public static class MaFrameworkBuilder
         {
             AddRateLimit(service, config.RateLimitOptions);
         }
+
+        if (config.UseJwtBearer == true)
+        {
+            AddJwtBearer(service, configuration);
+        }
+
         AddController(service);
 
         AddSwagger(service);
-        
+
         AddRepository(service);
 
-        // AutoRegisterService(service, assemblies);
-        
-        #region log
-        service.TryAddSingleton<ILogger, MyAdmin.Core.Logger.Logger>();
-        #endregion
+        AutoRegisterService(service, assemblies);
 
-       
+
         AddDapper(service);
-        
+
         return service;
+    }
+
+    private static void AddFrameworkService(IServiceCollection service)
+    {
+        service.AddSingleton<JwtHelper>();
+        service.TryAddSingleton<ILogger, MyAdmin.Core.Logger.Logger>();
+    }
+
+    private static void AddJwtBearer(IServiceCollection service, ConfigurationManager configuration)
+    {
+        service.AddAuthentication(options =>
+        {
+            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        }).AddJwtBearer(options =>
+        {
+            options.TokenValidationParameters = new TokenValidationParameters()
+            {
+                ValidateIssuer = true, //是否验证Issuer
+                ValidIssuer = configuration["Jwt:Issuer"], //发行人Issuer
+                ValidateAudience = true, //是否验证Audience
+                ValidAudience = configuration["Jwt:Audience"], //订阅人Audience
+                ValidateIssuerSigningKey = true, //是否验证SecurityKey
+                IssuerSigningKey =
+                    new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:SecretKey"])), //SecurityKey
+                ValidateLifetime = true, //是否验证失效时间
+                ClockSkew = TimeSpan.FromHours(
+                    Convert.ToInt16(configuration["Jwt:ExpireHour"])), //过期时间容错值，解决服务器端时间不同步问题（秒）
+                RequireExpirationTime = true,
+            };
+        });
+        service.AddAuthorization(options =>
+        {
+            options.AddPolicy("admin", (p) => p.RequireClaim(ClaimTypes.Role, "admin", "administrator"));
+        });
     }
 
     private static void AddRateLimit(IServiceCollection service, MaRateLimitOptions? configRateLimitOptions)
@@ -69,20 +108,46 @@ public static class MaFrameworkBuilder
         {
             configRateLimitOptions = new MaRateLimitOptions();
         }
-        service.AddRateLimiter(_ => _.AddSlidingWindowLimiter(policyName: Conf.ConstSettingValue.RateLimitingPolicyName, options =>
-        {
-            options.PermitLimit = configRateLimitOptions.PermitLimit;
-            options.Window = TimeSpan.FromSeconds(configRateLimitOptions.Window);
-            options.SegmentsPerWindow = configRateLimitOptions.SegmentsPerWindow;
-            options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-            options.QueueLimit = configRateLimitOptions.QueueLimit;
-        }));
+
+        service.AddRateLimiter(_ => _.AddSlidingWindowLimiter(policyName: Conf.ConstSettingValue.RateLimitingPolicyName,
+            options =>
+            {
+                options.PermitLimit = configRateLimitOptions.PermitLimit;
+                options.Window = TimeSpan.FromSeconds(configRateLimitOptions.Window);
+                options.SegmentsPerWindow = configRateLimitOptions.SegmentsPerWindow;
+                options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+                options.QueueLimit = configRateLimitOptions.QueueLimit;
+            }));
     }
 
     private static void AddSwagger(IServiceCollection service)
     {
         service.AddEndpointsApiExplorer();
-        service.AddSwaggerGen();
+        service.AddSwaggerGen(x =>
+        {
+            x.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme()
+            {
+                Description = "Bearer {token}",
+                Name = "Authorization",
+                In = ParameterLocation.Header,
+                Type = SecuritySchemeType.ApiKey
+            });
+            // 添加安全要求
+            x.AddSecurityRequirement(new OpenApiSecurityRequirement
+            {
+                {
+                    new OpenApiSecurityScheme
+                    {
+                        Reference = new OpenApiReference
+                        {
+                            Type = ReferenceType.SecurityScheme,
+                            Id = "Bearer"
+                        }
+                    },
+                    new string[] {}
+                }
+            });
+        });
         // configure swagger
         // service.AddTransient<IConfigureOptions<SwaggerGenOptions>, ConfigureSwaggerOptions>();
         // service.AddSwaggerGen(x => x.OperationFilter<SwaggerDefaultValues>());
@@ -101,8 +166,11 @@ public static class MaFrameworkBuilder
 
     public static void UseApiVersioning(this Core.MaFrameworkBuilder builder, ConfigurationManager configuration)
     {
-        var useVersioningStr = configuration[$"{nameof(Core.Conf.Setting.MaFrameworkOptions)}:{nameof(Core.Conf.Setting.MaFrameworkOptions.UseApiVersioning)}"];
-        if (string.IsNullOrEmpty(useVersioningStr) || !bool.TryParse(useVersioningStr, out bool useApiVersioning) || !useApiVersioning)
+        var useVersioningStr =
+            configuration[
+                $"{nameof(Core.Conf.Setting.MaFrameworkOptions)}:{nameof(Core.Conf.Setting.MaFrameworkOptions.UseApiVersioning)}"];
+        if (string.IsNullOrEmpty(useVersioningStr) || !bool.TryParse(useVersioningStr, out bool useApiVersioning) ||
+            !useApiVersioning)
         {
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
@@ -127,7 +195,6 @@ public static class MaFrameworkBuilder
             options.GroupNameFormat = "'v'VVV";
             options.SubstituteApiVersionInUrl = true;
         });
-       
     }
 
     private static void HandleAddBuildInDbContext(IServiceCollection service, ConfigurationManager configuration)
@@ -138,16 +205,16 @@ public static class MaFrameworkBuilder
         {
             return;
         }
-    
+
         if (DBType.TryParse(dbTypeStr, out DBType dbType))
         {
             switch (dbType)
             {
                 case DBType.MySql:
                     var serverVersion = new MySqlServerVersion(dbVersion);
-                    service.AddDbContext<MaDbContext>( dbContextOptions => dbContextOptions
-                        .UseMySql(configuration["ConnectionStrings:Default"],  serverVersion));
-                    service.AddKeyedTransient<DbContext,MaDbContext>(nameof(MyAdmin.Core.Repository.MaDbContext));
+                    service.AddDbContext<MaDbContext>(dbContextOptions => dbContextOptions
+                        .UseMySql(configuration["ConnectionStrings:Default"], serverVersion));
+                    service.AddKeyedTransient<DbContext, MaDbContext>(nameof(MyAdmin.Core.Repository.MaDbContext));
                     break;
                 case DBType.MsSql:
                     throw new UnSupposedFeatureException();
@@ -164,14 +231,14 @@ public static class MaFrameworkBuilder
         //service.AddControllers(options => options.Filters.Add(typeof(ValidationFilter)));
         service.AddControllers();
     }
-    
+
     private static void AddRepository(IServiceCollection service)
     {
         service.TryAddScoped(typeof(IRepository<>), typeof(RepositoryBase<>));
         service.TryAddScoped(typeof(IRepository<,>), typeof(RepositoryBase<,>));
         service.TryAddScoped(typeof(IRepository<,,>), typeof(RepositoryBase<,,>));
     }
-    
+
     private static void AutoRegisterService(IServiceCollection service, Assembly[] assemblies)
     {
         foreach (var assem in assemblies)
@@ -183,6 +250,7 @@ public static class MaFrameworkBuilder
                 {
                     continue;
                 }
+
                 var singletonAttr = t.GetCustomAttribute<SingletonAttribute>();
                 if (singletonAttr != null)
                 {
@@ -214,6 +282,7 @@ public static class MaFrameworkBuilder
                         continue;
                     }
                 }
+
                 var transientAttr = t.GetCustomAttribute<TransientAttribute>();
                 if (transientAttr != null)
                 {
@@ -229,7 +298,7 @@ public static class MaFrameworkBuilder
                         continue;
                     }
                 }
-                
+
                 var interfs = t.GetInterfaces();
                 foreach (var i in interfs)
                 {
@@ -238,17 +307,18 @@ public static class MaFrameworkBuilder
                         service.TryAddTransient(t);
                         continue;
                     }
+
                     if (i == typeof(IScoped))
                     {
                         service.TryAddScoped(t);
                         continue;
                     }
+
                     if (i == typeof(ISingleton))
                     {
                         service.TryAddSingleton(t);
                     }
                 }
-               
             }
         }
     }

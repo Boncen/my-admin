@@ -1,4 +1,5 @@
 ﻿using Asp.Versioning;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MyAdmin.Core.Model.Dto;
 using MyAdmin.Core.Model.BuildIn;
@@ -9,6 +10,7 @@ namespace MyAdmin.Core.Mvc;
 
 [ApiController]
 [Route("api/[controller]/[action]")]
+[Authorize(policy:"admin")]
 public class SystemRoleController: CrudController<MaRole, Guid, AddRoleDto,RoleDto>
 {
     public SystemRoleController(IRepository<MaRole,Guid> repository, DBHelper dbHelper):base(repository,dbHelper)

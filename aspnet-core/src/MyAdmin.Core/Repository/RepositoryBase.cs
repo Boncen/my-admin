@@ -1,4 +1,3 @@
-
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -34,6 +33,7 @@ public class RepositoryBase<TEntity>(IServiceProvider serviceProvider)
 
         return query;
     }
+
     protected static Expression<Func<TEntity, object>>? GetDefaultSortPredicate()
     {
         if (typeof(IHasCreationTime).IsAssignableFrom(typeof(TEntity)))
@@ -51,7 +51,8 @@ public class RepositoryBase<TEntity>(IServiceProvider serviceProvider)
     {
         return _dbContext.Set<TEntity>();
     }
-    protected IQueryable<TEntity> GetQueryable()
+
+    public IQueryable<TEntity> GetQueryable()
     {
         return GetDbSet().AsQueryable().AsNoTrackingIf(IsChangeTrackingEnabled == false);
     }
@@ -63,9 +64,11 @@ public class RepositoryBase<TEntity>(IServiceProvider serviceProvider)
             // sortField = GetDefaultSortField();
             return queryable;
         }
+
         ParameterExpression parameterExpression = Expression.Parameter(typeof(TEntity), "x");
         MemberExpression memberExpression = Expression.Property(parameterExpression, sortField);
-        Expression<Func<TEntity, object>> expression = Expression.Lambda<Func<TEntity, object>>(memberExpression, parameterExpression);
+        Expression<Func<TEntity, object>> expression =
+            Expression.Lambda<Func<TEntity, object>>(memberExpression, parameterExpression);
         switch (sortOrder)
         {
             case SortOrder.Ascending:
@@ -75,8 +78,10 @@ public class RepositoryBase<TEntity>(IServiceProvider serviceProvider)
             default:
                 break;
         }
+
         return queryable;
     }
+
     public async Task DeleteAsync(TEntity entity, bool autoSave = false, CancellationToken cancellationToken = default)
     {
         if (entity is ISoftDelete || entity is IHasDeletionTime)
@@ -85,10 +90,12 @@ public class RepositoryBase<TEntity>(IServiceProvider serviceProvider)
             {
                 softDelEntity.IsDeleted = true;
             }
-            if (entity is IHasDeletionTime hasDelTimeEntity )
+
+            if (entity is IHasDeletionTime hasDelTimeEntity)
             {
                 hasDelTimeEntity.DeletionTime = DateTime.Now;
             }
+
             GetDbSet().Update(entity);
         }
         else
@@ -102,7 +109,8 @@ public class RepositoryBase<TEntity>(IServiceProvider serviceProvider)
         }
     }
 
-    public async Task DeleteManyAsync(IEnumerable<TEntity> entities, bool autoSave = false, CancellationToken cancellationToken = default)
+    public async Task DeleteManyAsync(IEnumerable<TEntity> entities, bool autoSave = false,
+        CancellationToken cancellationToken = default)
     {
         foreach (var entity in entities)
         {
@@ -110,7 +118,8 @@ public class RepositoryBase<TEntity>(IServiceProvider serviceProvider)
         }
     }
 
-    public async Task<List<TEntity>> GetListAsync(Expression<Func<TEntity, bool>> queryPredicate, string? sortField, SortOrder sortOrder,
+    public async Task<List<TEntity>> GetListAsync(Expression<Func<TEntity, bool>> queryPredicate, string? sortField,
+        SortOrder sortOrder,
         params Expression<Func<TEntity, dynamic>>[] eagerLoadingProperties)
     {
         var query = GetQueryable();
@@ -121,7 +130,8 @@ public class RepositoryBase<TEntity>(IServiceProvider serviceProvider)
         return await query.ToListAsync();
     }
 
-    public async Task<List<TEntity>> GetPagedListAsync<TSortKey>(Expression<Func<TEntity, bool>>? queryPredicate, Expression<Func<TEntity, TSortKey>>? sortPredicate, SortOrder sortOrder,
+    public async Task<List<TEntity>> GetPagedListAsync<TSortKey>(Expression<Func<TEntity, bool>>? queryPredicate,
+        Expression<Func<TEntity, TSortKey>>? sortPredicate, SortOrder sortOrder,
         int pageNumber, int pageSize, params Expression<Func<TEntity, dynamic>>[] eagerLoadingProperties)
     {
         var query = GetQueryable();
@@ -145,11 +155,14 @@ public class RepositoryBase<TEntity>(IServiceProvider serviceProvider)
                     break;
             }
         }
+
         return await query.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
     }
 
-    public async Task<(List<TEntity>, int)> GetPagedListWithTotalAsync<TSortKey>(Expression<Func<TEntity, bool>> queryPredicate, Expression<Func<TEntity, TSortKey>>? sortPredicate,
-        SortOrder sortOrder, int pageNumber, int pageSize, params Expression<Func<TEntity, dynamic>>[] eagerLoadingProperties)
+    public async Task<(List<TEntity>, int)> GetPagedListWithTotalAsync<TSortKey>(
+        Expression<Func<TEntity, bool>> queryPredicate, Expression<Func<TEntity, TSortKey>>? sortPredicate,
+        SortOrder sortOrder, int pageNumber, int pageSize,
+        params Expression<Func<TEntity, dynamic>>[] eagerLoadingProperties)
     {
         var query = GetQueryable();
         query = IncludeDetails(query, eagerLoadingProperties);
@@ -173,17 +186,23 @@ public class RepositoryBase<TEntity>(IServiceProvider serviceProvider)
                     break;
             }
         }
+
         var list = await query.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
         return (list, total);
     }
 
-    public Task<TEntity> FindOneAsync(Expression<Func<TEntity, bool>> queryPredicate, CancellationToken cancellationToken = default)
+    public async Task<TEntity> FindOneAsync(Expression<Func<TEntity, bool>> queryPredicate,
+        CancellationToken cancellationToken = default,
+        params Expression<Func<TEntity, dynamic>>[] eagerLoadingProperties)
     {
-        // todo
-        throw new NotImplementedException();
+        var query = GetQueryable();
+        query = IncludeDetails(query, eagerLoadingProperties);
+        var entity = await query.FirstOrDefaultAsync(queryPredicate, cancellationToken);
+        return entity;
     }
 
-    public async Task<TEntity> InsertAsync(TEntity entity, bool autoSave = false, CancellationToken cancellationToken = default)
+    public async Task<TEntity> InsertAsync(TEntity entity, bool autoSave = false,
+        CancellationToken cancellationToken = default)
     {
         if (entity is IHasCreationTime i)
         {
@@ -192,6 +211,7 @@ public class RepositoryBase<TEntity>(IServiceProvider serviceProvider)
                 i.CreationTime = DateTime.Now;
             }
         }
+
         await GetDbContext().AddAsync(entity, cancellationToken: cancellationToken);
         if (autoSave)
         {
@@ -201,7 +221,8 @@ public class RepositoryBase<TEntity>(IServiceProvider serviceProvider)
         return entity;
     }
 
-    public async Task InsertManyAsync(IEnumerable<TEntity> entities, bool autoSave = false, CancellationToken cancellationToken = default)
+    public async Task InsertManyAsync(IEnumerable<TEntity> entities, bool autoSave = false,
+        CancellationToken cancellationToken = default)
     {
         foreach (var entity in entities)
         {
@@ -213,6 +234,7 @@ public class RepositoryBase<TEntity>(IServiceProvider serviceProvider)
                 }
             }
         }
+
         await GetDbSet().AddRangeAsync(entities, cancellationToken);
         if (autoSave)
         {
@@ -221,7 +243,8 @@ public class RepositoryBase<TEntity>(IServiceProvider serviceProvider)
     }
 
 
-    public async Task<TEntity> UpdateAsync(TEntity entity, bool autoSave = false, CancellationToken cancellationToken = default)
+    public async Task<TEntity> UpdateAsync(TEntity entity, bool autoSave = false,
+        CancellationToken cancellationToken = default)
     {
         if (entity is IHasModificationTime u)
         {
@@ -230,15 +253,18 @@ public class RepositoryBase<TEntity>(IServiceProvider serviceProvider)
                 u.LastModificationTime = DateTime.Now;
             }
         }
+
         GetDbSet().Update(entity);
         if (autoSave)
         {
             await GetDbContext().SaveChangesAsync(cancellationToken);
         }
+
         return entity;
     }
 
-    public async Task UpdateManyAsync(IEnumerable<TEntity> entities, bool autoSave = false, CancellationToken cancellationToken = default)
+    public async Task UpdateManyAsync(IEnumerable<TEntity> entities, bool autoSave = false,
+        CancellationToken cancellationToken = default)
     {
         foreach (var entity in entities)
         {
@@ -250,6 +276,7 @@ public class RepositoryBase<TEntity>(IServiceProvider serviceProvider)
                 }
             }
         }
+
         GetDbContext().UpdateRange(entities);
         if (autoSave)
         {
@@ -269,10 +296,12 @@ public class RepositoryBase<TEntity, TKey>(IServiceProvider serviceProvider)
         {
             return;
         }
+
         await DeleteAsync(entity, autoSave, cancellationToken);
     }
 
-    public async Task DeleteManyAsync(IEnumerable<TKey> ids, bool autoSave = false, CancellationToken cancellationToken = default)
+    public async Task DeleteManyAsync(IEnumerable<TKey> ids, bool autoSave = false,
+        CancellationToken cancellationToken = default)
     {
         foreach (var id in ids)
         {
@@ -286,7 +315,7 @@ public class RepositoryBase<TEntity, TKey>(IServiceProvider serviceProvider)
     }
 
     public async Task<TEntity?> FindByIdAsync(TKey id, CancellationToken cancellationToken = default,
-         params Expression<Func<TEntity, dynamic>>[] eagerLoadingProperties)
+        params Expression<Func<TEntity, dynamic>>[] eagerLoadingProperties)
     {
         var query = GetQueryable();
         query = IncludeDetails(query, eagerLoadingProperties);
@@ -295,18 +324,20 @@ public class RepositoryBase<TEntity, TKey>(IServiceProvider serviceProvider)
     }
 
     public async Task<TEntity> GetByIdAsync(TKey id, CancellationToken cancellationToken = default,
-         params Expression<Func<TEntity, dynamic>>[] eagerLoadingProperties)
+        params Expression<Func<TEntity, dynamic>>[] eagerLoadingProperties)
     {
         var entity = await FindByIdAsync(id, cancellationToken, eagerLoadingProperties);
         if (entity == null)
         {
             throw new EntityNotFoundException();
         }
+
         return entity;
     }
 }
 
-public class RepositoryBase<TEntity, TKey, TDbContext> : RepositoryBase<TEntity, TKey>, IRepository<TEntity, TKey, TDbContext>
+public class RepositoryBase<TEntity, TKey, TDbContext> : RepositoryBase<TEntity, TKey>,
+    IRepository<TEntity, TKey, TDbContext>
     where TEntity : class, IEntity<TKey>
     where TDbContext : DbContext
 {

@@ -11,7 +11,7 @@ public class RoleDto: FullAuditedEntity<Guid>
 
     public string Name { get; set; }
     public string? Description { get; set; }
-    public ICollection<RolePermission> RolePermissions { get; set; }
+    public ICollection<RoleMenu> RolePermissions { get; set; }
     public ICollection<UserRole> UserRoles { get; set; }
     public MaTenant? Tenant { get; set; }
 }

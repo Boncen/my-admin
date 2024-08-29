@@ -5,7 +5,7 @@ using MyAdmin.Core.Entity.Auditing;
 namespace MyAdmin.ApiHost.models;
 
 [Table("Order")]
-public class Order:FullAuditedEntity<Guid>,IEntity<Guid>,ITenantObject<Guid>
+public class Order:FullAuditedEntity<Guid>,IEntity<Guid>,ITenantObject<Guid?>
 {
     public Guid Id { get; set; }
     public string OrderNo { get; set; }
@@ -14,6 +14,6 @@ public class Order:FullAuditedEntity<Guid>,IEntity<Guid>,ITenantObject<Guid>
     /// 订单商品概述
     /// </summary>
     public string DescBody { get; set; }
-    public Guid TenantId { get; set; }
+    public Guid? TenantId { get; set; }
     
 }

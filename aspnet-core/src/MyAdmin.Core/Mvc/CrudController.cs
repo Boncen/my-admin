@@ -114,7 +114,7 @@ public class CrudController<TEntity, TKey, TAdd, TResponse> : MAController where
         ApiResult<PageResult<TResponse>> res = new ApiResult<PageResult<TResponse>>()
         {
             Data = new PageResult<TResponse>() { List = rsp, Total = total },
-            Status = StatusCodes.Status200OK,
+            ErrCode = StatusCodes.Status200OK,
         };
         return res;
     }

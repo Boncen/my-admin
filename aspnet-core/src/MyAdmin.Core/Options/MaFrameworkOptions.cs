@@ -11,6 +11,7 @@ public class MaFrameworkOptions
     // public bool? UseBuildInDbContext { get; set; }
     public bool? SaveRequestBody { get; set; }
     public bool? SaveResponseBody { get; set; }
+    public bool? UseJwtBearer { get; set; }
     public DBType DBType { get; set; }
     public string? DBVersion { get; set; }
     public bool? UseBuildInDbContext { get; set; } = true;
