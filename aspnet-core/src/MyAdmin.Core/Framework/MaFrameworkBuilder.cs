@@ -14,6 +14,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using MyAdmin.Core.Exception;
 using MyAdmin.Core.Framework.Attribute;
+using MyAdmin.Core.Identity;
 using MyAdmin.Core.Logger;
 using MyAdmin.Core.Options;
 using MyAdmin.Core.Repository;
@@ -34,44 +35,35 @@ public static class MaFrameworkBuilder
             assemblies = new[] { Assembly.GetEntryAssembly() };
         var builder = new Core.MaFrameworkBuilder(service, assemblies);
         builderAction?.Invoke(builder);
-
         AddFrameworkService(service);
         // service.AddSingleton(builder);
         AddOptions(service, configuration);
-
         if (config.UseBuildInDbContext == true)
         {
             HandleAddBuildInDbContext(service, configuration);
         }
-
         if (config.UseRateLimit == true)
         {
             AddRateLimit(service, config.RateLimitOptions);
         }
-
         if (config.UseJwtBearer == true)
         {
             AddJwtBearer(service, configuration);
         }
-
         AddController(service);
-
         AddSwagger(service);
-
         AddRepository(service);
-
         AutoRegisterService(service, assemblies);
-
-
         AddDapper(service);
-
         return service;
     }
 
     private static void AddFrameworkService(IServiceCollection service)
     {
+        service.AddHttpContextAccessor();
         service.AddSingleton<JwtHelper>();
         service.TryAddSingleton<ILogger, MyAdmin.Core.Logger.Logger>();
+        service.AddScoped<ICurrentUser, CurrentUser>();
     }
 
     private static void AddJwtBearer(IServiceCollection service, ConfigurationManager configuration)

@@ -1,6 +1,8 @@
-﻿using Asp.Versioning;
+﻿using System.Diagnostics;
+using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using MyAdmin.Core.Identity;
 using MyAdmin.Core.Model.Dto;
 using MyAdmin.Core.Model.BuildIn;
 using MyAdmin.Core.Mvc;
@@ -13,9 +15,10 @@ namespace MyAdmin.Core.Mvc;
 [Authorize(policy:"admin")]
 public class SystemRoleController: CrudController<MaRole, Guid, AddRoleDto,RoleDto>
 {
-    public SystemRoleController(IRepository<MaRole,Guid> repository, DBHelper dbHelper):base(repository,dbHelper)
+    private readonly ICurrentUser _currentUser;
+    public SystemRoleController(IRepository<MaRole,Guid> repository, DBHelper dbHelper, ICurrentUser currentUser):base(repository,dbHelper)
     {
-        
+        _currentUser = currentUser;
     }
 
     [HttpGet]
