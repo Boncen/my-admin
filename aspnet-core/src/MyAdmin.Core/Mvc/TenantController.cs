@@ -11,9 +11,9 @@ namespace MyAdmin.Core.Mvc;
 [ApiController]
 [Route("api/[controller]/[action]")]
 [Authorize(policy:"admin")]
-public class SystemUserController: CrudController<MaUser, Guid, AddUserDto,UserDto>
+public class TenantController: CrudController<MaTenant, Guid, AddTenantDto,TenantDto>
 {
-    public SystemUserController(IRepository<MaUser,Guid> repository,DBHelper dbHelper):base(repository,dbHelper)
+    public TenantController(IRepository<MaTenant,Guid> repository,DBHelper dbHelper):base(repository,dbHelper)
     {
         
     }

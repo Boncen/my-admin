@@ -1,8 +1,9 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using MyAdmin.Core.Framework.Attribute;
 
 namespace MyAdmin.Core.Mvc;
 [ApiController]
+[Authorize]
 public class MAController:ControllerBase
 {
     

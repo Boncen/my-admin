@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -12,6 +13,7 @@ using MyAdmin.Core.Utilities;
 namespace MyAdmin.ApiHost.Controller;
 
 [Route("/login")]
+[AllowAnonymous]
 public class LoginController : MAController
 {
     // private readonly ILogger _logger;
@@ -42,6 +44,20 @@ public class LoginController : MAController
     public async Task<ApiResult> Login([FromBody] LoginReq req, CancellationToken cancellationToken)
     {
         MaTenant tenant = null;
+        if (req.tenantId.HasValue)
+        {
+            tenant = await  _tenantRepository.GetByIdAsync(req.tenantId.Value, cancellationToken);
+            if (tenant == null)
+            {
+                return ApiResult.Fail("租户不存在");
+            }
+
+            if (tenant.ExpirationDate.HasValue && DateTime.Now > tenant.ExpirationDate.Value)
+            {
+                return ApiResult.Fail("租户已过有效期");
+            }
+        }
+        
         var user = await _repository.FindOneAsync(
             x => x.Account == req.account && x.TenantId == req.tenantId && x.IsEnabled == true && x.IsDeleted == false,
             cancellationToken, maUser => maUser.UserRoles);
