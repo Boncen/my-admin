@@ -10,12 +10,10 @@ namespace MyAdmin.Core.Mvc;
 
 [ApiController]
 [Route("api/[controller]/[action]")]
-[Authorize(policy:"admin")]
-public class TenantController: CrudController<MaTenant, Guid, AddTenantDto,TenantDto>
+[Authorize(policy: "admin")]
+public class TenantController : CrudController<MaTenant, Guid, AddTenantDto, TenantSearchDto, TenantDto>
 {
-    public TenantController(IRepository<MaTenant,Guid> repository,DBHelper dbHelper):base(repository,dbHelper)
+    public TenantController(IRepository<MaTenant, Guid> repository, DBHelper dbHelper) : base(repository, dbHelper)
     {
-        
     }
-    
 }

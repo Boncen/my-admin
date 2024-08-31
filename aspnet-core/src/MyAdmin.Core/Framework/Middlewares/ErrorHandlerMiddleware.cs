@@ -2,6 +2,7 @@
 using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Http;
+using MyAdmin.Core.Conf;
 using MyAdmin.Core.Exception;
 using MyAdmin.Core.Logger;
 using MyAdmin.Core.Model;
@@ -28,7 +29,7 @@ public class ErrorHandlerMiddleware
         catch (System.Exception error)
         {
             _logger.LogError(error);
-            var result = new ApiResult { Title = error?.Message, ErrCode = StatusCodes.Status500InternalServerError };
+            var result = new ApiResult { Error = error?.Message, ErrCode = MaErrorCode.UnexpectError };
             switch (error)
             {
                 case FriendlyException:

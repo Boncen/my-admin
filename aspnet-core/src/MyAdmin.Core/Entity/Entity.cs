@@ -17,7 +17,7 @@ public abstract class Entity<TKey> :Entity, IEntity<TKey>
 [Serializable]
 public abstract class CreationAuditedEntity<TKey> : ICreationAuditedObject<TKey>
 {
-    public virtual DateTime CreationTime { get; set; }
+    public virtual DateTime CreationTime { get; set; } = DateTime.Now;
 
     public virtual TKey? CreatorId { get; set; }
 }

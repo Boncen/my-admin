@@ -21,7 +21,7 @@ public class RepositoryBase<TEntity>(IServiceProvider serviceProvider)
 
     protected static IQueryable<TEntity> IncludeDetails(
         IQueryable<TEntity> query,
-        Expression<Func<TEntity, object>>[]? propertySelectors)
+        Expression<Func<TEntity, dynamic>>[]? propertySelectors)
     {
         if (propertySelectors != null && propertySelectors.Length > 0)
         {
@@ -34,7 +34,7 @@ public class RepositoryBase<TEntity>(IServiceProvider serviceProvider)
         return query;
     }
 
-    protected static Expression<Func<TEntity, object>>? GetDefaultSortPredicate()
+    protected static Expression<Func<TEntity, dynamic>>? GetDefaultSortPredicate()
     {
         if (typeof(IHasCreationTime).IsAssignableFrom(typeof(TEntity)))
             return entity => ((IHasCreationTime)entity).CreationTime;
@@ -64,11 +64,12 @@ public class RepositoryBase<TEntity>(IServiceProvider serviceProvider)
             // sortField = GetDefaultSortField();
             return queryable;
         }
-
+       // var entityProp = typeof(TEntity).GetProperty(requestSortField);
         ParameterExpression parameterExpression = Expression.Parameter(typeof(TEntity), "x");
         MemberExpression memberExpression = Expression.Property(parameterExpression, sortField);
-        Expression<Func<TEntity, object>> expression =
-            Expression.Lambda<Func<TEntity, object>>(memberExpression, parameterExpression);
+        UnaryExpression conversion = Expression.TypeAs(memberExpression, typeof(object));
+        Expression<Func<TEntity, dynamic>> expression =
+            Expression.Lambda<Func<TEntity, dynamic>>(conversion, parameterExpression);
         switch (sortOrder)
         {
             case SortOrder.Ascending:
@@ -124,14 +125,17 @@ public class RepositoryBase<TEntity>(IServiceProvider serviceProvider)
     {
         var query = GetQueryable();
         query = IncludeDetails(query, eagerLoadingProperties);
-        query = query.Where(queryPredicate);
+        if (queryPredicate != null)
+        {
+            query = query.Where(queryPredicate);
+        }
         query = SortByField(query, sortField, sortOrder);
 
         return await query.ToListAsync();
     }
 
-    public async Task<List<TEntity>> GetPagedListAsync<TSortKey>(Expression<Func<TEntity, bool>>? queryPredicate,
-        Expression<Func<TEntity, TSortKey>>? sortPredicate, SortOrder sortOrder,
+    public async Task<List<TEntity>> GetPagedListAsync(Expression<Func<TEntity, bool>>? queryPredicate,
+        Expression<Func<TEntity, dynamic>>? sortPredicate, SortOrder sortOrder,
         int pageNumber, int pageSize, params Expression<Func<TEntity, dynamic>>[] eagerLoadingProperties)
     {
         var query = GetQueryable();
@@ -159,8 +163,8 @@ public class RepositoryBase<TEntity>(IServiceProvider serviceProvider)
         return await query.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
     }
 
-    public async Task<(List<TEntity>, int)> GetPagedListWithTotalAsync<TSortKey>(
-        Expression<Func<TEntity, bool>> queryPredicate, Expression<Func<TEntity, TSortKey>>? sortPredicate,
+    public async Task<(List<TEntity>, int)> GetPagedListWithTotalAsync(
+        Expression<Func<TEntity, bool>> queryPredicate, Expression<Func<TEntity, dynamic>>? sortPredicate,
         SortOrder sortOrder, int pageNumber, int pageSize,
         params Expression<Func<TEntity, dynamic>>[] eagerLoadingProperties)
     {

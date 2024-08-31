@@ -12,11 +12,13 @@ namespace MyAdmin.Core.Mvc;
 
 [ApiController]
 [Route("api/[controller]/[action]")]
-[Authorize(policy:"admin")]
-public class SystemRoleController: CrudController<MaRole, Guid, AddRoleDto,RoleDto>
+[Authorize(policy: "admin")]
+public class SystemRoleController : CrudController<MaRole, Guid, AddRoleDto, RoleSearchDto, RoleDto>
 {
     private readonly ICurrentUser _currentUser;
-    public SystemRoleController(IRepository<MaRole,Guid> repository, DBHelper dbHelper, ICurrentUser currentUser):base(repository,dbHelper)
+
+    public SystemRoleController(IRepository<MaRole, Guid> repository, DBHelper dbHelper, ICurrentUser currentUser) :
+        base(repository, dbHelper)
     {
         _currentUser = currentUser;
     }

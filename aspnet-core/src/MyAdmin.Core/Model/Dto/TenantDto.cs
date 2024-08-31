@@ -15,3 +15,9 @@ public class AddTenantDto
     public string Name { get; set; }
     public DateTime? ExpirationDate { get; set; }
 }
+
+public class TenantSearchDto
+{
+    public string Name { get; set; }
+    public bool IsEnabled { get; set; }
+}

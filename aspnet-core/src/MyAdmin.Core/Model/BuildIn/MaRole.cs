@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 using MyAdmin.Core.Entity;
 using MyAdmin.Core.Entity.Auditing;
 using MyAdmin.Core.Framework.Attribute;
@@ -16,6 +17,9 @@ public class MaRole:FullAuditedEntity<Guid>, IEnableObject, ITenantObject<Guid?>
 
     public string Name { get; set; }
     public string? Description { get; set; }
+    [Comment("角色编码")]
+    public string Code { get; set; }
+    
     public ICollection<RoleMenu> RoleMenus { get; set; }
     public ICollection<UserRole> UserRoles { get; set; }
     public MaTenant Tenant { get; set; }

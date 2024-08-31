@@ -37,11 +37,10 @@ public class MaDbContext: DbContext
     {
         base.OnModelCreating(modelBuilder);
         #region seedData
-     
         modelBuilder.Entity<MaRole>().HasData(SystemInitial.Roles);
         modelBuilder.Entity<MaUser>().HasData(SystemInitial.Users);
         modelBuilder.Entity<UserRole>().HasData(SystemInitial.UserRoles);
-
+        modelBuilder.Entity<MaMenu>().HasData(SystemInitial.Menus);
         #endregion
        
         modelBuilder.Entity<UserRole>()

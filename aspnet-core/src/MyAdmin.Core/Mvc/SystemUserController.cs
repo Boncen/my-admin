@@ -10,12 +10,10 @@ namespace MyAdmin.Core.Mvc;
 
 [ApiController]
 [Route("api/[controller]/[action]")]
-[Authorize(policy:"admin")]
-public class SystemUserController: CrudController<MaUser, Guid, AddUserDto,UserDto>
+[Authorize(policy: "admin")]
+public class SystemUserController : CrudController<MaUser, Guid, AddUserDto, UserSearchDto, UserDto>
 {
-    public SystemUserController(IRepository<MaUser,Guid> repository,DBHelper dbHelper):base(repository,dbHelper)
+    public SystemUserController(IRepository<MaUser, Guid> repository, DBHelper dbHelper) : base(repository, dbHelper)
     {
-        
     }
-    
 }

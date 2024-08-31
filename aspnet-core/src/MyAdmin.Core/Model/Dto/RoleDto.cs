@@ -14,6 +14,7 @@ public class RoleDto: FullAuditedEntity<Guid>
     public ICollection<RoleMenu> RolePermissions { get; set; }
     public ICollection<UserRole> UserRoles { get; set; }
     public MaTenant? Tenant { get; set; }
+    public string Code { get; set; }
 }
 
 public class AddRoleDto
@@ -21,4 +22,12 @@ public class AddRoleDto
     public string Name { get; set; }
     public string? Description { get; set; }
     public Guid? TenantId { get; set; }
+    public string Code { get; set; }
+    public bool IsEnabled { get; set; }
+}
+
+public class RoleSearchDto
+{
+    public string Name { get; set; }
+    public string? Description { get; set; }
 }

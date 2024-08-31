@@ -47,7 +47,7 @@ public interface IFullAuditedObject<TKey> : IAuditedObject<TKey>, IDeletionAudit
 [Serializable]
 public abstract class FullAuditedEntity<TKey> : AuditedEntity<TKey>, IFullAuditedObject<TKey>
 {
-    public virtual bool IsDeleted { get; set; }
+    public virtual bool IsDeleted { get; set; } = false;
 
     public virtual TKey? DeleterId { get; set; }
 

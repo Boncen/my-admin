@@ -27,3 +27,12 @@ public class AddUserDto
     [ValidateTableField(TableName = nameof(MaTenant), FieldName = nameof(MaTenant.Id), ErrorMessage = "租户不存在")]
     public Guid? TenantId { get; set; }
 }
+
+public class UserSearchDto
+{
+    public string Name { get; set; }
+    public string Account { get; set; }
+    public string? Email { get; set; }
+    public string? Mobile { get; set; }
+    public Guid? TenantId { get; set; }
+}
