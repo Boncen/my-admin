@@ -84,7 +84,7 @@ public class LoginController : MAController
         };
         
         var token = _jwtHelper.CreateToken(claims);
-        return ApiResult<string>.Ok("登录成功", token);
+        return ApiResult<string>.Ok(token);
     }
 }
 

@@ -5,7 +5,7 @@ using MyAdmin.Core.Entity;
 namespace MyAdmin.Core.Repository;
 public interface IRepository
 {
-    public bool? IsChangeTrackingEnabled { get; protected set; }
+    public bool? IsChangeTrackingEnabled { get; set; }
 }
 public interface IRepository<TEntity> : IRepository where TEntity : class, IEntity
 {

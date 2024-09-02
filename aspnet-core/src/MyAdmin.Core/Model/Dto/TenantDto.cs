@@ -16,7 +16,7 @@ public class AddTenantDto
     public DateTime? ExpirationDate { get; set; }
 }
 
-public class TenantSearchDto
+public class TenantSearchDto:PageRequest
 {
     public string Name { get; set; }
     public bool IsEnabled { get; set; }

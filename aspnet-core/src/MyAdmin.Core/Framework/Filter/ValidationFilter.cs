@@ -16,7 +16,7 @@ public class ValidationFilter:IAsyncActionFilter
             var result = new ApiResult()
             {
                 ErrCode = StatusCodes.Status400BadRequest,
-                Title = errors.FirstOrDefault()?.ErrorMessage,
+                Error = errors.FirstOrDefault()?.ErrorMessage,
             };
             await context.HttpContext.Response.WriteAsync(JsonSerializer.Serialize(result));
             return;

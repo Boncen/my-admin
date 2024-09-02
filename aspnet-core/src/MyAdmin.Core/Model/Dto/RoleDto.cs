@@ -26,7 +26,7 @@ public class AddRoleDto
     public bool IsEnabled { get; set; }
 }
 
-public class RoleSearchDto
+public class RoleSearchDto:PageRequest
 {
     public string Name { get; set; }
     public string? Description { get; set; }

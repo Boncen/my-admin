@@ -33,7 +33,7 @@ public class ErrorHandlerMiddleware
             switch (error)
             {
                 case FriendlyException:
-                    result.Title = "服务端错误"; // todo Localization
+                    result.Error = "服务端错误"; // todo Localization
                     break;
 
             }

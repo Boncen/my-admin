@@ -28,7 +28,7 @@ public class AddUserDto
     public Guid? TenantId { get; set; }
 }
 
-public class UserSearchDto
+public class UserSearchDto:PageRequest
 {
     public string Name { get; set; }
     public string Account { get; set; }

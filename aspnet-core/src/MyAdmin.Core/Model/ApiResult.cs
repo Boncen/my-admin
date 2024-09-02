@@ -11,21 +11,21 @@ public class Result
 }
 public class ApiResult :Result
 {
-    public string? Title { get; set; }
+    //public string? Title { get; set; }
 
-    public static ApiResult Ok(string? title)
+    public static ApiResult Ok()
     {
         return new ApiResult()
         {
-            Title = title
+           // Title = title
         };
     }
-    public static ApiResult Fail(string? title, int errCode = MaErrorCode.LogicError)
+    public static ApiResult Fail(string? err, int errCode = MaErrorCode.LogicError)
     {
         return new ApiResult()
         {
             ErrCode = errCode,
-            Error = title,
+            Error = err,
         };
     }
 }
@@ -36,11 +36,10 @@ public class ApiResult :Result
 public class ApiResult<T> : ApiResult
 {
     public T? Data { get; set; }
-    public static ApiResult<T> Ok(string? title, T? data)
+    public static ApiResult<T> Ok(T? data)
     {
         return new ApiResult<T>()
         {
-            Title = title,
             Data = data
         };
     }
@@ -55,4 +54,12 @@ public class PageResult:ApiResult
 public class PageResult<T>:PageResult
 {
     public new List<T> List { get; set; }
+    public static PageResult<T> Ok(List<T> data, int? total)
+    {
+        return new PageResult<T>()
+        {
+            List = data,
+            Total = total
+        };
+    }
 }
