@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -8,17 +9,21 @@ using MyAdmin.Core.Extensions;
 
 namespace MyAdmin.Core.Repository;
 
-public class RepositoryBase() : IRepository
+public class RepositoryBase : IRepository
 {
     public bool? IsChangeTrackingEnabled { get; set; } = true;
 }
 
-public class RepositoryBase<TEntity>(IServiceProvider serviceProvider)
-    : RepositoryBase(), IRepository<TEntity>
+public class RepositoryBase<TEntity>
+    : RepositoryBase, IRepository<TEntity>
     where TEntity : class, IEntity
 {
-    protected DbContext _dbContext = serviceProvider.GetRequiredKeyedService<DbContext>(nameof(MaDbContext));
+    protected DbContext _dbContext;
 
+    public RepositoryBase(IServiceProvider serviceProvider)
+    {
+        _dbContext = serviceProvider.GetRequiredKeyedService<DbContext>(nameof(MaDbContext));
+    }
     protected static IQueryable<TEntity> IncludeDetails(
         IQueryable<TEntity> query,
         Expression<Func<TEntity, dynamic>>[]? propertySelectors)
@@ -293,6 +298,7 @@ public class RepositoryBase<TEntity, TKey>(IServiceProvider serviceProvider)
     : RepositoryBase<TEntity>(serviceProvider), IRepository<TEntity, TKey>
     where TEntity : class, IEntity<TKey>
 {
+     
     public async Task DeleteAsync(TKey id, bool autoSave = false, CancellationToken cancellationToken = default)
     {
         var entity = await GetByIdAsync(id, cancellationToken);

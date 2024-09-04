@@ -15,6 +15,8 @@ public class RoleDto: FullAuditedEntity<Guid>
     public ICollection<UserRole> UserRoles { get; set; }
     public MaTenant? Tenant { get; set; }
     public string Code { get; set; }
+
+    public string Creator { get; set; }
 }
 
 public class AddRoleDto
@@ -28,6 +30,7 @@ public class AddRoleDto
 
 public class RoleSearchDto:PageRequest
 {
-    public string Name { get; set; }
-    public string? Description { get; set; }
+    public string? Name { get; set; }
+    public RequestField? Description { get; set; }
+    public RequestField? CreationTime { get; set; }
 }

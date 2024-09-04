@@ -15,7 +15,7 @@ public class JwtHelper
         _configuration = configuration;
     }
 
-    public string CreateToken(Claim[] claims)
+    public string CreateToken(IEnumerable<Claim> claims)
     {
         var secretKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:SecretKey"]));
         var algorithm = SecurityAlgorithms.HmacSha256;

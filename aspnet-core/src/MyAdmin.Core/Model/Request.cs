@@ -16,7 +16,7 @@ public class ListRequest : Request
     /// </summary>
     public string? SortField
     {
-        get => CultureInfo.CurrentCulture.TextInfo.ToTitleCase(_sortField);
+        get => Check.HasValue(_sortField) ? CultureInfo.CurrentCulture.TextInfo.ToTitleCase(_sortField) : string.Empty;
         set => _sortField = value;
     }
 

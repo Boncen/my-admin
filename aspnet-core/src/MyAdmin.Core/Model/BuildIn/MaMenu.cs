@@ -24,7 +24,11 @@ public class MaMenu:FullAuditedEntity<Guid>,  ITenantObject<Guid?>,IEntity<Guid>
     public int Level { get; set; } = 0;
     public string Code { get; set; }
     
-    public ICollection<RoleMenu> RoleMenus { get; set; }
+    // public ICollection<RoleMenu> RoleMenus { get; set; }
+    // public MaUser? Creator { get; set; }
+    // public MaUser? LastModifier { get; set; }
+    // public MaUser? Deleter { get; set; }
+    // public MaTenant? Tenant { get; set; }
 }
 
 public enum MenuType

@@ -10,7 +10,7 @@ public class RoleMenu
 {
     public Guid RoleId { get; set; }
     public Guid MenuId { get; set; }
-    public MaRole Role { get; set; }
-
-    public MaMenu Menu { get; set; }
+    // public MaRole Role { get; set; }
+    //
+    // public MaMenu Menu { get; set; }
 }

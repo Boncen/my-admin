@@ -62,7 +62,8 @@ public class SystemInitial
             Name = "admin",
             Description = "admin role",
             CreatorId = DevUserId,
-            Code = "Admin"
+            Code = "Admin",
+            LastModifierId = AdminUserId
         },
         new MaRole()
         {
@@ -72,7 +73,8 @@ public class SystemInitial
             Name = "dev",
             Description = "dev role",
             CreatorId = DevUserId,
-            Code = "Dev"
+            Code = "Dev",
+            LastModifierId = AdminUserId
         }
     };
 
@@ -102,6 +104,7 @@ public class SystemInitial
             MenuType = MenuType.Page,
             Level = 0,
             Order = 1,
+            LastModifierId = AdminUserId,
         },
 
         #endregion
@@ -116,6 +119,7 @@ public class SystemInitial
             MenuType = MenuType.Category,
             Level = 0,
             Order = 2,
+            LastModifierId = AdminUserId
         },
 
         #region 用户管理
@@ -129,6 +133,7 @@ public class SystemInitial
             MenuType = MenuType.Page,
             Level = 1,
             Order = 1,
+            LastModifierId = AdminUserId
         },
         new MaMenu()
         {
@@ -138,6 +143,7 @@ public class SystemInitial
             MenuType = MenuType.Button,
             Level = 1,
             Order = 1,
+            LastModifierId = AdminUserId
         },
         new MaMenu()
         {
@@ -147,6 +153,7 @@ public class SystemInitial
             MenuType = MenuType.Button,
             Level = 1,
             Order = 1,
+            LastModifierId = AdminUserId
         },
         new MaMenu()
         {
@@ -156,6 +163,7 @@ public class SystemInitial
             MenuType = MenuType.Button,
             Level = 1,
             Order = 1,
+            LastModifierId = AdminUserId
         },
 
         #endregion
@@ -171,6 +179,7 @@ public class SystemInitial
             MenuType = MenuType.Page,
             Level = 1,
             Order = 2,
+            LastModifierId = AdminUserId
         },
         new MaMenu()
         {
@@ -180,6 +189,7 @@ public class SystemInitial
             MenuType = MenuType.Button,
             Level = 1,
             Order = 2,
+            LastModifierId = AdminUserId
         },
         new MaMenu()
         {
@@ -189,6 +199,7 @@ public class SystemInitial
             MenuType = MenuType.Button,
             Level = 1,
             Order = 2,
+            LastModifierId = AdminUserId
         },
         new MaMenu()
         {
@@ -198,6 +209,7 @@ public class SystemInitial
             MenuType = MenuType.Button,
             Level = 1,
             Order = 2,
+            LastModifierId = AdminUserId
         },
 
         #endregion
@@ -213,6 +225,7 @@ public class SystemInitial
             MenuType = MenuType.Page,
             Level = 1,
             Order = 3,
+            LastModifierId = AdminUserId
         },
         new MaMenu()
         {
@@ -222,6 +235,7 @@ public class SystemInitial
             MenuType = MenuType.Button,
             Level = 1,
             Order = 3,
+            LastModifierId = AdminUserId
         },
         new MaMenu()
         {
@@ -231,6 +245,7 @@ public class SystemInitial
             MenuType = MenuType.Button,
             Level = 1,
             Order = 3,
+            LastModifierId = AdminUserId
         },
         new MaMenu()
         {
@@ -240,6 +255,7 @@ public class SystemInitial
             MenuType = MenuType.Button,
             Level = 1,
             Order = 3,
+            LastModifierId = AdminUserId
         },
 
         #endregion
@@ -250,7 +266,8 @@ public class SystemInitial
             Code = "Log",
             MenuType = MenuType.Page,
             Level = 0,
-            Order = 3
+            Order = 3,
+            LastModifierId = AdminUserId
         },
 
         #endregion

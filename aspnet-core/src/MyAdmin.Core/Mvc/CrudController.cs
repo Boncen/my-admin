@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Linq.Expressions;
 using System.Reflection;
 using Dapper;
@@ -17,7 +18,6 @@ public class CrudController<TEntity, TKey, TAdd, TPageListSearch, TResponse> : M
 {
     public readonly DBHelper _dbHelper;
     private readonly IRepository<TEntity, TKey> _repository;
-
     public CrudController(IRepository<TEntity, TKey> repository, DBHelper dbHelper)
     {
         _repository = repository;
@@ -80,6 +80,7 @@ public class CrudController<TEntity, TKey, TAdd, TPageListSearch, TResponse> : M
     [HttpGet]
     public virtual async Task<TResponse> GetOne(TKey id, CancellationToken cancellationToken)
     {
+        _repository.IsChangeTrackingEnabled = false;
         var entity = await _repository.GetByIdAsync(id, cancellationToken);
         var rsp = entity.Adapt<TResponse>();
         return rsp;
@@ -88,10 +89,11 @@ public class CrudController<TEntity, TKey, TAdd, TPageListSearch, TResponse> : M
     [HttpPost]
     public virtual async Task<ApiResult<List<TResponse>>> List([FromBody] TPageListSearch? search)
     {
+        _repository.IsChangeTrackingEnabled = false;
         var query = GenerateQueryPredicate(search);
-        var sortType = search.Desc == true ? SortOrder.Descending :
-            search.Desc == false ? SortOrder.Ascending : SortOrder.Unspecified;
-        var result = await _repository.GetListAsync(query, search.SortField, sortType);
+        var sortType = search?.Desc == true ? SortOrder.Descending :
+            search?.Desc == false ? SortOrder.Ascending : SortOrder.Unspecified;
+        var result = await _repository.GetListAsync(query, search?.SortField, sortType);
         return ApiResult<List<TResponse>>.Ok(result.Adapt<List<TResponse>>());
     }
 
@@ -99,27 +101,27 @@ public class CrudController<TEntity, TKey, TAdd, TPageListSearch, TResponse> : M
     public virtual async Task<PageResult<TResponse>> PageList([FromBody] TPageListSearch? search,
         CancellationToken cancellationToken)
     {
+        _repository.IsChangeTrackingEnabled = false;
         List<TEntity> entities = default;
         var total = 0;
         var query = GenerateQueryPredicate(search);
-        var sortType = search.Desc == true ? SortOrder.Descending :
-            search.Desc == false ? SortOrder.Ascending : SortOrder.Unspecified;
+        var sortType = search?.Desc == true ? SortOrder.Descending :
+            search?.Desc == false ? SortOrder.Ascending : SortOrder.Unspecified;
         Expression<Func<TEntity, dynamic>> sortPredicate = null;
-        if (Check.HasValue(search.SortField)) sortPredicate = GenerateSortPredicate(search.SortField);
-        if (search.ReturnTotal == true)
+        if (Check.HasValue(search?.SortField)) sortPredicate = GenerateSortPredicate(search?.SortField);
+        if (search?.ReturnTotal == true)
         {
             var entitiesWithTotal = await _repository.GetPagedListWithTotalAsync(query, sortPredicate,
                 sortType,
-                search.PageIndex, search.PageSize);
+                search?.PageIndex ?? 1, search?.PageSize ?? 10);
             entities = entitiesWithTotal.Item1;
             total = entitiesWithTotal.Item2;
         }
         else
         {
             entities = await _repository.GetPagedListAsync(query, sortPredicate, sortType,
-                search.PageIndex, search.PageSize);
+                search?.PageIndex ?? 1, search?.PageSize ?? 10);
         }
-
         var rsp = entities.Adapt<List<TResponse>>();
         return PageResult<TResponse>.Ok(rsp, total);
     }
@@ -165,15 +167,18 @@ public class CrudController<TEntity, TKey, TAdd, TPageListSearch, TResponse> : M
 
             // 属性
             var propertyAccessExpr = Expression.Property(param, entityProp);
-            Expression constantExpr = Expression.Constant(value, entityProp.PropertyType);
-            if (entityProp.PropertyType != prop.PropertyType)
-                constantExpr = Expression.Convert(constantExpr, entityProp.PropertyType);
             if (value is RequestField field)
             {
                 var reqType = field.Type;
                 var fieldValue = field.Value;
-                // 创建方法调用表达式，用于字符串的 Contains 方法
-
+                // if (fieldValue == null)
+                // {
+                //     continue;
+                // }
+                Expression constantExpr = Expression.Constant(fieldValue.ToString(), typeof(object));
+                if (entityProp.PropertyType != field.Value.GetType())
+                    constantExpr = Expression.Convert(constantExpr, entityProp.PropertyType);
+                
                 switch (reqType)
                 {
                     case FieldRequestType.Contain:
@@ -182,13 +187,31 @@ public class CrudController<TEntity, TKey, TAdd, TPageListSearch, TResponse> : M
                             typeof(string).GetMethod("Contains", new[] { typeof(string) }),
                             constantExpr
                         );
+                        conditions.Add(methodCallExpr);
+                        break;
+                    case FieldRequestType.Equal:
+                        conditions.Add(Expression.Equal(propertyAccessExpr, constantExpr));
+                        break;
+                    case FieldRequestType.GreaterThan:
+                        conditions.Add(Expression.GreaterThan(propertyAccessExpr, constantExpr));
+                        break;
+                    case FieldRequestType.LessThan:
+                        conditions.Add(Expression.LessThan(propertyAccessExpr, constantExpr));
+                        break;
+                    case FieldRequestType.GreaterOrEqual:
+                        conditions.Add(Expression.GreaterThanOrEqual(propertyAccessExpr, constantExpr));
+                        break;
+                    case FieldRequestType.LessOrEqual:
+                        conditions.Add(Expression.LessThanOrEqual(propertyAccessExpr, constantExpr));
                         break;
                 }
             }
             else
             {
+                Expression constantExpr = Expression.Constant(value, entityProp.PropertyType);
+                if (entityProp.PropertyType != prop.PropertyType)
+                    constantExpr = Expression.Convert(constantExpr, entityProp.PropertyType);
                 // the default option is equal
-
                 conditions.Add(Expression.Equal(propertyAccessExpr, constantExpr));
             }
         }

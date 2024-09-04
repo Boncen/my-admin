@@ -20,16 +20,18 @@ public class LoginController : MAController
     private readonly IRepository<MaUser, Guid> _repository;
     private readonly IRepository<MaTenant, Guid> _tenantRepository;
     private readonly IRepository<MaRole, Guid> _roleRepository;
+    private readonly IRepository<UserRole> _userRoleRepository;
     private readonly JwtHelper _jwtHelper;
 
     public LoginController(IRepository<MaUser, Guid> repository, IRepository<MaTenant, Guid> tenantRepository,
-        JwtHelper jwtHelper, IRepository<MaRole, Guid> roleRepository)
+        JwtHelper jwtHelper, IRepository<MaRole, Guid> roleRepository, IRepository<UserRole> userRoleRepository)
     {
         // _logger = logger;
         _repository = repository;
         _tenantRepository = tenantRepository;
         _jwtHelper = jwtHelper;
         _roleRepository = roleRepository;
+        _userRoleRepository = userRoleRepository;
     }
 
     // todo 生成验证码
@@ -46,7 +48,7 @@ public class LoginController : MAController
         MaTenant tenant = null;
         if (req.tenantId.HasValue)
         {
-            tenant = await  _tenantRepository.GetByIdAsync(req.tenantId.Value, cancellationToken);
+            tenant = await _tenantRepository.GetByIdAsync(req.tenantId.Value, cancellationToken);
             if (tenant == null)
             {
                 return ApiResult.Fail("租户不存在");
@@ -57,10 +59,10 @@ public class LoginController : MAController
                 return ApiResult.Fail("租户已过有效期");
             }
         }
-        
+
         var user = await _repository.FindOneAsync(
             x => x.Account == req.account && x.TenantId == req.tenantId && x.IsEnabled == true && x.IsDeleted == false,
-            cancellationToken, maUser => maUser.UserRoles);
+            cancellationToken);
         if (user == null)
         {
             return ApiResult.Fail("登录名或者密码错误");
@@ -72,17 +74,21 @@ public class LoginController : MAController
             return ApiResult.Fail("登录名或者密码错误!");
         }
 
-        // get user's roles
-        var roles = await _roleRepository.GetListAsync(r => user.UserRoles.Select(x => x.RoleId).Contains(r.Id));
-        var roleNames = roles.Select(x => x.Name).ToList();
         // generate JWT token
-        var claims = new[]
+        var claims = new List<Claim>
         {
-            new Claim(ClaimTypes.Role, string.Join(',', roleNames)),
             new Claim("account", user.Account),
             new Claim("id", user.Id.ToString()),
         };
-        
+
+        var userRoles = await _userRoleRepository.GetListAsync(x => x.UserId == user.Id);
+        if (userRoles.Count > 0)
+        {
+            var roleIds = userRoles.Select(x => x.RoleId);
+            var roles = await _roleRepository.GetListAsync(r => roleIds.Contains(r.Id));
+            var roleNames = roles.Select(x => x.Name).ToList();
+            claims.Add(new Claim(ClaimTypes.Role,string.Join(',', roleNames)));
+        }
         var token = _jwtHelper.CreateToken(claims);
         return ApiResult<string>.Ok(token);
     }

@@ -14,4 +14,7 @@ public class MaTenant:FullAuditedEntity<Guid>,IEntity<Guid>,IEnableObject
     // public string? FullName { get; set; }
     public bool IsEnabled { get; set; }
     public DateTime? ExpirationDate { get; set; }
+    // public MaUser? Creator { get; set; }
+    // public MaUser? LastModifier { get; set; }
+    // public MaUser? Deleter { get; set; }
 }

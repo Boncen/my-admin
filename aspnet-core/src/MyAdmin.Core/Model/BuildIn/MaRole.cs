@@ -20,7 +20,10 @@ public class MaRole:FullAuditedEntity<Guid>, IEnableObject, ITenantObject<Guid?>
     [Comment("角色编码")]
     public string Code { get; set; }
     
-    public ICollection<RoleMenu> RoleMenus { get; set; }
-    public ICollection<UserRole> UserRoles { get; set; }
-    public MaTenant Tenant { get; set; }
+    // public ICollection<RoleMenu> RoleMenus { get; set; }
+    // public ICollection<UserRole> UserRoles { get; set; }
+    // public MaTenant? Tenant { get; set; }
+    // public MaUser? Creator { get; set; }
+    // public MaUser? LastModifier { get; set; }
+    // public MaUser? Deleter { get; set; }
 }
