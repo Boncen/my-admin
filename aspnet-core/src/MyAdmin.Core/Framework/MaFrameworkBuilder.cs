@@ -226,6 +226,7 @@ public static class MaFrameworkBuilder
 
     private static void AddRepository(IServiceCollection service)
     {
+        // service.TryAddScoped<DbContext, MaDbContext>();
         service.TryAddScoped(typeof(IRepository<>), typeof(RepositoryBase<>));
         service.TryAddScoped(typeof(IRepository<,>), typeof(RepositoryBase<,>));
         service.TryAddScoped(typeof(IRepository<,,>), typeof(RepositoryBase<,,>));

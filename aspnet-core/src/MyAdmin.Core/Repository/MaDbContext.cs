@@ -21,16 +21,16 @@ public class MaDbContext: DbContext
     }
     public MaDbContext(DbContextOptions<MaDbContext> dbContextOptions):base(dbContextOptions)
     {
-#if DEBUG
-        try
-        {
-            Database.EnsureCreated();
-        }
-        catch (System.Exception ex)
-        {
-            throw new MAException("数据库连接错误", ex);
-        }
-#endif
+// #if DEBUG
+//         try
+//         {
+//             Database.EnsureCreated();
+//         }
+//         catch (System.Exception ex)
+//         {
+//             throw new MAException("数据库连接错误", ex);
+//         }
+// #endif
     }
   
     protected override void OnModelCreating(ModelBuilder modelBuilder)

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
+using MyAdmin.Core.EasyApi;
 using MyAdmin.Core.Framework.Middlewares;
 using MyAdmin.Core.Options;
 
@@ -62,5 +63,6 @@ public static class WebApplicationSetup
         {
             app.UseMiddleware<RequestMonitorMiddleware>();
         }
+        app.UseEasyApi();
     }
 }

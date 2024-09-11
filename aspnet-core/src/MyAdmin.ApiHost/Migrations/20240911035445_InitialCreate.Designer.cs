@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using MyAdmin.ApiHost.Db;
 
@@ -11,9 +12,11 @@ using MyAdmin.ApiHost.Db;
 namespace MyAdmin.ApiHost.Migrations
 {
     [DbContext(typeof(AdminTemplateDbContext))]
-    partial class AdminTemplateDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240911035445_InitialCreate")]
+    partial class InitialCreate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

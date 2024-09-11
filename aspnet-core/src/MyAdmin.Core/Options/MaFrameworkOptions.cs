@@ -17,6 +17,7 @@ public class MaFrameworkOptions
     public bool? UseBuildInDbContext { get; set; } = true;
     public bool? UseRateLimit { get; set; } = false;
     public MaRateLimitOptions? RateLimitOptions { get; set; } = new();
+    // public bool? UseEasyApi { get; set; }
 }
 
 public class MaRateLimitOptions
