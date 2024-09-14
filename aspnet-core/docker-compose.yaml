@@ -10,7 +10,7 @@ services:
         ports:
             - 3306:3306
         volumes:
-            - ./data:/var/lib/mysql
+          - ./data:/var/lib/mysql:z
         command:
             --max_connections=1000
             --character-set-server=utf8mb4

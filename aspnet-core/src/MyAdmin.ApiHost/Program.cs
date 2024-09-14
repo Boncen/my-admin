@@ -1,6 +1,5 @@
 using System.Reflection;
 using MyAdmin.Core.Framework;
-using MyAdmin.Core.Framework.Middlewares;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddMaFramework( builder.Configuration, (o)=>{

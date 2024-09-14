@@ -1,9 +1,14 @@
+using Dapper;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
-using MyAdmin.Core.EasyApi;
+using Microsoft.Extensions.Options;
 using MyAdmin.Core.Framework.Middlewares;
+using MyAdmin.Core.Model;
 using MyAdmin.Core.Options;
+using MyAdmin.Core.Repository;
 
 namespace MyAdmin.Core.Framework;
 
@@ -64,5 +69,33 @@ public static class WebApplicationSetup
             app.UseMiddleware<RequestMonitorMiddleware>();
         }
         app.UseEasyApi();
+    }
+
+    public static void UseEasyApi(this WebApplication app, string url = "/easy")
+    {
+        app.MapGet((url), async ([FromServices]IHttpContextAccessor accessor,[FromServices]DBHelper dbHelper, 
+            [FromServices]IOptionsSnapshot<MaFrameworkOptions> frameworkOption, [FromServices]EasyApi easy) =>
+        {
+            var queryCollection = accessor.HttpContext.Request.Query;
+            EasyApiOptions? easyApiOptions = frameworkOption.Value?.EasyApi ?? new();
+            
+            var parseResult = easy.ProcessQueryRequest(queryCollection, easyApiOptions);
+            if (parseResult.Success == false)
+            {
+                return ApiResult.Fail(parseResult.Msg);
+            }
+            if (!Check.HasValue(parseResult.Sql))
+            {
+                return ApiResult.Ok();
+            }
+
+            var data = await dbHelper.Connection.ExecuteReaderAsync(parseResult.Sql);
+            var result = easy.HandleDataReader(data, easyApiOptions.ColumnAlias, parseResult.Table);
+            if (parseResult.Page == 1 && parseResult.Count == 1)
+            {
+                return ApiResult<dynamic>.Ok(result.FirstOrDefault());
+            }
+            return ApiResult<dynamic>.Ok(result);
+        });
     }
 }

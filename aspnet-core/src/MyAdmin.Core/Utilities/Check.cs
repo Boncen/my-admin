@@ -20,4 +20,23 @@ public class Check
     public static bool In<T>(T target, IEnumerable<T> collection){
         return collection.Contains(target);
     }
+
+    /// <summary>
+    /// 简单判断是否有sql注入风险
+    /// </summary>
+    /// <param name="sql"></param>
+    /// <returns></returns>
+    public static bool IfSqlFragmentSafe(string sql)
+    {
+        if (!HasValue(sql))
+        {
+            return true;
+        }
+
+        if (sql.Contains("--") || sql.Contains("//") || sql.Contains("truncate") || sql.Contains('(')|| sql.Contains(')'))
+        {
+            return false;
+        }
+        return true;
+    }
 }

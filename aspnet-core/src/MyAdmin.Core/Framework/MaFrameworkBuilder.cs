@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.RateLimiting;
@@ -12,6 +13,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using MyAdmin.Core.Entity;
 using MyAdmin.Core.Exception;
 using MyAdmin.Core.Framework.Attribute;
 using MyAdmin.Core.Identity;
@@ -30,10 +32,14 @@ public static class MaFrameworkBuilder
         var config = new MaFrameworkOptions();
         var frameworkOptions = configuration.GetSection("MaFrameworkOptions");
         frameworkOptions.Bind(config);
-
-        if (assemblies.Length == 0)
-            assemblies = new[] { Assembly.GetEntryAssembly() };
+        if (assemblies == null)
+        {
+            assemblies = new Assembly[]{ Assembly.GetEntryAssembly() };
+        }
         var builder = new Core.MaFrameworkBuilder(service, assemblies);
+        builder.Assemblies.Add(Assembly.GetAssembly(typeof(MaFrameworkBuilder)));
+        
+        service.AddSingleton<Core.MaFrameworkBuilder>(builder);
         builderAction?.Invoke(builder);
         AddFrameworkService(service);
         // service.AddSingleton(builder);
@@ -50,12 +56,38 @@ public static class MaFrameworkBuilder
         {
             AddJwtBearer(service, configuration);
         }
+        if (config.Cache != null)
+        {
+            AddCache(service, config);
+        }
         AddController(service);
         AddSwagger(service);
         AddRepository(service);
         AutoRegisterService(service, assemblies);
         AddDapper(service);
+        AddEasyApi(service);
+        
+
         return service;
+    }
+
+    private static void AddEasyApi(this IServiceCollection service)
+    {
+        service.TryAddScoped<EasyApi>();
+    }
+
+    private static void AddCache(this IServiceCollection service, MaFrameworkOptions config)
+    {
+        switch (config.Cache.CacheType)
+        {
+            case CacheTypeEnum.Redis:
+                throw new UnSupposedFeatureException();
+            default:
+                service.AddMemoryCache();
+                service.TryAddSingleton<ICacheManager, MemeroryCacheManager>();
+                service.TryAddSingleton(typeof(ICacheManager<>), typeof(MemeroryCacheManager<>));
+                break;
+        }
     }
 
     private static void AddFrameworkService(IServiceCollection service)

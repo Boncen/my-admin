@@ -14,6 +14,7 @@ public class MaDbContext: DbContext
     public DbSet<MaMenu> MaMenus { get; set; }
     public DbSet<UserRole> UserRoles { get; set; }
     public DbSet<RoleMenu> RolePermissions { get; set; }
+    public DbSet<MaTenant> Tenants { get; set; }
 
     public MaDbContext()
     {

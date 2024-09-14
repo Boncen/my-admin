@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using System.Threading.RateLimiting;
 using MyAdmin.Core.Framework;
 
@@ -17,7 +18,39 @@ public class MaFrameworkOptions
     public bool? UseBuildInDbContext { get; set; } = true;
     public bool? UseRateLimit { get; set; } = false;
     public MaRateLimitOptions? RateLimitOptions { get; set; } = new();
-    // public bool? UseEasyApi { get; set; }
+
+    public EasyApiOptions? EasyApi { get; set; }
+    public CacheOptions? Cache { get; set; }
+}
+
+public class CacheOptions
+{
+    /// <summary>
+    ///     
+    /// </summary>
+    public CacheTypeEnum? CacheType { get; set; }
+    
+    public string? RedisUrl { get; set; }
+}
+
+public enum CacheTypeEnum
+{
+    Memerory = 1,
+    Redis
+}
+
+public class EasyApiOptions
+{
+    /// <summary>
+    /// alias: actualName
+    /// </summary>
+    public Dictionary<string,string>? TableAlias { get; set; }
+    /// <summary>
+    /// alias: actualName
+    /// </summary>
+    public Dictionary<string,string>? ColumnAlias { get; set; }
+
+    
 }
 
 public class MaRateLimitOptions
