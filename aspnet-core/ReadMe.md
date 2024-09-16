@@ -46,6 +46,7 @@ private readonly IRepository<Order, Guid, AdminTemplateDbContext> _orderReposito
 {
   "MaFrameworkOptions": {
     "Cache": {
+      "CacheType": 1, // CacheTypeEnum
     }
   }
 }
@@ -77,7 +78,25 @@ MaFrameworkOptions:EasyApi:ColumnAlias
 ```
 
 - 列别名的key设置为下划线加原值，则不会返回，需要匹配大小写。 
-- 对于需要特殊化处理的某些表，设置项的值可以设置为 `表名.字段名`，注意大小写。
+- 对于需要特殊化处理的某些表，设置项的值可以设置为 `表名.字段名`，需要匹配大小写。
+
+
+### get请求
+
+实例：
+```
+http://localhost:5026/easy?target=user&page=1&count=21&columns=id,name, account
+```
+- target  表名
+- page    页码
+- count   返回条数
+- columns 请求返回的列，不传默认返回全部
+
+其他参数请求直接拼上即可。如：`&name=foo&type=bar`
+
+加上参数 `&total=<任意数值>` 告诉后端该分页接口需要返回total
+
+### post请求
 
 
 

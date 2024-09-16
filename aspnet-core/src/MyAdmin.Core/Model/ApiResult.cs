@@ -53,8 +53,8 @@ public class PageResult:ApiResult
 
 public class PageResult<T>:PageResult
 {
-    public new List<T> List { get; set; }
-    public static PageResult<T> Ok(List<T> data, int? total)
+    public new List<T>? List { get; set; }
+    public static PageResult<T> Ok(List<T>? data, int? total)
     {
         return new PageResult<T>()
         {

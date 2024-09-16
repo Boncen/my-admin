@@ -5,10 +5,12 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
+using MyAdmin.Core.Exception;
 using MyAdmin.Core.Framework.Middlewares;
 using MyAdmin.Core.Model;
 using MyAdmin.Core.Options;
 using MyAdmin.Core.Repository;
+using MySql.Data.MySqlClient;
 
 namespace MyAdmin.Core.Framework;
 
@@ -17,13 +19,14 @@ public static class WebApplicationSetup
     public static void SetupSwaggerUi(this WebApplication app, ConfigurationManager configuration)
     {
         var useVersioningStr = configuration[$"{nameof(Conf.Setting.MaFrameworkOptions)}:{nameof(Conf.Setting.MaFrameworkOptions.UseApiVersioning)}"];
-        if (string.IsNullOrEmpty(useVersioningStr) || !bool.TryParse(useVersioningStr, out bool useApiVersioning ) || !useApiVersioning)
+        if (string.IsNullOrEmpty(useVersioningStr) || !bool.TryParse(useVersioningStr, out bool useApiVersioning) || !useApiVersioning)
         {
             app.UseSwaggerUI();
             return;
         }
 
-        app.UseSwaggerUI(x => {
+        app.UseSwaggerUI(x =>
+        {
             foreach (var desc in app.DescribeApiVersions())
             {
                 x.SwaggerEndpoint($"/swagger/{desc.GroupName}/swagger.json", desc.GroupName);
@@ -46,7 +49,7 @@ public static class WebApplicationSetup
             app.UseAuthentication();
             app.UseAuthorization();
         }
-        
+
         if (config.UseRateLimit == true)
         {
             app.UseRateLimiter();
@@ -56,14 +59,14 @@ public static class WebApplicationSetup
         {
             app.MapControllers();
         }
-       
+
         // swagger
         if (app.Environment.IsDevelopment())
         {
             app.UseSwagger();
             app.SetupSwaggerUi(configurationManager);
         }
-        
+
         if (config.UseRequestLog == true)
         {
             app.UseMiddleware<RequestMonitorMiddleware>();
@@ -73,29 +76,42 @@ public static class WebApplicationSetup
 
     public static void UseEasyApi(this WebApplication app, string url = "/easy")
     {
-        app.MapGet((url), async ([FromServices]IHttpContextAccessor accessor,[FromServices]DBHelper dbHelper, 
-            [FromServices]IOptionsSnapshot<MaFrameworkOptions> frameworkOption, [FromServices]EasyApi easy) =>
+        app.MapGet((url), async ([FromServices] IHttpContextAccessor accessor, [FromServices] DBHelper dbHelper,
+            [FromServices] IOptionsSnapshot<MaFrameworkOptions> frameworkOption, [FromServices] EasyApi easy) =>
         {
-            var queryCollection = accessor.HttpContext.Request.Query;
-            EasyApiOptions? easyApiOptions = frameworkOption.Value?.EasyApi ?? new();
-            
-            var parseResult = easy.ProcessQueryRequest(queryCollection, easyApiOptions);
-            if (parseResult.Success == false)
+            try
             {
-                return ApiResult.Fail(parseResult.Msg);
-            }
-            if (!Check.HasValue(parseResult.Sql))
-            {
-                return ApiResult.Ok();
-            }
+                var queryCollection = accessor.HttpContext.Request.Query;
+                EasyApiOptions? easyApiOptions = frameworkOption.Value?.EasyApi ?? new();
 
-            var data = await dbHelper.Connection.ExecuteReaderAsync(parseResult.Sql);
-            var result = easy.HandleDataReader(data, easyApiOptions.ColumnAlias, parseResult.Table);
-            if (parseResult.Page == 1 && parseResult.Count == 1)
-            {
-                return ApiResult<dynamic>.Ok(result.FirstOrDefault());
+                var parseResult = easy.ProcessQueryRequest(queryCollection, easyApiOptions);
+                if (parseResult.Success == false)
+                {
+                    return ApiResult.Fail(parseResult.Msg);
+                }
+                if (!Check.HasValue(parseResult.Sql))
+                {
+                    return ApiResult.Ok();
+                }
+
+                var data = await dbHelper.Connection.ExecuteReaderAsync(parseResult.Sql);
+                var result = easy.HandleDataReader(data, easyApiOptions.ColumnAlias, parseResult.Table);
+                if (parseResult.Page == 1 && parseResult.Count == 1)
+                {
+                    return ApiResult<dynamic>.Ok(result.FirstOrDefault());
+                }
+                if (Check.HasValue(parseResult.TotalSql))
+                {
+                    var total = dbHelper.Connection.ExecuteScalar<int>(parseResult.TotalSql);
+                    // return ApiResult<dynamic>.Ok(PageResult<dynamic>.Ok(result, total));
+                    return ApiResult<dynamic>.Ok(new { list = result, total });
+                }
+                return ApiResult<dynamic>.Ok(result);
             }
-            return ApiResult<dynamic>.Ok(result);
+            catch (MySqlException e)
+            {
+                throw new MAException("查询中发生错误", e);
+            }
         });
     }
 }

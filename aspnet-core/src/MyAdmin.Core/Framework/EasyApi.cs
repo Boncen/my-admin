@@ -63,17 +63,23 @@ public class EasyApi
             Count = 1,
             Columns = "*",
             Sql = string.Empty,
-            Table = string.Empty
+            Table = string.Empty,
         };
         if (!queryCollection.ContainsKey("target"))
         {
             return result;
         }
 
-        
+
         List<string> queryList = new();
         foreach (var q in queryCollection)
         {
+            if (q.Key.Equals(nameof(result.Total), StringComparison.CurrentCultureIgnoreCase))
+            {
+                int.TryParse(q.Value.ToString(), out int total);
+                result.Total = total;
+                continue;
+            }
             if (q.Key.Equals(nameof(result.Page), StringComparison.CurrentCultureIgnoreCase))
             {
                 int.TryParse(q.Value.ToString(), out int page);
@@ -111,7 +117,7 @@ public class EasyApi
                 }
                 continue;
             }
-            
+
             if (int.TryParse(q.Value.ToString(), out int v))
             {
                 queryList.Add($"{q.Key}={q.Value.ToString()}");
@@ -120,7 +126,7 @@ public class EasyApi
             {
                 queryList.Add($"{q.Key}='{q.Value.ToString()}'");
             }
-            
+
         }
 
         string where = "";
@@ -128,7 +134,12 @@ public class EasyApi
         {
             where += " WHERE " + string.Join(" AND ", queryList);
         }
+        if (result.Total.HasValue)
+        {
+            result.TotalSql = $"SELECT COUNT(1) from {result.Table} {where}";
+        }
         result.Sql = $"SELECT {result.Columns} from {result.Table} {where} limit {result.Count} offset {(result.Page - 1) * result.Count} ";
+
 #if DEBUG
         Console.WriteLine(result.Sql);
 #endif
@@ -147,7 +158,7 @@ public class EasyApi
         {
             return columns;
         }
-        
+
         string[] cols = columns.Split(',');
         List<string> colList = new();
         foreach (var col in cols)
@@ -184,7 +195,7 @@ public class EasyApi
                 continue;
             }
 
-            if (entityFullName.ToLower().IndexOf( ("." + target).ToLower()) > -1)
+            if (entityFullName.ToLower().IndexOf(("." + target).ToLower()) > -1)
             {
                 return true;
             }
@@ -229,19 +240,19 @@ public class EasyApi
             foreach (DataColumn dtColumn in dt.Columns)
             {
                 var name = dtColumn.ColumnName;
-                if (columnAlias.ContainsValue(name) || columnAlias.ContainsValue(table+"." + name))
+                if (columnAlias.ContainsValue(name) || columnAlias.ContainsValue(table + "." + name))
                 {
-                    name  = columnAlias.FirstOrDefault(x =>
-                        x.Value.Equals(table+"." + name) || x.Value.Equals(name, StringComparison.CurrentCultureIgnoreCase)).Key;
+                    name = columnAlias.FirstOrDefault(x =>
+                        x.Value.Equals(table + "." + name) || x.Value.Equals(name, StringComparison.CurrentCultureIgnoreCase)).Key;
                     // key前面加下划线 _ 的配置项视为忽略输出
-                    if (name == "_"+dtColumn.ColumnName)
+                    if (name == "_" + dtColumn.ColumnName)
                     {
                         continue;
                     }
                 }
                 jobj.Add(name, row.Field<dynamic>(dtColumn));
             }
-            
+
             result.Add(jobj);
         }
 
@@ -271,8 +282,8 @@ public class EasyApi
                     // JsonArray join = null;
                     // JsonNode children = null;   
                     JsonObject subObject = tableNode.Value.AsObject();
-                    
-                    
+
+
                     foreach (var subProperty in subObject)
                     {
                         if (subProperty.Key == "@columns")
@@ -284,14 +295,14 @@ public class EasyApi
                         {
                             int.TryParse(subProperty.Value.ToString(), out count);
                         }
-                        
+
                         if (subProperty.Key == "@page")
                         {
                             int.TryParse(subProperty.Value.ToString(), out page);
                         }
                         if (subProperty.Key == "@where")
                         {
-                            
+
                         }
                     }
                 }
@@ -307,7 +318,9 @@ public class EasyApiParseResult()
     public int Page { get; set; }
     public int Count { get; set; }
     public string Table { get; set; }
+    public int? Total { get; set; }
     public string Sql { get; set; }
+    public string TotalSql { get; set; }
     public string Columns { get; set; }
     public bool Success { get; set; } = true;
     public string Msg { get; set; } = string.Empty;
