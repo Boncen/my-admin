@@ -133,7 +133,7 @@ public static class MaFrameworkBuilder
             configRateLimitOptions = new MaRateLimitOptions();
         }
 
-        service.AddRateLimiter(_ => _.AddSlidingWindowLimiter(policyName: Conf.ConstSettingValue.RateLimitingPolicyName,
+        service.AddRateLimiter(_ => _.AddSlidingWindowLimiter(policyName: Conf.ConstStrings.RateLimitingPolicyName,
             options =>
             {
                 options.PermitLimit = configRateLimitOptions.PermitLimit;

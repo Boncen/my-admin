@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Http;
 using MyAdmin.Core.Conf;
 using MyAdmin.Core.Entity;
 using MyAdmin.Core.Exception;
+using MyAdmin.Core.Extensions;
 using MyAdmin.Core.Options;
 using MyAdmin.Core.Utilities;
 
@@ -22,7 +23,7 @@ public class EasyApi
 
     private List<string> GetEntityList()
     {
-        var list = _cacheManager.Get(ConstSettingValue.MACacheKeyAllEntities);
+        var list = _cacheManager.Get(ConstStrings.MACacheKeyAllEntities);
         if (list == null || list.Count < 1)
         {
             list = new List<string>();
@@ -43,7 +44,7 @@ public class EasyApi
                 }
             }
 
-            _cacheManager.Save(ConstSettingValue.MACacheKeyAllEntities, list);
+            _cacheManager.Save(ConstStrings.MACacheKeyAllEntities, list);
         }
 
         return list;
@@ -258,60 +259,177 @@ public class EasyApi
 
         return result;
     }
-    private async Task<string> ProcessRequest(Stream body, CancellationToken cancellationToken)
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="body"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    public async Task<EasyApiParseResult> ProcessPostRequest(Stream body, MaFrameworkOptions option)
     {
-        var root = await JsonNode.ParseAsync(body, cancellationToken: cancellationToken);
+        EasyApiParseResult result = new EasyApiParseResult()
+        {
+            Page = 1,
+            Count = 1,
+            Columns = "*",
+            Sql = string.Empty,
+            Table = string.Empty,
+        };
+        var root = await JsonNode.ParseAsync(body);
         if (root == null)
         {
-            return "";
+            return result;
         }
 
         StringBuilder sb = new();
         var rootObject = root.AsObject();
+        List<string> queryList = new();
         if (rootObject != null)
         {
             foreach (var tableNode in rootObject)
             {
-                if (tableNode.Value != null)
+                if (tableNode.Value == null) // user: {
                 {
-                    var tableName = tableNode.Key;
-                    string columns = string.Empty;
-                    int count = 0;
-                    int page = 0;
-                    JsonNode where = null;
-                    // JsonArray join = null;
-                    // JsonNode children = null;   
-                    JsonObject subObject = tableNode.Value.AsObject();
+                    continue;
+                }
+                JsonObject subObject = tableNode.Value.AsObject();
+                result.Table = tableNode.Key;
+                result.Table = GetTableAlias(result.Table, option.EasyApi);
+                if (!IsEntity(result.Table))
+                {
+                    result.Success = false;
+                    result.Msg = "target无效";
+                    return result;
+                }
 
-
-                    foreach (var subProperty in subObject)
+                foreach (var subProperty in subObject)
+                {
+                    if (subProperty.Key.Equals("@columns", StringComparison.CurrentCultureIgnoreCase))
                     {
-                        if (subProperty.Key == "@columns")
+                        result.Columns = HandleColumnAlias(subProperty.Value.ToString(), option.EasyApi);
+                        if (!Check.IfSqlFragmentSafe(result.Columns))
                         {
-                            columns = subProperty.Value.ToString();
+                            result.Success = false;
+                            result.Msg = "输入了无效参数";
+                            return result;
                         }
+                        continue;
+                    }
 
-                        if (subProperty.Key == "@count")
+                    if (subProperty.Key.Equals("@count", StringComparison.CurrentCultureIgnoreCase))
+                    {
+                        if (int.TryParse(subProperty.Value.ToString(), out int count))
                         {
-                            int.TryParse(subProperty.Value.ToString(), out count);
-                        }
-
-                        if (subProperty.Key == "@page")
-                        {
-                            int.TryParse(subProperty.Value.ToString(), out page);
-                        }
-                        if (subProperty.Key == "@where")
-                        {
-
+                            result.Count = count;
                         }
                     }
+
+                    if (subProperty.Key.Equals("@total", StringComparison.CurrentCultureIgnoreCase))
+                    {
+                        if (int.TryParse(subProperty.Value.ToString(), out int total))
+                        {
+                            result.Total = total;
+                        }
+                    }
+
+                    if (subProperty.Key.Equals("@page", StringComparison.CurrentCultureIgnoreCase))
+                    {
+                        if (int.TryParse(subProperty.Value.ToString(), out int page))
+                        {
+                            result.Page = page;
+                        }
+                    }
+                    if (subProperty.Key.Equals("@where", StringComparison.CurrentCultureIgnoreCase))
+                    {
+                        foreach (var whereField in subProperty.Value.AsObject())
+                        {
+                            string fieldName = whereField.Key;
+                            if (whereField.Value == null)
+                            {
+                                continue;
+                            }
+                            var fieldType = whereField.Value?.AsObject()["type"]?.ToString();
+                            var fieldValue = whereField.Value?.AsObject()["value"]?.ToString();
+                            queryList.Add(GetOperatorNotationByWhereType(fieldType, option.DBType, fieldName, fieldValue));
+                        }
+                    }
+                } // for property
+                  // 查询的情况
+                string where = "";
+                if (queryList.Count > 0)
+                {
+                    where += " WHERE " + string.Join(" AND ", queryList);
                 }
-            }
+                if (result.Total.HasValue)
+                {
+                    result.TotalSql = $"SELECT COUNT(1) from {result.Table} {where}";
+                }
+                string sql = $"SELECT {result.Columns} from {result.Table} {where} limit {result.Count} offset {(result.Page - 1) * result.Count} ";
+
+                // 新增数据的情况 todo
+                result.KeyResults.Add(tableNode.Key, sql);
+            }// for table
         }
 
-        return "";
+        return result;
+    }
+    private string GetOperatorNotationByWhereType(string type, DBType dbType, string left, string right)
+    {
+        string result = string.Empty;
+
+        switch (type)
+        {
+            case ConstStrings.WhereConfitionType.Contains:
+                result = $"{left} LIKE '%{right}%'";
+                break;
+            case ConstStrings.WhereConfitionType.NotEqual:
+                result = $"{left} != {GetRightPart(right)}";
+                break;
+            case ConstStrings.WhereConfitionType.In:
+                result = $"{left} IN {GetRightPart(right)}";
+                break;
+            case ConstStrings.WhereConfitionType.LessThan:
+                result = $"{left} < {GetRightPart(right)}";
+                break;
+            case ConstStrings.WhereConfitionType.GreaterThan:
+                result = $"{left} > {GetRightPart(right)}";
+                break;
+            case ConstStrings.WhereConfitionType.LessThanOrEqual:
+                result = $"{left} <= {GetRightPart(right)}";
+                break;
+            case ConstStrings.WhereConfitionType.GreaterThanOrEqual:
+                result = $"{left} >= {GetRightPart(right)}";
+                break;
+            case ConstStrings.WhereConfitionType.Equal:
+            default:
+                result = $"{left}={GetRightPart(right)}";
+                break;
+        }
+
+        string GetRightPart(string right)
+        {
+            List<string> tmp = new();
+            var cols = right.Split(',');
+            foreach (var item in cols)
+            {
+                if (int.TryParse(item, out int v))
+                {
+                    tmp.Add(item);
+                }
+                else
+                {
+                    tmp.Add("'" + item + "'");
+                }
+            }
+
+            return string.Join(',', tmp);
+        }
+
+        return result;
     }
 }
+
+
 
 public class EasyApiParseResult()
 {
@@ -324,4 +442,15 @@ public class EasyApiParseResult()
     public string Columns { get; set; }
     public bool Success { get; set; } = true;
     public string Msg { get; set; } = string.Empty;
+    public Dictionary<string, dynamic> KeyResults { get; set; } = new();
 }
+
+public class WhereField
+{
+    /// <summary>
+    /// ConstSettingValue.WhereConfitionType
+    /// </summary>
+    public string? Type { get; set; }
+    public object Value { get; set; }
+}
+

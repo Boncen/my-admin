@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using Dapper;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -53,7 +54,7 @@ public static class WebApplicationSetup
         if (config.UseRateLimit == true)
         {
             app.UseRateLimiter();
-            app.MapControllers().RequireRateLimiting(Conf.ConstSettingValue.RateLimitingPolicyName);
+            app.MapControllers().RequireRateLimiting(Conf.ConstStrings.RateLimitingPolicyName);
         }
         else
         {
@@ -76,6 +77,7 @@ public static class WebApplicationSetup
 
     public static void UseEasyApi(this WebApplication app, string url = "/easy")
     {
+        // 简单的查询，分页查询
         app.MapGet((url), async ([FromServices] IHttpContextAccessor accessor, [FromServices] DBHelper dbHelper,
             [FromServices] IOptionsSnapshot<MaFrameworkOptions> frameworkOption, [FromServices] EasyApi easy) =>
         {
@@ -112,6 +114,75 @@ public static class WebApplicationSetup
             {
                 throw new MAException("查询中发生错误", e);
             }
+        });
+
+        // 新增数据，复杂查询
+        app.MapPost((url), async ([FromServices] IHttpContextAccessor accessor, [FromServices] DBHelper dbHelper,
+            [FromServices] IOptionsSnapshot<MaFrameworkOptions> frameworkOption, [FromServices] EasyApi easy) =>
+        {
+            try
+            {
+                var body = accessor.HttpContext.Request.Body;
+                // EasyApiOptions? easyApiOptions = frameworkOption.Value?.EasyApi ?? new();
+
+                var parseResult = await easy.ProcessPostRequest(body, frameworkOption.Value);
+                if (parseResult.Success == false)
+                {
+                    return ApiResult.Fail(parseResult.Msg);
+                }
+                if (Check.HasValue(parseResult.Sql))
+                {
+                    var data = await dbHelper.Connection.ExecuteReaderAsync(parseResult.Sql);
+                    var result = easy.HandleDataReader(data, frameworkOption.Value?.EasyApi?.ColumnAlias, parseResult.Table);
+                    if (parseResult.Page == 1 && parseResult.Count == 1)
+                    {
+                        return ApiResult<dynamic>.Ok(result.FirstOrDefault());
+                    }
+                    if (Check.HasValue(parseResult.TotalSql))
+                    {
+                        var total = dbHelper.Connection.ExecuteScalar<int>(parseResult.TotalSql);
+                        return ApiResult<dynamic>.Ok(new { list = result, total });
+                    }
+                }
+
+                if (parseResult.KeyResults.Count > 0)
+                {
+                    JsonObject jobj = new JsonObject();
+                    foreach (var item in parseResult.KeyResults)
+                    {
+                        var data = await dbHelper.Connection.ExecuteReaderAsync(item.Value as string);
+                        var result = easy.HandleDataReader(data, frameworkOption.Value?.EasyApi?.ColumnAlias, parseResult.Table);
+                        if (parseResult.Page == 1 && parseResult.Count == 1)
+                        {
+                            jobj.Add(item.Key, result.FirstOrDefault());
+                            // return ApiResult<dynamic>.Ok(result.FirstOrDefault());
+                        }
+                        if (Check.HasValue(parseResult.TotalSql))
+                        {
+                            var total = dbHelper.Connection.ExecuteScalar<int>(parseResult.TotalSql);
+                            var tmpListRes = new JsonObject();
+                            // tmpListRes.Add(item.Key, );
+                            // return ApiResult<dynamic>.Ok(new { list = result, total });
+                        }
+                    }
+                }
+
+                return ApiResult<dynamic>.Ok();
+            }
+            catch (MySqlException e)
+            {
+                throw new MAException("查询中发生错误", e);
+            }
+        });
+
+        app.MapPut((url), async () =>
+        {
+
+        });
+
+        app.MapDelete((url), async () =>
+        {
+
         });
     }
 }
