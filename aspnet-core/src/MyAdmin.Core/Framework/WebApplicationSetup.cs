@@ -123,51 +123,48 @@ public static class WebApplicationSetup
             try
             {
                 var body = accessor.HttpContext.Request.Body;
-                // EasyApiOptions? easyApiOptions = frameworkOption.Value?.EasyApi ?? new();
+                var parseResults = await easy.ProcessPostRequest(body, frameworkOption.Value);
+                JsonObject jobj = new JsonObject(); // table node
 
-                var parseResult = await easy.ProcessPostRequest(body, frameworkOption.Value);
-                if (parseResult.Success == false)
+                foreach (var parseResult in parseResults)
                 {
-                    return ApiResult.Fail(parseResult.Msg);
-                }
-                if (Check.HasValue(parseResult.Sql))
-                {
-                    var data = await dbHelper.Connection.ExecuteReaderAsync(parseResult.Sql);
-                    var result = easy.HandleDataReader(data, frameworkOption.Value?.EasyApi?.ColumnAlias, parseResult.Table);
-                    if (parseResult.Page == 1 && parseResult.Count == 1)
+                    if (parseResult.Success == false)
                     {
-                        return ApiResult<dynamic>.Ok(result.FirstOrDefault());
+                        jobj[parseResult.Target] = parseResult.Msg ?? "解析失败";
+                        continue;
                     }
-                    if (Check.HasValue(parseResult.TotalSql))
+                    // JsonObject tableObj = new JsonObject();
+                    if (Check.HasValue(parseResult.Sql))
                     {
-                        var total = dbHelper.Connection.ExecuteScalar<int>(parseResult.TotalSql);
-                        return ApiResult<dynamic>.Ok(new { list = result, total });
-                    }
-                }
-
-                if (parseResult.KeyResults.Count > 0)
-                {
-                    JsonObject jobj = new JsonObject();
-                    foreach (var item in parseResult.KeyResults)
-                    {
-                        var data = await dbHelper.Connection.ExecuteReaderAsync(item.Value as string);
-                        var result = easy.HandleDataReader(data, frameworkOption.Value?.EasyApi?.ColumnAlias, parseResult.Table);
-                        if (parseResult.Page == 1 && parseResult.Count == 1)
+                        if (parseResult.OperationType == SqlOperationType.None)
                         {
-                            jobj.Add(item.Key, result.FirstOrDefault());
-                            // return ApiResult<dynamic>.Ok(result.FirstOrDefault());
+                            int affectRows = await dbHelper.Connection.ExecuteAsync(parseResult.Sql);
+                            jobj["rows"] = affectRows;
                         }
-                        if (Check.HasValue(parseResult.TotalSql))
+                        else
                         {
-                            var total = dbHelper.Connection.ExecuteScalar<int>(parseResult.TotalSql);
-                            var tmpListRes = new JsonObject();
-                            // tmpListRes.Add(item.Key, );
-                            // return ApiResult<dynamic>.Ok(new { list = result, total });
+                            var data = await dbHelper.Connection.ExecuteReaderAsync(parseResult.Sql);
+                            var result = easy.HandleDataReader(data, frameworkOption.Value?.EasyApi?.ColumnAlias, parseResult.Table);
+                            if (parseResult.Page == 1 && parseResult.Count == 1)
+                            {
+                                jobj.Add(parseResult.Target, result.FirstOrDefault());
+                            }
+                            else
+                            {
+                                JsonObject pageResultJobj = new JsonObject();
+                                if (Check.HasValue(parseResult.TotalSql))
+                                {
+                                    var total = dbHelper.Connection.ExecuteScalar<int>(parseResult.TotalSql);
+                                    pageResultJobj["total"] = total;
+                                }
+                                pageResultJobj["list"] = new JsonArray(result.ToArray());
+                                jobj.Add(parseResult.Target, pageResultJobj);
+                            }
                         }
                     }
+                    // jobj.Add(parseResult.Table, tableObj);
                 }
-
-                return ApiResult<dynamic>.Ok();
+                return ApiResult<dynamic>.Ok(jobj);
             }
             catch (MySqlException e)
             {

@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel;
 using System.Reflection;
 using System.Text;
+using System.Text.Json.Nodes;
 
 
 namespace MyAdmin.Core.Extensions;
@@ -13,7 +14,8 @@ public static class CommonExtension
         {
             return string.Empty;
         }
-        string getInfoFromException(System.Exception ex){
+        string getInfoFromException(System.Exception ex)
+        {
             return ex.Message + Environment.NewLine + ex.Source + Environment.NewLine + ex.StackTrace;
         }
         StringBuilder sb = new StringBuilder();
@@ -32,7 +34,8 @@ public static class CommonExtension
 
     #region Datetime
 
-    public static string ToCommonString(this DateTime dateTime){
+    public static string ToCommonString(this DateTime dateTime)
+    {
         return dateTime.ToString("yyyy-MM-dd HH:mm:ss");
     }
 
@@ -40,12 +43,12 @@ public static class CommonExtension
     {
         return date.ToString("yyyy-MM-dd").Equals("0001-01-01");
     }
-    
+
     public static bool IsDefaultValue(this DateTime dateTime)
     {
         return dateTime.ToString("yyyy-MM-dd HH:mm:ss").Equals("0001-01-01 00:00:00");
     }
-    
+
     #endregion
 
 
@@ -76,7 +79,7 @@ public static class CommonExtension
     /// <param name="dic"></param>
     /// <param name="ignoreNull"></param>
     /// <returns></returns>
-    public static string ToUrlString(this IDictionary<string, Object> dic,char seperator = '&', bool ignoreNull = true)
+    public static string ToUrlString(this IDictionary<string, Object> dic, char seperator = '&', bool ignoreNull = true)
     {
         List<string> strings = new List<string>();
         foreach (var key in dic.Keys)
@@ -96,7 +99,7 @@ public static class CommonExtension
     public static string GetDescription(this PropertyInfo propertyInfo)
     {
         var descriptionAttr = propertyInfo.GetCustomAttribute<DescriptionAttribute>();
-        if (descriptionAttr!= null)
+        if (descriptionAttr != null)
         {
             return descriptionAttr.Description;
         }
@@ -104,4 +107,17 @@ public static class CommonExtension
     }
 
     #endregion
+
+    public static bool IsJsonArray(this JsonNode node)
+    {
+        if (node == null)
+        {
+            return false;
+        }
+        string tmp = node.ToJsonString(new System.Text.Json.JsonSerializerOptions()
+        {
+            MaxDepth = 1
+        });
+        return Check.HasValue(tmp) && tmp.StartsWith('[');
+    }
 }

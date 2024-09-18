@@ -98,6 +98,64 @@ http://localhost:5026/easy?target=user&page=1&count=21&columns=id,name, account
 
 ### post请求
 
+#### 添加数据
+http://localhost:5026/easy
 
+字段前不能加 `@` 符号.
 
+添加单条
+```json
+{
+  "TestEasy": {   /** 待添加字段 */    },
+}
 
+```
+
+批量添加
+```json
+{
+  "TestEasy": [
+      {   /** 待添加字段 */    },
+      {   /** 待添加字段 */    },
+      {   /** 待添加字段 */    },
+  ]
+}
+```
+
+#### 查询
+在一次请求中查询多个表, 为了防止混淆，关键的字段前面需要带上`@`.
+```json
+{
+  "user": {
+    "@page": 1,
+    "@count": 10,
+    "@total": 0,
+    "@where": {
+      "salt": {
+        "type": "lessThan",
+        "value": 8894561230
+      },
+      "name": {
+        "value": "dev"
+      }
+    }
+  },
+  "MaLog": {
+    "@page": 1,
+    "@count": 3,
+    "@total": 0
+  }
+}
+```
+
+where条件中type取值如下：
+```
+contains
+in
+lessThan
+greaterThan
+lessThanOrEqual
+greaterThanOrEqual
+equal
+notEqual
+```
