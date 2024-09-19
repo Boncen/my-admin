@@ -159,3 +159,49 @@ greaterThanOrEqual
 equal
 notEqual
 ```
+
+#### 连表查询
+使用连表查询的约定：
+- 必须传columns
+- 对前端暴露了过多的表结构信息
+
+```json
+{
+  "user": {
+    "@page": 1,
+    "@count": 10,
+    "@total": 0,
+    "@columns": "MaUser.Name as username, MaRole.Name as rolename",
+    "@join": [
+      {
+        "targetJoin": "UserRole",
+        "joinField": "userid",
+        "onField": "id"
+      },
+      {
+        "targetJoin": "MaRole",
+        "joinField": "id",
+        "onField": "RoleId",
+        "targetOn": "UserRole"
+      }
+    ],
+    "@where": {
+      "salt": {
+        "type": "lessThan",
+        "value": 8894561230
+      },
+      "MaRole.Name": {
+        "value": "dev"
+      }
+    }
+  }
+}
+```
+
+以上参数转化的sql如下：
+```sql
+SELECT MaUser.Name as username, MaRole.Name as rolename from MaUser  
+JOIN UserRole ON UserRole.userid = MaUser.id   
+JOIN MaRole ON MaRole.id = UserRole.RoleId  
+WHERE MaUser.salt < '8894561230' AND MaRole.Name='dev' limit 10 offset 0 
+```

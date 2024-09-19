@@ -86,7 +86,7 @@ public static class WebApplicationSetup
                 var queryCollection = accessor.HttpContext.Request.Query;
                 EasyApiOptions? easyApiOptions = frameworkOption.Value?.EasyApi ?? new();
 
-                var parseResult = easy.ProcessQueryRequest(queryCollection, easyApiOptions);
+                var parseResult = easy.ProcessQueryRequest(queryCollection);
                 if (parseResult.Success == false)
                 {
                     return ApiResult.Fail(parseResult.Msg);
@@ -133,7 +133,6 @@ public static class WebApplicationSetup
                         jobj[parseResult.Target] = parseResult.Msg ?? "解析失败";
                         continue;
                     }
-                    // JsonObject tableObj = new JsonObject();
                     if (Check.HasValue(parseResult.Sql))
                     {
                         if (parseResult.OperationType == SqlOperationType.None)
@@ -162,13 +161,13 @@ public static class WebApplicationSetup
                             }
                         }
                     }
-                    // jobj.Add(parseResult.Table, tableObj);
+                    
                 }
                 return ApiResult<dynamic>.Ok(jobj);
             }
             catch (MySqlException e)
             {
-                throw new MAException("查询中发生错误", e);
+                throw new MAException("执行SQL发生异常", e);
             }
         });
 

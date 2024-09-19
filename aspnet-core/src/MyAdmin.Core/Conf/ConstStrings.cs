@@ -11,7 +11,8 @@ public static class ConstStrings
     /// </summary>
     public static string MACacheKeyAllEntities = "MA-AllEntities";
 
-    public static class WhereConfitionType {
+    public static class WhereConfitionType
+    {
         public const string Contains = "contains";
         public const string In = "in";
         public const string LessThan = "lessThan";
@@ -20,5 +21,14 @@ public static class ConstStrings
         public const string GreaterThanOrEqual = "greaterThanOrEqual";
         public const string Equal = "equal";
         public const string NotEqual = "notEqual";
+    }
+
+    public static class JoinType
+    {
+        // public const string Join = "join"; // 默认
+        public const string LeftJoin = "left";
+        public const string RightJoin = "right";
+        public const string InnerJoin = "inner";
+        public const string OuterJoin = "outer";
     }
 }

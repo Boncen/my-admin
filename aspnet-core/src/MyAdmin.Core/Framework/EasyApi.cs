@@ -4,6 +4,8 @@ using System.Text;
 using System.Text.Json.Nodes;
 using System.Transactions;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
+using Microsoft.Extensions.Options;
 using MyAdmin.Core.Conf;
 using MyAdmin.Core.Entity;
 using MyAdmin.Core.Exception;
@@ -17,10 +19,12 @@ public class EasyApi
 {
     private readonly Core.MaFrameworkBuilder _maFrameworkBuilder;
     private readonly ICacheManager<List<string>> _cacheManager;
-    public EasyApi(Core.MaFrameworkBuilder maFrameworkBuilder, ICacheManager<List<string>> cacheManager)
+    private readonly MaFrameworkOptions _maFrameworkOptions;
+    public EasyApi(Core.MaFrameworkBuilder maFrameworkBuilder, ICacheManager<List<string>> cacheManager, IOptionsSnapshot<MaFrameworkOptions> optionSnap)
     {
         _maFrameworkBuilder = maFrameworkBuilder;
         _cacheManager = cacheManager;
+        _maFrameworkOptions = optionSnap.Value;
     }
 
     private List<string> GetEntityList()
@@ -58,7 +62,7 @@ public class EasyApi
     /// <param name="option"></param>
     /// <returns></returns>
     /// <exception cref="MAException"></exception>
-    public EasyApiParseResult ProcessQueryRequest(IQueryCollection queryCollection, EasyApiOptions option)
+    public EasyApiParseResult ProcessQueryRequest(IQueryCollection queryCollection)
     {
         EasyApiParseResult result = new EasyApiParseResult()
         {
@@ -98,7 +102,7 @@ public class EasyApi
             if (q.Key.Equals("target", StringComparison.CurrentCultureIgnoreCase))
             {
                 result.Target = q.Value.ToString();
-                result.Table = GetTableAlias(result.Target, option);
+                result.Table = GetTableAlias(result.Target);
                 // if (!IsEntity(result.Table))
                 // {
                 //     result.Success = false;
@@ -111,7 +115,7 @@ public class EasyApi
 
             if (q.Key.Equals(nameof(result.Columns), StringComparison.CurrentCultureIgnoreCase) && Check.HasValue(q.Value))
             {
-                result.Columns = GetQueryColumnAlias(q.Value.ToString(), option);
+                result.Columns = GetQueryColumnAlias(q.Value.ToString(), _maFrameworkOptions.EasyApi!);
                 if (!Check.IfSqlFragmentSafe(result.Columns))
                 {
                     result.Success = false;
@@ -237,7 +241,6 @@ public class EasyApi
         }
 
         return false;
-        //GetTableAlias(target, option);
     }
 
     /// <summary>
@@ -245,13 +248,17 @@ public class EasyApi
     /// </summary>
     /// <param name="target"></param>
     /// <param name="option"></param>
-    private string GetTableAlias(string target, EasyApiOptions option)
+    private string GetTableAlias(string? target)
     {
-        if (option.TableAlias != null)
+        if (!Check.HasValue(target))
         {
-            if (option.TableAlias.ContainsKey(target))
+            return target;
+        }
+        if (_maFrameworkOptions.EasyApi?.TableAlias != null)
+        {
+            if (_maFrameworkOptions.EasyApi.TableAlias.ContainsKey(target))
             {
-                var val = option.TableAlias[target];
+                var val = _maFrameworkOptions.EasyApi.TableAlias[target];
                 if (Check.HasValue(val))
                 {
                     return Check.HasValue(val) ? val : target;
@@ -343,7 +350,7 @@ public class EasyApi
                 }
 
                 result.Target = tableNode.Key;
-                result.Table = GetTableAlias(result.Target, option.EasyApi);
+                result.Table = GetTableAlias(result.Target);
                 // if (!IsEntity(result.Table))
                 // {
                 //     result.Success = false;
@@ -351,7 +358,7 @@ public class EasyApi
                 //     results.Add(result);
                 //     return results;
                 // }
-
+                List<string> joinStrs = new();
                 foreach (var subProperty in subObject)
                 {
                     if (subProperty.Key.Equals("@columns", StringComparison.CurrentCultureIgnoreCase))
@@ -390,6 +397,12 @@ public class EasyApi
                             result.Page = page;
                         }
                     }
+                    if (subProperty.Key.Equals("@join", StringComparison.CurrentCultureIgnoreCase))
+                    {
+                        ProcessJoinPart(subProperty, joinStrs, result.Table);
+                        // column 添加表名前缀
+                        //var cols = result.Columns.Split()
+                    }
                     if (subProperty.Key.Equals("@where", StringComparison.CurrentCultureIgnoreCase))
                     {
                         foreach (var whereField in subProperty.Value.AsObject())
@@ -399,26 +412,41 @@ public class EasyApi
                             {
                                 continue;
                             }
+                            if (fieldName.Contains('.'))
+                            {
+                                var fieldNameAray = fieldName.Split('.');
+                                if (fieldNameAray.Length == 3)
+                                {
+                                    string table = GetTableAlias(fieldNameAray[0]);
+                                    fieldName = table + "." + fieldNameAray[2];
+                                }
+                            }
                             var fieldType = whereField.Value?.AsObject()["type"]?.ToString();
                             var fieldValue = whereField.Value?.AsObject()["value"]?.ToString();
                             if (Check.HasValue(fieldValue))
                             {
-                                queryList.Add(GetOperatorNotationByWhereType(fieldType, option.DBType, fieldName, fieldValue));
+                                queryList.Add(GetOperatorNotationByWhereType(fieldType, option.DBType, fieldName, fieldValue, result.Table));
                             }
                         }
                     }
                 } // for property
                   // 查询的情况
                 string where = "";
+                string joinStr = string.Empty;
                 if (queryList.Count > 0)
                 {
                     where += " WHERE " + string.Join(" AND ", queryList);
                 }
+                  if (joinStrs.Count > 0)
+                {
+                    joinStr = string.Join(' ', joinStrs);
+                }
                 if (result.Total.HasValue)
                 {
-                    result.TotalSql = $"SELECT COUNT(1) from {result.Table} {where}";
+                    result.TotalSql = $"SELECT COUNT(1) from {result.Table}  {joinStr} {where}";
                 }
-                result.Sql = $"SELECT {result.Columns} from {result.Table} {where} limit {result.Count} offset {(result.Page - 1) * result.Count} ";
+
+                result.Sql = $"SELECT {result.Columns} from {result.Table} {joinStr} {where} limit {result.Count} offset {(result.Page - 1) * result.Count} ";
 
                 // 新增数据的情况 todo
                 // result.KeyResults.Add(tableNode.Key, sql);
@@ -428,6 +456,86 @@ public class EasyApi
 
         return results;
     }
+
+    private void ProcessJoinPart(KeyValuePair<string, JsonNode?> subProperty, List<string> joinStrs, string table)
+    {
+        if (subProperty.Value == null)
+        {
+            return;
+        }
+        foreach (var item in subProperty.Value.AsArray())
+        {
+            var obj = item.AsObject();
+            string? targetJoin = obj["targetJoin"]?.ToString();
+            string? targetOn = obj["targetOn"]?.ToString();
+            string? joinField = obj["joinField"]?.ToString();
+            string? onField = obj["onField"]?.ToString();
+            string? joinType = obj["type"]?.ToString();
+
+            if (!Check.HasValue(targetJoin) || !Check.HasValue(joinField) || !Check.HasValue(onField)) // || !Check.HasValue(targetField) )
+            {
+                continue;
+            }
+            if (!Check.HasValue(joinType))
+            {
+                joinType = "join";
+            }
+            targetJoin = GetTableAlias(targetJoin);
+            targetOn = GetTableAlias(targetOn);
+            joinType = GetJoinType(joinType);
+            joinField = GetFieldAlias(joinField, targetJoin);
+            onField = GetFieldAlias(onField, targetJoin);
+            string result = string.Empty;
+            if (!Check.HasValue(targetOn))
+            {
+                result = $" {joinType} {targetJoin} ON {targetJoin}.{joinField} = {table}.{onField} ";
+            }
+            else
+            {
+                result = $" {joinType} {targetJoin} ON {targetJoin}.{joinField} = {targetOn}.{onField} ";
+            }
+
+            joinStrs.Add(result);
+        }
+    }
+
+    /// <summary>
+    /// 获取单个字段的别名
+    /// </summary>
+    /// <param name="name"></param>
+    /// <param name="target"></param>
+    /// <returns></returns>
+    private string GetFieldAlias(string name, string target)
+    {
+        if (_maFrameworkOptions.EasyApi?.ColumnAlias == null)
+        {
+            return name;
+        }
+
+        if (_maFrameworkOptions.EasyApi?.ColumnAlias?.ContainsKey(name) == true)
+        {
+            return _maFrameworkOptions.EasyApi.ColumnAlias[name];
+        }
+        return name;
+    }
+
+    private string GetJoinType(string joinType)
+    {
+        switch (joinType.ToLower())
+        {
+            case ConstStrings.JoinType.InnerJoin:
+                return "INNER JOIN";
+            case ConstStrings.JoinType.OuterJoin:
+                return "OUTER JOIN";
+            case ConstStrings.JoinType.LeftJoin:
+                return "LEFT JOIN";
+            case ConstStrings.JoinType.RightJoin:
+                return "RIGHT JOIN";
+            default:
+                return "JOIN";
+        }
+    }
+
     /// <summary>
     /// 新增数据
     /// </summary>
@@ -466,7 +574,7 @@ public class EasyApi
         }
 
         string target = tableNode.Key;
-        string tableName = GetTableAlias(target, easyApiOptions);
+        string tableName = GetTableAlias(target);
         List<string> cols = new();
         JsonArray bulkItemArray = new();
         List<string> valuesParts = new();
@@ -490,10 +598,13 @@ public class EasyApi
         return result;
     }
 
-    private string GetOperatorNotationByWhereType(string type, DBType dbType, string left, string right)
+    private string GetOperatorNotationByWhereType(string type, DBType dbType, string left, string right, string table)
     {
         string result = string.Empty;
-
+        if (!left.Contains("."))
+        {
+            left = table + "." + left;
+        }
         switch (type)
         {
             case ConstStrings.WhereConfitionType.Contains:
@@ -566,10 +677,35 @@ public class EasyApiParseResult()
 public class WhereField
 {
     /// <summary>
-    /// ConstSettingValue.WhereConfitionType
+    /// ConstStrings.WhereConfitionType
     /// </summary>
     public string? Type { get; set; }
     public object Value { get; set; }
+}
+
+public class JoinField
+{
+    /// <summary>
+    /// 连表对象
+    /// </summary>
+    public string TargetJon { get; set; }
+    /// <summary>
+    /// 
+    /// </summary>
+    public string TargetOn { get; set; }
+    /// <summary>
+    /// 连表方式
+    /// </summary>
+    public string Type { get; set; }
+    /// <summary>
+    /// ConstStrings.JoinType
+    /// </summary>
+    public string TargetField { get; set; }
+    /// <summary>
+    /// 连表字段
+    /// </summary>
+    public string Field { get; set; }
+
 }
 
 public enum SqlOperationType
