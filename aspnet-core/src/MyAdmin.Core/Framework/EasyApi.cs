@@ -72,34 +72,35 @@ public class EasyApi
             Sql = string.Empty,
             Table = string.Empty,
         };
-        if (!queryCollection.ContainsKey("target"))
+        if (!queryCollection.ContainsKey("@target"))
         {
             return result;
         }
 
 
         List<string> queryList = new();
+        List<string> orderStrs = new();
         foreach (var q in queryCollection)
         {
-            if (q.Key.Equals(nameof(result.Total), StringComparison.CurrentCultureIgnoreCase))
+            if (q.Key.Equals("@total", StringComparison.CurrentCultureIgnoreCase))
             {
                 int.TryParse(q.Value.ToString(), out int total);
                 result.Total = total;
                 continue;
             }
-            if (q.Key.Equals(nameof(result.Page), StringComparison.CurrentCultureIgnoreCase))
+            if (q.Key.Equals("@page", StringComparison.CurrentCultureIgnoreCase))
             {
                 int.TryParse(q.Value.ToString(), out int page);
                 result.Page = page;
                 continue;
             }
-            if (q.Key.Equals(nameof(result.Count), StringComparison.CurrentCultureIgnoreCase))
+            if (q.Key.Equals("@count", StringComparison.CurrentCultureIgnoreCase))
             {
                 int.TryParse(q.Value.ToString(), out int count);
                 result.Count = count;
                 continue;
             }
-            if (q.Key.Equals("target", StringComparison.CurrentCultureIgnoreCase))
+            if (q.Key.Equals("@target", StringComparison.CurrentCultureIgnoreCase))
             {
                 result.Target = q.Value.ToString();
                 result.Table = GetTableAlias(result.Target);
@@ -112,8 +113,26 @@ public class EasyApi
 
                 continue;
             }
+            if (q.Key.Equals("@orderAsc", StringComparison.CurrentCultureIgnoreCase))
+            {
+                string val = q.Value.ToString();
+                if (Check.HasValue(val))
+                {
+                    orderStrs.Add(GetFieldAlias(val) + " ASC");
+                }
+                continue;
+            }
+            if (q.Key.Equals("@orderDesc", StringComparison.CurrentCultureIgnoreCase))
+            {
+                string val = q.Value.ToString();
+                if (Check.HasValue(val))
+                {
+                    orderStrs.Add(GetFieldAlias(val) + " DESC");
+                }
+                continue;
+            }
 
-            if (q.Key.Equals(nameof(result.Columns), StringComparison.CurrentCultureIgnoreCase) && Check.HasValue(q.Value))
+            if (q.Key.Equals("@columns", StringComparison.CurrentCultureIgnoreCase) && Check.HasValue(q.Value))
             {
                 result.Columns = GetQueryColumnAlias(q.Value.ToString(), _maFrameworkOptions.EasyApi!);
                 if (!Check.IfSqlFragmentSafe(result.Columns))
@@ -136,7 +155,8 @@ public class EasyApi
 
         }
 
-        string where = "";
+        string where = string.Empty;
+        string order = string.Empty;
         if (queryList.Count > 0)
         {
             where += " WHERE " + string.Join(" AND ", queryList);
@@ -145,7 +165,11 @@ public class EasyApi
         {
             result.TotalSql = $"SELECT COUNT(1) from {result.Table} {where}";
         }
-        result.Sql = $"SELECT {result.Columns} from {result.Table} {where} limit {result.Count} offset {(result.Page - 1) * result.Count} ";
+        if (orderStrs.Count > 0)
+        {
+            order = $"ORDER BY " + string.Join(",", orderStrs);
+        }
+        result.Sql = $"SELECT {result.Columns} from {result.Table} {where} {order} limit {result.Count} offset {(result.Page - 1) * result.Count} ";
 
 #if DEBUG
         Console.WriteLine(result.Sql);
@@ -359,6 +383,7 @@ public class EasyApi
                 //     return results;
                 // }
                 List<string> joinStrs = new();
+                List<string> orderStrs = new();
                 foreach (var subProperty in subObject)
                 {
                     if (subProperty.Key.Equals("@columns", StringComparison.CurrentCultureIgnoreCase))
@@ -407,19 +432,10 @@ public class EasyApi
                     {
                         foreach (var whereField in subProperty.Value.AsObject())
                         {
-                            string fieldName = whereField.Key;
+                            string fieldName = MakeSureHavaTablePrefix(whereField.Key, result.Table);
                             if (whereField.Value == null)
                             {
                                 continue;
-                            }
-                            if (fieldName.Contains('.'))
-                            {
-                                var fieldNameAray = fieldName.Split('.');
-                                if (fieldNameAray.Length == 3)
-                                {
-                                    string table = GetTableAlias(fieldNameAray[0]);
-                                    fieldName = table + "." + fieldNameAray[2];
-                                }
                             }
                             var fieldType = whereField.Value?.AsObject()["type"]?.ToString();
                             var fieldValue = whereField.Value?.AsObject()["value"]?.ToString();
@@ -429,15 +445,20 @@ public class EasyApi
                             }
                         }
                     }
+                    if (subProperty.Key.Equals("@order", StringComparison.CurrentCultureIgnoreCase))
+                    {
+                        ProcessOrderByPart(subProperty, orderStrs, result.Table);
+                    }
                 } // for property
                   // 查询的情况
                 string where = "";
                 string joinStr = string.Empty;
+                string orderStr = string.Empty;
                 if (queryList.Count > 0)
                 {
                     where += " WHERE " + string.Join(" AND ", queryList);
                 }
-                  if (joinStrs.Count > 0)
+                if (joinStrs.Count > 0)
                 {
                     joinStr = string.Join(' ', joinStrs);
                 }
@@ -445,16 +466,67 @@ public class EasyApi
                 {
                     result.TotalSql = $"SELECT COUNT(1) from {result.Table}  {joinStr} {where}";
                 }
+                if (orderStrs.Count > 0)
+                {
+                    orderStr = " ORDER BY " + string.Join(',', orderStrs);
+                }
 
-                result.Sql = $"SELECT {result.Columns} from {result.Table} {joinStr} {where} limit {result.Count} offset {(result.Page - 1) * result.Count} ";
-
-                // 新增数据的情况 todo
-                // result.KeyResults.Add(tableNode.Key, sql);
+                result.Sql = $"SELECT {result.Columns} from {result.Table} {joinStr} {where} {orderStr} limit {result.Count} offset {(result.Page - 1) * result.Count} ";
                 results.Add(result);
             }// for table
         }
 
         return results;
+    }
+    /// <summary>
+    /// 确保字段名前带上表名前缀 TABLE.COLUMN
+    /// </summary>
+    /// <param name="fieldName"></param>
+    /// <param name="table"></param>
+    /// <returns></returns>
+    private string MakeSureHavaTablePrefix(string fieldName, string table)
+    {
+        if (fieldName.Contains('.'))
+        {
+            var fieldNameAray = fieldName.Split('.');
+            if (fieldNameAray.Length == 3)
+            {
+                string alias = GetTableAlias(fieldNameAray[0]);
+                return alias + "." + fieldNameAray[2];
+            }
+            return fieldName;
+        }
+        else
+        {
+
+            return table + "." + fieldName;
+        }
+    }
+    private void ProcessOrderByPart(KeyValuePair<string, JsonNode?> subProperty, List<string> orderStrs, string table)
+    {
+        if (subProperty.Value == null)
+        {
+            return;
+        }
+        foreach (var item in subProperty.Value.AsArray())
+        {
+            var obj = item.AsObject();
+            string? field = obj["field"]?.ToString();
+            string? type = obj["type"]?.ToString();
+
+            if (!Check.HasValue(field))
+            {
+                continue;
+            }
+            field = MakeSureHavaTablePrefix(field, table);
+            if (!Check.HasValue(type))
+            {
+                type = "ASC";
+            }
+
+            field = GetFieldAlias(field);
+            orderStrs.Add($"{field} {type}");
+        }
     }
 
     private void ProcessJoinPart(KeyValuePair<string, JsonNode?> subProperty, List<string> joinStrs, string table)
@@ -483,8 +555,8 @@ public class EasyApi
             targetJoin = GetTableAlias(targetJoin);
             targetOn = GetTableAlias(targetOn);
             joinType = GetJoinType(joinType);
-            joinField = GetFieldAlias(joinField, targetJoin);
-            onField = GetFieldAlias(onField, targetJoin);
+            joinField = GetFieldAlias(joinField);
+            onField = GetFieldAlias(onField);
             string result = string.Empty;
             if (!Check.HasValue(targetOn))
             {
@@ -505,7 +577,7 @@ public class EasyApi
     /// <param name="name"></param>
     /// <param name="target"></param>
     /// <returns></returns>
-    private string GetFieldAlias(string name, string target)
+    private string GetFieldAlias(string name)
     {
         if (_maFrameworkOptions.EasyApi?.ColumnAlias == null)
         {

@@ -85,16 +85,18 @@ MaFrameworkOptions:EasyApi:ColumnAlias
 
 实例：
 ```
-http://localhost:5026/easy?target=user&page=1&count=21&columns=id,name, account
+http://localhost:5026/easy?@target=user&@page=1&@count=21&@columns=id,name&@orderasc=field&@orderdesc=field
 ```
-- target  表名
-- page    页码
-- count   返回条数
-- columns 请求返回的列，不传默认返回全部
+- @target   表名
+- @page     页码
+- @count    返回条数
+- @columns  请求返回的列，不传默认返回全部
+- @orderAsc 
+- @orderDesc
 
 其他参数请求直接拼上即可。如：`&name=foo&type=bar`
 
-加上参数 `&total=<任意数值>` 告诉后端该分页接口需要返回total
+加上参数 `&@total=<任意数值>` 告诉后端该分页接口需要返回total
 
 ### post请求
 
@@ -204,4 +206,22 @@ SELECT MaUser.Name as username, MaRole.Name as rolename from MaUser
 JOIN UserRole ON UserRole.userid = MaUser.id   
 JOIN MaRole ON MaRole.id = UserRole.RoleId  
 WHERE MaUser.salt < '8894561230' AND MaRole.Name='dev' limit 10 offset 0 
+```
+
+#### 排序
+
+```json
+{
+  "user": {
+    "@page": 1,
+    "@count": 10,
+    "@total": 0,
+    "@order": [
+      {
+        "field": "name",
+        "type": "asc"
+      }
+    ]
+  }
+}
 ```
