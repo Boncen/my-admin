@@ -1,3 +1,5 @@
+using System.Collections;
+
 namespace MyAdmin.Core.Extensions;
 
 public static class CollectionExtensions
@@ -20,5 +22,14 @@ public static class CollectionExtensions
 
         source.Add(item);
         return true;
+    }
+
+    public static ICollection<string> ToStringCollection(this ICollection<dynamic> source){
+        ICollection<string> result = new List<string>();
+        foreach (var item in source)
+        {
+            result.Add("'" + item + "'");
+        }
+        return result;
     }
 }

@@ -112,7 +112,7 @@ public static class WebApplicationSetup
             }
             catch (MySqlException e)
             {
-                throw new MAException("查询中发生错误", e);
+                throw new MAException("SQL异常", e);
             }
         });
 
@@ -161,13 +161,13 @@ public static class WebApplicationSetup
                             }
                         }
                     }
-                    
+
                 }
                 return ApiResult<dynamic>.Ok(jobj);
             }
             catch (MySqlException e)
             {
-                throw new MAException("执行SQL发生异常", e);
+                throw new MAException("SQL异常", e);
             }
         });
 
@@ -176,9 +176,33 @@ public static class WebApplicationSetup
 
         });
 
-        app.MapDelete((url), async () =>
+        app.MapDelete((url), async ([FromServices] IHttpContextAccessor accessor, [FromServices] DBHelper dbHelper,
+            [FromServices] IOptionsSnapshot<MaFrameworkOptions> frameworkOption, [FromServices] EasyApi easy) =>
         {
+            try
+            {
+                var queryCollection = accessor.HttpContext.Request.Query;
+                EasyApiOptions? easyApiOptions = frameworkOption.Value?.EasyApi ?? new();
 
+                var parseResult = easy.ProcessDeleteRequest(queryCollection);
+                if (parseResult.Success == false)
+                {
+                    return ApiResult.Fail(parseResult.Msg);
+                }
+                if (!Check.HasValue(parseResult.Sql))
+                {
+                    return ApiResult.Ok();
+                }
+                JsonObject jobj = new JsonObject();
+                int affectRows = await dbHelper.Connection.ExecuteAsync(parseResult.Sql);
+                jobj["rows"] = affectRows;
+
+                return ApiResult<dynamic>.Ok(jobj);
+            }
+            catch (MySqlException e)
+            {
+                throw new MAException("SQL异常", e);
+            }
         });
     }
 }

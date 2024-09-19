@@ -177,6 +177,42 @@ public class EasyApi
         return result;
     }
 
+    public EasyApiParseResult ProcessDeleteRequest(IQueryCollection queryCollection)
+    {
+        EasyApiParseResult result = new EasyApiParseResult()
+        {
+            OperationType = SqlOperationType.None
+        };
+        foreach (var q in queryCollection)
+        {
+            if (q.Key.Equals("target", StringComparison.CurrentCultureIgnoreCase))
+            {
+                result.Target = q.Value.ToString();
+                result.Table = GetTableAlias(result.Target);
+                continue;
+            }
+            if (q.Key.Equals("id", StringComparison.CurrentCultureIgnoreCase))
+            {
+
+                result.Sql = $"DELETE FROM {result.Table} WHERE {result.Table}.Id  = '{q.Value}' ";
+                continue;
+            }
+            if (q.Key.Equals("ids", StringComparison.CurrentCultureIgnoreCase))
+            {
+                var idsArray = q.Value.ToString().Split(',');
+                if (idsArray.Length < 1)
+                {
+                    continue;
+                }
+
+                result.Sql = $"DELETE FROM {result.Table} WHERE {result.Table}.Id  IN ({string.Join(',', idsArray.ToStringCollection())}) ";
+            }
+
+        }
+        // result.Sql = $"DELETE FROM {result.Table} WHERE {result.Table}.Id  = 1 ";
+        return result;
+    }
+
     /// <summary>
     /// Get Column Alias, output: id as _id, name as _name, etc
     /// </summary>
