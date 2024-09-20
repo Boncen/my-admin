@@ -1,3 +1,4 @@
+using System.Data;
 using System.Text.Json.Nodes;
 using Dapper;
 using Microsoft.AspNetCore.Builder;
@@ -86,7 +87,7 @@ public static class WebApplicationSetup
                 var queryCollection = accessor.HttpContext.Request.Query;
                 EasyApiOptions? easyApiOptions = frameworkOption.Value?.EasyApi ?? new();
 
-                var parseResult = easy.ProcessQueryRequest(queryCollection, easyApiOptions);
+                var parseResult = easy.ProcessQueryRequest(queryCollection);
                 if (parseResult.Success == false)
                 {
                     return ApiResult.Fail(parseResult.Msg);
@@ -112,7 +113,7 @@ public static class WebApplicationSetup
             }
             catch (MySqlException e)
             {
-                throw new MAException("查询中发生错误", e);
+                throw new MAException("SQL异常", e);
             }
         });
 
@@ -123,66 +124,120 @@ public static class WebApplicationSetup
             try
             {
                 var body = accessor.HttpContext.Request.Body;
-                // EasyApiOptions? easyApiOptions = frameworkOption.Value?.EasyApi ?? new();
+                var parseResults = await easy.ProcessPostRequest(body, frameworkOption.Value);
+                JsonObject jobj = new JsonObject(); // table node
+                int index = 0;
+                foreach (var parseResult in parseResults)
+                {
+                    ++index;
+                    if (parseResult.Success == false)
+                    {
+                        if (Check.HasValue(parseResult.Target))
+                        {
+                            jobj[parseResult.Target] = parseResult.Msg ?? "解析失败";
+                        }
+                        else{
+                            jobj["target" + index] = parseResult.Msg ?? "解析失败";
+                        }
+                        continue;
+                    }
+                    if (Check.HasValue(parseResult.Sql))
+                    {
+                        if (parseResult.OperationType == SqlOperationType.None)
+                        {
+                            int affectRows = await dbHelper.Connection.ExecuteAsync(parseResult.Sql);
+                            jobj["rows"] = affectRows;
+                        }
+                        else
+                        {
+                            var data = await dbHelper.Connection.ExecuteReaderAsync(parseResult.Sql);
+                            var result = easy.HandleDataReader(data, frameworkOption.Value?.EasyApi?.ColumnAlias, parseResult.Table);
+                            if (parseResult.Page == 1 && parseResult.Count == 1)
+                            {
+                                jobj.Add(parseResult.Target, result.FirstOrDefault());
+                            }
+                            else
+                            {
+                                JsonObject pageResultJobj = new JsonObject();
+                                if (Check.HasValue(parseResult.TotalSql))
+                                {
+                                    var total = dbHelper.Connection.ExecuteScalar<int>(parseResult.TotalSql);
+                                    pageResultJobj["total"] = total;
+                                }
+                                pageResultJobj["list"] = new JsonArray(result.ToArray());
+                                jobj.Add(parseResult.Target, pageResultJobj);
+                            }
+                        }
+                    }
 
-                var parseResult = await easy.ProcessPostRequest(body, frameworkOption.Value);
+                }
+                return ApiResult<dynamic>.Ok(jobj);
+            }
+            catch (MySqlException e)
+            {
+                throw new MAException("SQL异常", e);
+            }
+        });
+
+        app.MapPut((url), async ([FromServices] IHttpContextAccessor accessor, [FromServices] DBHelper dbHelper,
+             [FromServices] IOptionsSnapshot<MaFrameworkOptions> frameworkOption, [FromServices] EasyApi easy) =>
+         {
+             IDbTransaction trans = null;
+             try
+             {
+                 var body = accessor.HttpContext.Request.Body;
+                 List<EasyApiParseResult> parseResults = await easy.ProcessPutRequest(body, frameworkOption.Value);
+                 JsonObject jobj = new JsonObject();
+                 int rows = 0;
+                 dbHelper.Connection.Open();
+                 trans = dbHelper.Connection.BeginTransaction();
+                 foreach (var parseResult in parseResults)
+                 {
+                     if (!Check.HasValue(parseResult.Sql) || parseResult.Success == false)
+                     {
+                         return ApiResult<dynamic>.Fail(parseResult.Msg ?? "解析错误");
+                     }
+                     rows += await dbHelper.Connection.ExecuteAsync(parseResult.Sql);
+                     jobj["rows"] = rows;
+                 }
+                 trans.Commit();
+
+                 return ApiResult<dynamic>.Ok(jobj);
+             }
+             catch (MySqlException e)
+             {
+                 trans?.Rollback();
+                 throw new MAException("SQL异常", e);
+             }
+         });
+
+        app.MapDelete((url), async ([FromServices] IHttpContextAccessor accessor, [FromServices] DBHelper dbHelper,
+            [FromServices] IOptionsSnapshot<MaFrameworkOptions> frameworkOption, [FromServices] EasyApi easy) =>
+        {
+            try
+            {
+                var queryCollection = accessor.HttpContext.Request.Query;
+                EasyApiOptions? easyApiOptions = frameworkOption.Value?.EasyApi ?? new();
+
+                var parseResult = easy.ProcessDeleteRequest(queryCollection);
                 if (parseResult.Success == false)
                 {
                     return ApiResult.Fail(parseResult.Msg);
                 }
-                if (Check.HasValue(parseResult.Sql))
+                if (!Check.HasValue(parseResult.Sql))
                 {
-                    var data = await dbHelper.Connection.ExecuteReaderAsync(parseResult.Sql);
-                    var result = easy.HandleDataReader(data, frameworkOption.Value?.EasyApi?.ColumnAlias, parseResult.Table);
-                    if (parseResult.Page == 1 && parseResult.Count == 1)
-                    {
-                        return ApiResult<dynamic>.Ok(result.FirstOrDefault());
-                    }
-                    if (Check.HasValue(parseResult.TotalSql))
-                    {
-                        var total = dbHelper.Connection.ExecuteScalar<int>(parseResult.TotalSql);
-                        return ApiResult<dynamic>.Ok(new { list = result, total });
-                    }
+                    return ApiResult.Ok();
                 }
+                JsonObject jobj = new JsonObject();
+                int affectRows = await dbHelper.Connection.ExecuteAsync(parseResult.Sql);
+                jobj["rows"] = affectRows;
 
-                if (parseResult.KeyResults.Count > 0)
-                {
-                    JsonObject jobj = new JsonObject();
-                    foreach (var item in parseResult.KeyResults)
-                    {
-                        var data = await dbHelper.Connection.ExecuteReaderAsync(item.Value as string);
-                        var result = easy.HandleDataReader(data, frameworkOption.Value?.EasyApi?.ColumnAlias, parseResult.Table);
-                        if (parseResult.Page == 1 && parseResult.Count == 1)
-                        {
-                            jobj.Add(item.Key, result.FirstOrDefault());
-                            // return ApiResult<dynamic>.Ok(result.FirstOrDefault());
-                        }
-                        if (Check.HasValue(parseResult.TotalSql))
-                        {
-                            var total = dbHelper.Connection.ExecuteScalar<int>(parseResult.TotalSql);
-                            var tmpListRes = new JsonObject();
-                            // tmpListRes.Add(item.Key, );
-                            // return ApiResult<dynamic>.Ok(new { list = result, total });
-                        }
-                    }
-                }
-
-                return ApiResult<dynamic>.Ok();
+                return ApiResult<dynamic>.Ok(jobj);
             }
             catch (MySqlException e)
             {
-                throw new MAException("查询中发生错误", e);
+                throw new MAException("SQL异常", e);
             }
-        });
-
-        app.MapPut((url), async () =>
-        {
-
-        });
-
-        app.MapDelete((url), async () =>
-        {
-
         });
     }
 }

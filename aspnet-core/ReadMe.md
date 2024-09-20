@@ -85,19 +85,206 @@ MaFrameworkOptions:EasyApi:ColumnAlias
 
 实例：
 ```
-http://localhost:5026/easy?target=user&page=1&count=21&columns=id,name, account
+http://localhost:5026/easy?@target=user&@page=1&@count=21&@columns=id,name&@orderasc=field&@orderdesc=field
 ```
-- target  表名
-- page    页码
-- count   返回条数
-- columns 请求返回的列，不传默认返回全部
+- @target   表名
+- @page     页码
+- @count    返回条数
+- @columns  请求返回的列，不传默认返回全部
+- @orderAsc 
+- @orderDesc
 
 其他参数请求直接拼上即可。如：`&name=foo&type=bar`
 
-加上参数 `&total=<任意数值>` 告诉后端该分页接口需要返回total
+加上参数 `&@total=<任意数值>` 告诉后端该分页接口需要返回total
 
 ### post请求
 
+#### 添加数据
+http://localhost:5026/easy
+
+字段前不能加 `@` 符号.
+
+添加单条
+```json
+{
+  "TestEasy": {   /** 表字段 */    },
+}
+
+```
+
+批量添加
+```json
+{
+  "TestEasy": [
+      {   /** 表字段 */    },
+      {   /** 表字段 */    },
+      {   /** 表字段 */    },
+  ]
+}
+```
+
+对于非自增长的主键字段，如果没有给定值，则框架会自动获取该表主键类型并自动添加默认值。
 
 
+#### 查询
+在一次请求中查询多个表, 为了防止混淆，关键的字段前面需要带上`@`.
+```json
+{
+  "user": {
+    "@page": 1,
+    "@count": 10,
+    "@total": 0,
+    "@where": {
+      "salt": {
+        "type": "lessThan",
+        "value": 8894561230
+      },
+      "name": {
+        "value": "dev"
+      }
+    }
+  },
+  "MaLog": {
+    "@page": 1,
+    "@count": 3,
+    "@total": 0
+  }
+}
+```
+
+where条件中type取值如下：
+```
+contains
+in
+lessThan
+greaterThan
+lessThanOrEqual
+greaterThanOrEqual
+equal
+notEqual
+```
+
+#### 连表查询
+使用连表查询的约定：
+- 必须传columns
+- 对前端暴露了过多的表结构信息
+
+```json
+{
+  "user": {
+    "@page": 1,
+    "@count": 10,
+    "@total": 0,
+    "@columns": "MaUser.Name as username, MaRole.Name as rolename",
+    "@join": [
+      {
+        "targetJoin": "UserRole",
+        "joinField": "userid",
+        "onField": "id"
+      },
+      {
+        "targetJoin": "MaRole",
+        "joinField": "id",
+        "onField": "RoleId",
+        "targetOn": "UserRole"
+      }
+    ],
+    "@where": {
+      "salt": {
+        "type": "lessThan",
+        "value": 8894561230
+      },
+      "MaRole.Name": {
+        "value": "dev"
+      }
+    }
+  }
+}
+```
+
+以上参数转化的sql如下：
+```sql
+SELECT MaUser.Name as username, MaRole.Name as rolename from MaUser  
+JOIN UserRole ON UserRole.userid = MaUser.id   
+JOIN MaRole ON MaRole.id = UserRole.RoleId  
+WHERE MaUser.salt < '8894561230' AND MaRole.Name='dev' limit 10 offset 0 
+```
+
+#### 排序
+
+```json
+{
+  "user": {
+    "@page": 1,
+    "@count": 10,
+    "@total": 0,
+    "@order": [
+      {
+        "field": "name",
+        "type": "asc"
+      }
+    ]
+  }
+}
+```
+
+#### 删除
+批量删除
+```json
+http://localhost:5066/easy?target=TestEasy&ids=17,18
+```
+
+删除
+```json
+http://localhost:5066/easy?target=TestEasy&id=17
+```
+
+#### 更新
+```json
+[
+  {
+    "@id": "20",
+    "Account": "测试啊3",
+    "@target": "TestEasy"
+  }
+]
+```
+
+批量更新
+```json
+[
+  {
+    "@ids": "20,21,22",
+    "Account": "测试啊3",
+    "@target": "TestEasy"
+  }
+]
+```
+
+根据条件查询更新，多个更新操作。
+```json
+[
+  {
+    "@ids": "20,21,22",
+    "Account": "测试啊4",
+    "@target": "TestEasy"
+  },
+  {
+    "@ids": "21,22",
+    "isAvalid": 1,
+    "@target": "TestEasy"
+  },
+  {
+    "@where": {
+      "Id": {
+        "type": "lessThan",
+        "value": 20
+      }
+    },
+    "Account": "测试啊3",
+    "@target": "TestEasy"
+  }
+]
+```
 

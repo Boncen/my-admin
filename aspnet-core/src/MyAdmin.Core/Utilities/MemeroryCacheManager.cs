@@ -65,7 +65,7 @@ public class MemeroryCacheManager:ICacheManager
         }
     }
 
-    public object? Get(string key)
+    public dynamic? Get(string key)
     {
         return _memoryCache.Get(key);
     }

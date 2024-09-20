@@ -1,12 +1,19 @@
 using System.Data;
+using System.Diagnostics;
 using System.Text;
 using System.Text.Json.Nodes;
+using System.Transactions;
+using Dapper;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
+using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.Extensions.Options;
 using MyAdmin.Core.Conf;
 using MyAdmin.Core.Entity;
 using MyAdmin.Core.Exception;
 using MyAdmin.Core.Extensions;
 using MyAdmin.Core.Options;
+using MyAdmin.Core.Repository;
 using MyAdmin.Core.Utilities;
 
 namespace MyAdmin.Core.Framework;
@@ -14,11 +21,15 @@ namespace MyAdmin.Core.Framework;
 public class EasyApi
 {
     private readonly Core.MaFrameworkBuilder _maFrameworkBuilder;
-    private readonly ICacheManager<List<string>> _cacheManager;
-    public EasyApi(Core.MaFrameworkBuilder maFrameworkBuilder, ICacheManager<List<string>> cacheManager)
+    private readonly ICacheManager _cacheManager;
+    private readonly MaFrameworkOptions _maFrameworkOptions;
+    private readonly DBHelper _dbHelper;
+    public EasyApi(Core.MaFrameworkBuilder maFrameworkBuilder, ICacheManager cacheManager, IOptionsSnapshot<MaFrameworkOptions> optionSnap, DBHelper dbHelper)
     {
         _maFrameworkBuilder = maFrameworkBuilder;
         _cacheManager = cacheManager;
+        _maFrameworkOptions = optionSnap.Value;
+        _dbHelper = dbHelper;
     }
 
     private List<string> GetEntityList()
@@ -56,7 +67,7 @@ public class EasyApi
     /// <param name="option"></param>
     /// <returns></returns>
     /// <exception cref="MAException"></exception>
-    public EasyApiParseResult ProcessQueryRequest(IQueryCollection queryCollection, EasyApiOptions option)
+    public EasyApiParseResult ProcessQueryRequest(IQueryCollection queryCollection)
     {
         EasyApiParseResult result = new EasyApiParseResult()
         {
@@ -66,50 +77,69 @@ public class EasyApi
             Sql = string.Empty,
             Table = string.Empty,
         };
-        if (!queryCollection.ContainsKey("target"))
+        if (!queryCollection.ContainsKey("@target"))
         {
             return result;
         }
 
 
         List<string> queryList = new();
+        List<string> orderStrs = new();
         foreach (var q in queryCollection)
         {
-            if (q.Key.Equals(nameof(result.Total), StringComparison.CurrentCultureIgnoreCase))
+            if (q.Key.Equals("@total", StringComparison.CurrentCultureIgnoreCase))
             {
                 int.TryParse(q.Value.ToString(), out int total);
                 result.Total = total;
                 continue;
             }
-            if (q.Key.Equals(nameof(result.Page), StringComparison.CurrentCultureIgnoreCase))
+            if (q.Key.Equals("@page", StringComparison.CurrentCultureIgnoreCase))
             {
                 int.TryParse(q.Value.ToString(), out int page);
                 result.Page = page;
                 continue;
             }
-            if (q.Key.Equals(nameof(result.Count), StringComparison.CurrentCultureIgnoreCase))
+            if (q.Key.Equals("@count", StringComparison.CurrentCultureIgnoreCase))
             {
                 int.TryParse(q.Value.ToString(), out int count);
                 result.Count = count;
                 continue;
             }
-            if (q.Key.Equals("target", StringComparison.CurrentCultureIgnoreCase))
+            if (q.Key.Equals("@target", StringComparison.CurrentCultureIgnoreCase))
             {
-                result.Table = q.Value.ToString();
-                result.Table = GetTableAlias(result.Table, option);
-                if (!IsEntity(result.Table))
-                {
-                    result.Success = false;
-                    result.Msg = "target无效";
-                    return result;
-                }
+                result.Target = q.Value.ToString();
+                result.Table = GetTableAlias(result.Target);
+                // if (!IsEntity(result.Table))
+                // {
+                //     result.Success = false;
+                //     result.Msg = "target无效";
+                //     return result;
+                // }
 
                 continue;
             }
-
-            if (q.Key.Equals(nameof(result.Columns), StringComparison.CurrentCultureIgnoreCase) && Check.HasValue(q.Value))
+            if (q.Key.Equals("@orderAsc", StringComparison.CurrentCultureIgnoreCase))
             {
-                result.Columns = HandleColumnAlias(q.Value.ToString(), option);
+                string val = q.Value.ToString();
+                if (Check.HasValue(val))
+                {
+                    orderStrs.Add(GetFieldAlias(val) + " ASC");
+                }
+                continue;
+            }
+            if (q.Key.Equals("@orderDesc", StringComparison.CurrentCultureIgnoreCase))
+            {
+                string val = q.Value.ToString();
+                if (Check.HasValue(val))
+                {
+                    orderStrs.Add(GetFieldAlias(val) + " DESC");
+                }
+                continue;
+            }
+
+            if (q.Key.Equals("@columns", StringComparison.CurrentCultureIgnoreCase) && Check.HasValue(q.Value))
+            {
+                result.Columns = GetQueryColumnAlias(q.Value.ToString(), _maFrameworkOptions.EasyApi!);
                 if (!Check.IfSqlFragmentSafe(result.Columns))
                 {
                     result.Success = false;
@@ -130,7 +160,8 @@ public class EasyApi
 
         }
 
-        string where = "";
+        string where = string.Empty;
+        string order = string.Empty;
         if (queryList.Count > 0)
         {
             where += " WHERE " + string.Join(" AND ", queryList);
@@ -139,11 +170,60 @@ public class EasyApi
         {
             result.TotalSql = $"SELECT COUNT(1) from {result.Table} {where}";
         }
-        result.Sql = $"SELECT {result.Columns} from {result.Table} {where} limit {result.Count} offset {(result.Page - 1) * result.Count} ";
-
+        if (orderStrs.Count > 0)
+        {
+            order = $"ORDER BY " + string.Join(",", orderStrs);
+        }
+        result.Sql = $"SELECT {result.Columns} from {result.Table} {where} {order} limit {result.Count} offset {(result.Page - 1) * result.Count} ";
+        if (!Check.IfSqlFragmentSafe(result.Sql))
+        {
+            result.Success = false;
+            result.Msg = "不安全的SQL";
+        }
 #if DEBUG
         Console.WriteLine(result.Sql);
 #endif
+        return result;
+    }
+
+    public EasyApiParseResult ProcessDeleteRequest(IQueryCollection queryCollection)
+    {
+        EasyApiParseResult result = new EasyApiParseResult()
+        {
+            OperationType = SqlOperationType.None
+        };
+        foreach (var q in queryCollection)
+        {
+            if (q.Key.Equals("target", StringComparison.CurrentCultureIgnoreCase))
+            {
+                result.Target = q.Value.ToString();
+                result.Table = GetTableAlias(result.Target);
+                continue;
+            }
+            if (q.Key.Equals("id", StringComparison.CurrentCultureIgnoreCase))
+            {
+
+                result.Sql = $"DELETE FROM {result.Table} WHERE {result.Table}.Id  = '{q.Value}' ";
+                continue;
+            }
+            if (q.Key.Equals("ids", StringComparison.CurrentCultureIgnoreCase))
+            {
+                var idsArray = q.Value.ToString().Split(',');
+                if (idsArray.Length < 1)
+                {
+                    continue;
+                }
+
+                result.Sql = $"DELETE FROM {result.Table} WHERE {result.Table}.Id  IN ({string.Join(',', idsArray.ToStringCollection())}) ";
+            }
+
+        }
+        // result.Sql = $"DELETE FROM {result.Table} WHERE {result.Table}.Id  = 1 ";
+        if (!Check.IfSqlFragmentSafe(result.Sql))
+        {
+            result.Success = false;
+            result.Msg = "不安全的SQL";
+        }
         return result;
     }
 
@@ -153,7 +233,7 @@ public class EasyApi
     /// <param name="columns">expect format: col1,col2</param>
     /// <param name="option"></param>
     /// <returns></returns>
-    private string HandleColumnAlias(string columns, EasyApiOptions option)
+    private string GetQueryColumnAlias(string columns, EasyApiOptions option)
     {
         if (option.ColumnAlias == null)
         {
@@ -182,6 +262,38 @@ public class EasyApi
     }
 
     /// <summary>
+    /// 列别名转为表列名
+    /// </summary>
+    /// <param name="columns"></param>
+    /// <param name="option"></param>
+    /// <returns></returns>
+    private List<string> GetOriginalColumn(List<string> columns, EasyApiOptions option)
+    {
+        if (option.ColumnAlias == null)
+        {
+            return default;
+        }
+        List<string> colList = new();
+        foreach (var col in columns)
+        {
+            if (option.ColumnAlias.ContainsKey(col))
+            {
+                var val = option.ColumnAlias[col];
+                if (Check.HasValue(val))
+                {
+                    colList.Add($"{val}");
+                }
+            }
+            else
+            {
+                colList.Add($"{col}");
+            }
+        }
+
+        return colList.Count == 0 ? columns : colList;
+    }
+
+    /// <summary>
     /// 检查表名是否为IEntity
     /// </summary>
     /// <param name="target"></param>
@@ -203,7 +315,6 @@ public class EasyApi
         }
 
         return false;
-        //GetTableAlias(target, option);
     }
 
     /// <summary>
@@ -211,13 +322,17 @@ public class EasyApi
     /// </summary>
     /// <param name="target"></param>
     /// <param name="option"></param>
-    private string GetTableAlias(string target, EasyApiOptions option)
+    private string GetTableAlias(string? target)
     {
-        if (option.TableAlias != null)
+        if (!Check.HasValue(target))
         {
-            if (option.TableAlias.ContainsKey(target))
+            return target;
+        }
+        if (_maFrameworkOptions.EasyApi?.TableAlias != null)
+        {
+            if (_maFrameworkOptions.EasyApi.TableAlias.ContainsKey(target))
             {
-                var val = option.TableAlias[target];
+                var val = _maFrameworkOptions.EasyApi.TableAlias[target];
                 if (Check.HasValue(val))
                 {
                     return Check.HasValue(val) ? val : target;
@@ -265,53 +380,72 @@ public class EasyApi
     /// <param name="body"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    public async Task<EasyApiParseResult> ProcessPostRequest(Stream body, MaFrameworkOptions option)
+    public async Task<List<EasyApiParseResult>> ProcessPostRequest(Stream body, MaFrameworkOptions option)
     {
-        EasyApiParseResult result = new EasyApiParseResult()
-        {
-            Page = 1,
-            Count = 1,
-            Columns = "*",
-            Sql = string.Empty,
-            Table = string.Empty,
-        };
+        List<EasyApiParseResult> results = new List<EasyApiParseResult>();
+
         var root = await JsonNode.ParseAsync(body);
         if (root == null)
         {
-            return result;
+            return results;
         }
 
-        StringBuilder sb = new();
         var rootObject = root.AsObject();
-        List<string> queryList = new();
         if (rootObject != null)
         {
             foreach (var tableNode in rootObject)
             {
-                if (tableNode.Value == null) // user: {
+                if (tableNode.Value == null)
                 {
                     continue;
                 }
-                JsonObject subObject = tableNode.Value.AsObject();
-                result.Table = tableNode.Key;
-                result.Table = GetTableAlias(result.Table, option.EasyApi);
-                if (!IsEntity(result.Table))
+
+                var result = new EasyApiParseResult()
                 {
-                    result.Success = false;
-                    result.Msg = "target无效";
-                    return result;
+                    Page = 1,
+                    Count = 1,
+                    Columns = "*",
+                    OperationType = SqlOperationType.Table
+                };
+                if (tableNode.Value is JsonArray)
+                {
+                    // POST方式 表节点下的数组现在作为批量添加
+                    result = ProcessAddData(tableNode, option.EasyApi, true);
+                    results.Add(result);
+                    continue;
                 }
+                JsonObject subObject = tableNode.Value.AsObject();
+                if (!subObject.Any(x => x.Key.StartsWith('@')))
+                {
+                    result = ProcessAddData(tableNode, option.EasyApi);
+                    results.Add(result);
+                    continue;
+                }
+
+                result.Target = tableNode.Key;
+                result.Table = GetTableAlias(result.Target);
+                // if (!IsEntity(result.Table))
+                // {
+                //     result.Success = false;
+                //     result.Msg = "target无效";
+                //     results.Add(result);
+                //     return results;
+                // }
+                List<string> joinStrs = new();
+                List<string> orderStrs = new();
+                string where = "";
 
                 foreach (var subProperty in subObject)
                 {
                     if (subProperty.Key.Equals("@columns", StringComparison.CurrentCultureIgnoreCase))
                     {
-                        result.Columns = HandleColumnAlias(subProperty.Value.ToString(), option.EasyApi);
+                        result.Columns = GetQueryColumnAlias(subProperty.Value.ToString(), option.EasyApi);
                         if (!Check.IfSqlFragmentSafe(result.Columns))
                         {
                             result.Success = false;
                             result.Msg = "输入了无效参数";
-                            return result;
+                            results.Add(result);
+                            return results;
                         }
                         continue;
                     }
@@ -339,44 +473,357 @@ public class EasyApi
                             result.Page = page;
                         }
                     }
+                    if (subProperty.Key.Equals("@join", StringComparison.CurrentCultureIgnoreCase))
+                    {
+                        ProcessJoinPart(subProperty, joinStrs, result.Table);
+                    }
                     if (subProperty.Key.Equals("@where", StringComparison.CurrentCultureIgnoreCase))
                     {
-                        foreach (var whereField in subProperty.Value.AsObject())
-                        {
-                            string fieldName = whereField.Key;
-                            if (whereField.Value == null)
-                            {
-                                continue;
-                            }
-                            var fieldType = whereField.Value?.AsObject()["type"]?.ToString();
-                            var fieldValue = whereField.Value?.AsObject()["value"]?.ToString();
-                            queryList.Add(GetOperatorNotationByWhereType(fieldType, option.DBType, fieldName, fieldValue));
-                        }
+                        where = HandleWhereParam(result, subProperty.Value);
+                    }
+                    if (subProperty.Key.Equals("@order", StringComparison.CurrentCultureIgnoreCase))
+                    {
+                        ProcessOrderByPart(subProperty, orderStrs, result.Table);
                     }
                 } // for property
                   // 查询的情况
-                string where = "";
-                if (queryList.Count > 0)
+                string joinStr = string.Empty;
+                string orderStr = string.Empty;
+                if (joinStrs.Count > 0)
                 {
-                    where += " WHERE " + string.Join(" AND ", queryList);
+                    joinStr = string.Join(' ', joinStrs);
                 }
                 if (result.Total.HasValue)
                 {
-                    result.TotalSql = $"SELECT COUNT(1) from {result.Table} {where}";
+                    result.TotalSql = $"SELECT COUNT(1) from {result.Table}  {joinStr} {where}";
                 }
-                string sql = $"SELECT {result.Columns} from {result.Table} {where} limit {result.Count} offset {(result.Page - 1) * result.Count} ";
+                if (orderStrs.Count > 0)
+                {
+                    orderStr = " ORDER BY " + string.Join(',', orderStrs);
+                }
 
-                // 新增数据的情况 todo
-                result.KeyResults.Add(tableNode.Key, sql);
+                result.Sql = $"SELECT {result.Columns} from {result.Table} {joinStr} {where} {orderStr} limit {result.Count} offset {(result.Page - 1) * result.Count} ";
+                if (!Check.IfSqlFragmentSafe(result.Sql))
+                {
+                    result.Success = false;
+                    result.Msg = "不安全的SQL";
+                }
+                results.Add(result);
             }// for table
         }
 
+        return results;
+    }
+
+    private string HandleWhereParam(EasyApiParseResult result, JsonNode node)
+    {
+        List<string> tmps = new();
+
+        foreach (var whereField in node.AsObject())
+        {
+            string fieldName = MakeSureHavaTablePrefix(whereField.Key, result.Table);
+            if (whereField.Value == null)
+            {
+                continue;
+            }
+            var fieldType = whereField.Value?.AsObject()["type"]?.ToString();
+            var fieldValue = whereField.Value?.AsObject()["value"]?.ToString();
+            if (Check.HasValue(fieldValue))
+            {
+                tmps.Add(GetOperatorNotationByWhereType(fieldType, _maFrameworkOptions.DBType, fieldName, fieldValue));
+            }
+        }
+        return tmps.Count > 0 ? " WHERE " + string.Join(" AND ", tmps) : string.Empty;
+    }
+
+    /// <summary>
+    /// 确保字段名前带上表名前缀 TABLE.COLUMN
+    /// </summary>
+    /// <param name="fieldName"></param>
+    /// <param name="table"></param>
+    /// <returns></returns>
+    private string MakeSureHavaTablePrefix(string fieldName, string table)
+    {
+        if (fieldName.Contains('.'))
+        {
+            var fieldNameAray = fieldName.Split('.');
+            if (fieldNameAray.Length == 3)
+            {
+                string alias = GetTableAlias(fieldNameAray[0]);
+                return alias + "." + fieldNameAray[2];
+            }
+            return fieldName;
+        }
+        else
+        {
+            return Check.HasValue(table) ? table + "." + fieldName : fieldName;
+        }
+    }
+    private void ProcessOrderByPart(KeyValuePair<string, JsonNode?> subProperty, List<string> orderStrs, string table)
+    {
+        if (subProperty.Value == null)
+        {
+            return;
+        }
+        foreach (var item in subProperty.Value.AsArray())
+        {
+            var obj = item.AsObject();
+            string? field = obj["field"]?.ToString();
+            string? type = obj["type"]?.ToString();
+
+            if (!Check.HasValue(field))
+            {
+                continue;
+            }
+            field = MakeSureHavaTablePrefix(field, table);
+            if (!Check.HasValue(type))
+            {
+                type = "ASC";
+            }
+
+            field = GetFieldAlias(field);
+            orderStrs.Add($"{field} {type}");
+        }
+    }
+
+    private void ProcessJoinPart(KeyValuePair<string, JsonNode?> subProperty, List<string> joinStrs, string table)
+    {
+        if (subProperty.Value == null)
+        {
+            return;
+        }
+        foreach (var item in subProperty.Value.AsArray())
+        {
+            var obj = item.AsObject();
+            string? targetJoin = obj["targetJoin"]?.ToString();
+            string? targetOn = obj["targetOn"]?.ToString();
+            string? joinField = obj["joinField"]?.ToString();
+            string? onField = obj["onField"]?.ToString();
+            string? joinType = obj["type"]?.ToString();
+
+            if (!Check.HasValue(targetJoin) || !Check.HasValue(joinField) || !Check.HasValue(onField)) // || !Check.HasValue(targetField) )
+            {
+                continue;
+            }
+            if (!Check.HasValue(joinType))
+            {
+                joinType = "join";
+            }
+            targetJoin = GetTableAlias(targetJoin);
+            targetOn = GetTableAlias(targetOn);
+            joinType = GetJoinType(joinType);
+            joinField = GetFieldAlias(joinField);
+            onField = GetFieldAlias(onField);
+            string result = string.Empty;
+            if (!Check.HasValue(targetOn))
+            {
+                result = $" {joinType} {targetJoin} ON {targetJoin}.{joinField} = {table}.{onField} ";
+            }
+            else
+            {
+                result = $" {joinType} {targetJoin} ON {targetJoin}.{joinField} = {targetOn}.{onField} ";
+            }
+
+            joinStrs.Add(result);
+        }
+    }
+
+    /// <summary>
+    /// 获取单个字段的别名
+    /// </summary>
+    /// <param name="name"></param>
+    /// <param name="target"></param>
+    /// <returns></returns>
+    private string GetFieldAlias(string name)
+    {
+        if (_maFrameworkOptions.EasyApi?.ColumnAlias == null)
+        {
+            return name;
+        }
+
+        if (_maFrameworkOptions.EasyApi?.ColumnAlias?.ContainsKey(name) == true)
+        {
+            return _maFrameworkOptions.EasyApi.ColumnAlias[name];
+        }
+        return name;
+    }
+
+    private string GetJoinType(string joinType)
+    {
+        switch (joinType.ToLower())
+        {
+            case ConstStrings.JoinType.InnerJoin:
+                return "INNER JOIN";
+            case ConstStrings.JoinType.OuterJoin:
+                return "OUTER JOIN";
+            case ConstStrings.JoinType.LeftJoin:
+                return "LEFT JOIN";
+            case ConstStrings.JoinType.RightJoin:
+                return "RIGHT JOIN";
+            default:
+                return "JOIN";
+        }
+    }
+
+    /// <summary>
+    /// 新增数据
+    /// </summary>
+    /// <param name="tableNode"></param>
+    /// <returns></returns>
+    private EasyApiParseResult ProcessAddData(KeyValuePair<string, JsonNode?> tableNode, EasyApiOptions easyApiOptions, bool isMulti = false)
+    {
+        EasyApiParseResult result = new EasyApiParseResult()
+        {
+            OperationType = SqlOperationType.None
+        };
+        if (tableNode.Value == null)
+        {
+            return result;
+        }
+
+
+
+        void HandleValue(JsonNode? node, List<string> cols, List<dynamic> vals, List<string> valuesParts)
+        {
+            if (node == null)
+            {
+                return;
+            }
+            // 获取主键，自增忽略，非自增自动生成默认值
+            (string k, dynamic v) primaryKey = GetPrimaryKeyDefaultValueOfTable(tableNode.Key);
+            foreach (var item in node.AsObject())
+            {
+                cols.Add(item.Key);
+                if (long.TryParse(item.Value.ToString(), out long v))
+                {
+                    vals.Add(v);
+                }
+                else
+                {
+                    vals.Add("'" + item.Value.ToString() + "'");
+                }
+            }
+            if (!cols.Contains(primaryKey.k))
+            {
+                // 未包含主键
+                cols.Add(primaryKey.k);
+                vals.Add("'" + primaryKey.v + "'");
+            }
+            valuesParts.Add("(" + string.Join(',', vals) + ")");
+        }
+
+        string target = tableNode.Key;
+        string tableName = GetTableAlias(target);
+        List<string> cols = new();
+        JsonArray bulkItemArray = new();
+        List<string> valuesParts = new();
+        List<dynamic> vals = new();
+        if (isMulti)
+        {
+            bulkItemArray = tableNode.Value.AsArray();
+        }
+        else
+        {
+            HandleValue(tableNode.Value.AsObject(), cols, vals, valuesParts);
+        }
+        foreach (var bulkItem in bulkItemArray)
+        {
+            cols.Clear();
+            vals.Clear();
+            HandleValue(bulkItem, cols, vals, valuesParts);
+        }
+        string originalColumn = string.Join(',', GetOriginalColumn(cols, easyApiOptions));
+        result.Sql = $"INSERT INTO {tableName} ({originalColumn}) VALUES {string.Join(',', valuesParts)}";
+        if (!Check.IfSqlFragmentSafe(result.Sql))
+        {
+            result.Success = false;
+            result.Msg = "不安全的SQL";
+        }
         return result;
     }
+    /// <summary>
+    /// 获取表的主键
+    /// </summary>
+    /// <param name="table"></param>
+    /// <returns></returns>
+    private (string, dynamic?) GetPrimaryKeyDefaultValueOfTable(string table)
+    {
+        var types = _cacheManager.Get("TableColType") as Dictionary<string, IEnumerable<TableColType>>;
+        if (types == null)
+        {
+            types = new Dictionary<string, IEnumerable<TableColType>>();
+        }
+        if (!types.ContainsKey(table))
+        {
+            // 请求
+            string sql = $@"
+           SELECT
+            COLUMN_NAME 'Name',
+            COLUMN_TYPE 'TypeLength',
+            IF(EXTRA='auto_increment',CONCAT(COLUMN_KEY,'(', IF(EXTRA='auto_increment','自增长',EXTRA),')'),COLUMN_KEY) 'Key',
+            IS_NULLABLE 'Isnull',
+            COLUMN_COMMENT 'Remark'
+            FROM
+                information_schema.COLUMNS
+            WHERE  TABLE_NAME = '{table}';
+            ";
+            var tmp = _dbHelper.Connection.Query<TableColType>(sql);
+            types.Add(table, tmp);
+            _cacheManager.Save("TableColType", types);
+        }
+
+        var list = types[table];
+        var primaryKey = list.FirstOrDefault(x => x.Key.Contains("PRI"));
+        if (primaryKey == null)
+        {
+            return (string.Empty, null);
+        }
+        return (primaryKey.Name, GetDBTypeDefaultValue(primaryKey.TypeLength, table, primaryKey.Name));
+    }
+
+    /// <summary>
+    /// 获取数据库类型的默认值
+    /// </summary>
+    /// <param name="typeLength"></param>
+    /// <returns></returns>
+    private dynamic? GetDBTypeDefaultValue(string typeLength, string table, string fieldName)
+    {
+        if (!Check.HasValue(typeLength))
+        {
+            return null;
+        }
+        if ("char(36)".Equals(typeLength, StringComparison.CurrentCultureIgnoreCase))
+        {
+            return Guid.NewGuid().ToString();
+        }
+
+        if (typeLength.ToLower().Contains("int")
+            || typeLength.ToLower().Contains("double")
+            || typeLength.ToLower().Contains("decimal")
+            || typeLength.ToLower().Contains("long")
+            || typeLength.ToLower().Contains("numeric")
+            || typeLength.ToLower().Contains("float"))
+        {
+            // 获取数据中当前最大值
+            dynamic? val = GetCurrentMaxValue(table, fieldName);
+            return val + 1;
+        }
+
+        return null;
+    }
+
+    private dynamic? GetCurrentMaxValue(string table, string fieldName)
+    {
+        if (!Check.HasValue(table) || !Check.HasValue(fieldName))
+        {
+            return null;
+        }
+        return _dbHelper.Connection.ExecuteScalar($"SELECT MAX({fieldName}) FROM {table}");
+    }
+
     private string GetOperatorNotationByWhereType(string type, DBType dbType, string left, string right)
     {
         string result = string.Empty;
-
         switch (type)
         {
             case ConstStrings.WhereConfitionType.Contains:
@@ -427,6 +874,97 @@ public class EasyApi
 
         return result;
     }
+
+    public async Task<List<EasyApiParseResult>> ProcessPutRequest(Stream body, MaFrameworkOptions value)
+    {
+        List<EasyApiParseResult> results = new();
+
+
+        var root = await JsonNode.ParseAsync(body);
+        if (root == null)
+        {
+            return results;
+        }
+
+        var objArray = root.AsArray();
+        foreach (var obj in objArray)
+        {
+            EasyApiParseResult result = new EasyApiParseResult()
+            {
+                OperationType = SqlOperationType.None
+            };
+            if (obj == null)
+            {
+                continue;
+            }
+            var id = string.Empty;// obj["@id"]?.ToString();
+            var ids = string.Empty;// obj["@ids"]?.ToString();
+            JsonNode? where = null;// obj["@where"];
+
+            var target = string.Empty;//GetTableAlias(obj["@target"]?.ToString());
+
+            List<string> setList = new();
+            foreach (var prop in obj.AsObject())
+            {
+                if (prop.Key.Equals("@id", StringComparison.CurrentCultureIgnoreCase))
+                {
+                    id = obj["@id"]?.ToString();
+                    continue;
+                }
+                if (prop.Key.Equals("@ids", StringComparison.CurrentCultureIgnoreCase))
+                {
+                    ids = obj["@ids"]?.ToString();
+                    continue;
+                }
+                if (prop.Key.Equals("@where", StringComparison.CurrentCultureIgnoreCase))
+                {
+                    where = obj["@where"];
+                    continue;
+                }
+                if (prop.Key.Equals("@target", StringComparison.CurrentCultureIgnoreCase))
+                {
+                    target = GetTableAlias(obj["@target"]?.ToString());
+                    continue;
+                }
+                var key = GetFieldAlias(prop.Key);
+                var val = prop.Value;
+                setList.Add($"{key}='{val}'");
+            }
+            if (!Check.HasValue(target))
+            {
+                continue;
+            }
+            if (!Check.HasValue(id) && !Check.HasValue(ids) && where == null)
+            {
+                continue;
+            }
+            if (setList.Count > 0)
+            {
+                result.Sql = $"UPDATE {target} SET {string.Join(',', setList)}";
+                if (Check.HasValue(id))
+                {
+                    result.Sql += $" WHERE ID='{id}'";
+                }
+                else if (Check.HasValue(ids))
+                {
+                    var idsTmp = ids.Split(',').ToStringCollection();
+                    result.Sql += $" WHERE ID IN ({string.Join(',', idsTmp)})";
+                }
+                else if (where != null)
+                {
+                    result.Sql += HandleWhereParam(result, where);
+                }
+            }
+            if (!Check.IfSqlFragmentSafe(result.Sql))
+            {
+                result.Success = false;
+                result.Msg = "不安全的SQL";
+            }
+            results.Add(result);
+        }
+
+        return results;
+    }
 }
 
 
@@ -436,21 +974,64 @@ public class EasyApiParseResult()
     public int Page { get; set; }
     public int Count { get; set; }
     public string Table { get; set; }
+    public string Target { get; set; }
     public int? Total { get; set; }
     public string Sql { get; set; }
     public string TotalSql { get; set; }
     public string Columns { get; set; }
     public bool Success { get; set; } = true;
     public string Msg { get; set; } = string.Empty;
-    public Dictionary<string, dynamic> KeyResults { get; set; } = new();
+    public SqlOperationType OperationType { get; set; }
 }
 
 public class WhereField
 {
     /// <summary>
-    /// ConstSettingValue.WhereConfitionType
+    /// ConstStrings.WhereConfitionType
     /// </summary>
     public string? Type { get; set; }
     public object Value { get; set; }
 }
 
+public class JoinField
+{
+    /// <summary>
+    /// 连表对象
+    /// </summary>
+    public string TargetJon { get; set; }
+    /// <summary>
+    /// 
+    /// </summary>
+    public string TargetOn { get; set; }
+    /// <summary>
+    /// 连表方式
+    /// </summary>
+    public string Type { get; set; }
+    /// <summary>
+    /// ConstStrings.JoinType
+    /// </summary>
+    public string TargetField { get; set; }
+    /// <summary>
+    /// 连表字段
+    /// </summary>
+    public string Field { get; set; }
+
+}
+
+public enum SqlOperationType
+{
+    None = 0,
+    Scalar = 1,
+    Row = 2,
+    Table = 3,
+
+}
+
+public class TableColType
+{
+    public string Name { get; set; }
+    public string TypeLength { get; set; }
+    public string Key { get; set; }
+    public string Isnull { get; set; }
+    public string Remark { get; set; }
+}

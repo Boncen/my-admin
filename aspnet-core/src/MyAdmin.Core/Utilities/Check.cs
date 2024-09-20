@@ -1,4 +1,6 @@
-﻿namespace MyAdmin.Core;
+﻿using System.Text.Json.Nodes;
+
+namespace MyAdmin.Core;
 
 public class Check
 {
@@ -33,7 +35,7 @@ public class Check
             return true;
         }
 
-        if (sql.Contains("--") || sql.Contains("//") || sql.Contains("truncate") || sql.Contains('(')|| sql.Contains(')'))
+        if (sql.Contains("--") || sql.Contains("//") || sql.Contains("truncate"))// || sql.Contains('(')|| sql.Contains(')'))
         {
             return false;
         }
