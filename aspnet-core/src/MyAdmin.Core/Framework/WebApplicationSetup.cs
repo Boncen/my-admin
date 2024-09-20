@@ -126,12 +126,19 @@ public static class WebApplicationSetup
                 var body = accessor.HttpContext.Request.Body;
                 var parseResults = await easy.ProcessPostRequest(body, frameworkOption.Value);
                 JsonObject jobj = new JsonObject(); // table node
-
+                int index = 0;
                 foreach (var parseResult in parseResults)
                 {
+                    ++index;
                     if (parseResult.Success == false)
                     {
-                        jobj[parseResult.Target] = parseResult.Msg ?? "解析失败";
+                        if (Check.HasValue(parseResult.Target))
+                        {
+                            jobj[parseResult.Target] = parseResult.Msg ?? "解析失败";
+                        }
+                        else{
+                            jobj["target" + index] = parseResult.Msg ?? "解析失败";
+                        }
                         continue;
                     }
                     if (Check.HasValue(parseResult.Sql))

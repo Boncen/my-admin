@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Text;
 using System.Text.Json.Nodes;
 using System.Transactions;
+using Dapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
 using Microsoft.EntityFrameworkCore.Metadata;
@@ -12,6 +13,7 @@ using MyAdmin.Core.Entity;
 using MyAdmin.Core.Exception;
 using MyAdmin.Core.Extensions;
 using MyAdmin.Core.Options;
+using MyAdmin.Core.Repository;
 using MyAdmin.Core.Utilities;
 
 namespace MyAdmin.Core.Framework;
@@ -19,13 +21,15 @@ namespace MyAdmin.Core.Framework;
 public class EasyApi
 {
     private readonly Core.MaFrameworkBuilder _maFrameworkBuilder;
-    private readonly ICacheManager<List<string>> _cacheManager;
+    private readonly ICacheManager _cacheManager;
     private readonly MaFrameworkOptions _maFrameworkOptions;
-    public EasyApi(Core.MaFrameworkBuilder maFrameworkBuilder, ICacheManager<List<string>> cacheManager, IOptionsSnapshot<MaFrameworkOptions> optionSnap)
+    private readonly DBHelper _dbHelper;
+    public EasyApi(Core.MaFrameworkBuilder maFrameworkBuilder, ICacheManager cacheManager, IOptionsSnapshot<MaFrameworkOptions> optionSnap, DBHelper dbHelper)
     {
         _maFrameworkBuilder = maFrameworkBuilder;
         _cacheManager = cacheManager;
         _maFrameworkOptions = optionSnap.Value;
+        _dbHelper = dbHelper;
     }
 
     private List<string> GetEntityList()
@@ -391,7 +395,7 @@ public class EasyApi
         {
             foreach (var tableNode in rootObject)
             {
-                if (tableNode.Value == null) // user: {
+                if (tableNode.Value == null)
                 {
                     continue;
                 }
@@ -677,12 +681,16 @@ public class EasyApi
             return result;
         }
 
+
+
         void HandleValue(JsonNode? node, List<string> cols, List<dynamic> vals, List<string> valuesParts)
         {
             if (node == null)
             {
                 return;
             }
+            // 获取主键，自增忽略，非自增自动生成默认值
+            (string k, dynamic v) primaryKey = GetPrimaryKeyDefaultValueOfTable(tableNode.Key);
             foreach (var item in node.AsObject())
             {
                 cols.Add(item.Key);
@@ -694,6 +702,12 @@ public class EasyApi
                 {
                     vals.Add("'" + item.Value.ToString() + "'");
                 }
+            }
+            if (!cols.Contains(primaryKey.k))
+            {
+                // 未包含主键
+                cols.Add(primaryKey.k);
+                vals.Add("'" + primaryKey.v + "'");
             }
             valuesParts.Add("(" + string.Join(',', vals) + ")");
         }
@@ -726,6 +740,85 @@ public class EasyApi
             result.Msg = "不安全的SQL";
         }
         return result;
+    }
+    /// <summary>
+    /// 获取表的主键
+    /// </summary>
+    /// <param name="table"></param>
+    /// <returns></returns>
+    private (string, dynamic?) GetPrimaryKeyDefaultValueOfTable(string table)
+    {
+        var types = _cacheManager.Get("TableColType") as Dictionary<string, IEnumerable<TableColType>>;
+        if (types == null)
+        {
+            types = new Dictionary<string, IEnumerable<TableColType>>();
+        }
+        if (!types.ContainsKey(table))
+        {
+            // 请求
+            string sql = $@"
+           SELECT
+            COLUMN_NAME 'Name',
+            COLUMN_TYPE 'TypeLength',
+            IF(EXTRA='auto_increment',CONCAT(COLUMN_KEY,'(', IF(EXTRA='auto_increment','自增长',EXTRA),')'),COLUMN_KEY) 'Key',
+            IS_NULLABLE 'Isnull',
+            COLUMN_COMMENT 'Remark'
+            FROM
+                information_schema.COLUMNS
+            WHERE  TABLE_NAME = '{table}';
+            ";
+            var tmp = _dbHelper.Connection.Query<TableColType>(sql);
+            types.Add(table, tmp);
+            _cacheManager.Save("TableColType", types);
+        }
+
+        var list = types[table];
+        var primaryKey = list.FirstOrDefault(x => x.Key.Contains("PRI"));
+        if (primaryKey == null)
+        {
+            return (string.Empty, null);
+        }
+        return (primaryKey.Name, GetDBTypeDefaultValue(primaryKey.TypeLength, table, primaryKey.Name));
+    }
+
+    /// <summary>
+    /// 获取数据库类型的默认值
+    /// </summary>
+    /// <param name="typeLength"></param>
+    /// <returns></returns>
+    private dynamic? GetDBTypeDefaultValue(string typeLength, string table, string fieldName)
+    {
+        if (!Check.HasValue(typeLength))
+        {
+            return null;
+        }
+        if ("char(36)".Equals(typeLength, StringComparison.CurrentCultureIgnoreCase))
+        {
+            return Guid.NewGuid().ToString();
+        }
+
+        if (typeLength.ToLower().Contains("int")
+            || typeLength.ToLower().Contains("double")
+            || typeLength.ToLower().Contains("decimal")
+            || typeLength.ToLower().Contains("long")
+            || typeLength.ToLower().Contains("numeric")
+            || typeLength.ToLower().Contains("float"))
+        {
+            // 获取数据中当前最大值
+            dynamic? val = GetCurrentMaxValue(table, fieldName);
+            return val + 1;
+        }
+
+        return null;
+    }
+
+    private dynamic? GetCurrentMaxValue(string table, string fieldName)
+    {
+        if (!Check.HasValue(table) || !Check.HasValue(fieldName))
+        {
+            return null;
+        }
+        return _dbHelper.Connection.ExecuteScalar($"SELECT MAX({fieldName}) FROM {table}");
     }
 
     private string GetOperatorNotationByWhereType(string type, DBType dbType, string left, string right)
@@ -932,4 +1025,13 @@ public enum SqlOperationType
     Row = 2,
     Table = 3,
 
+}
+
+public class TableColType
+{
+    public string Name { get; set; }
+    public string TypeLength { get; set; }
+    public string Key { get; set; }
+    public string Isnull { get; set; }
+    public string Remark { get; set; }
 }

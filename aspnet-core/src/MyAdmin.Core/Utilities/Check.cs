@@ -35,7 +35,7 @@ public class Check
             return true;
         }
 
-        if (sql.Contains("--") || sql.Contains("//") || sql.Contains("truncate") || sql.Contains('(')|| sql.Contains(')'))
+        if (sql.Contains("--") || sql.Contains("//") || sql.Contains("truncate"))// || sql.Contains('(')|| sql.Contains(')'))
         {
             return false;
         }

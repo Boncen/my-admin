@@ -7,7 +7,7 @@ public interface ICacheManager
     object Save(string key, object data, TimeSpan expire);
     object SaveIfNotExist(string key, object data);
     object SaveIfNotExist(string key, object data, TimeSpan expire);
-    object? Get(string key);
+    dynamic? Get(string key);
 }
 
 public interface ICacheManager<T> : ICacheManager
