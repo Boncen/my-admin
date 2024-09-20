@@ -225,3 +225,63 @@ WHERE MaUser.salt < '8894561230' AND MaRole.Name='dev' limit 10 offset 0
   }
 }
 ```
+
+#### 删除
+批量删除
+```json
+http://localhost:5066/easy?target=TestEasy&ids=17,18
+```
+
+删除
+```json
+http://localhost:5066/easy?target=TestEasy&id=17
+```
+
+#### 更新
+```json
+[
+  {
+    "@id": "20",
+    "Account": "测试啊3",
+    "@target": "TestEasy"
+  }
+]
+```
+
+批量更新
+```json
+[
+  {
+    "@ids": "20,21,22",
+    "Account": "测试啊3",
+    "@target": "TestEasy"
+  }
+]
+```
+
+根据条件查询更新，多个更新操作。
+```json
+[
+  {
+    "@ids": "20,21,22",
+    "Account": "测试啊4",
+    "@target": "TestEasy"
+  },
+  {
+    "@ids": "21,22",
+    "isAvalid": 1,
+    "@target": "TestEasy"
+  },
+  {
+    "@where": {
+      "Id": {
+        "type": "lessThan",
+        "value": 20
+      }
+    },
+    "Account": "测试啊3",
+    "@target": "TestEasy"
+  }
+]
+```
+

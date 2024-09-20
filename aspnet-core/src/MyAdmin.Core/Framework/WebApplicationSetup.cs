@@ -1,3 +1,4 @@
+using System.Data;
 using System.Text.Json.Nodes;
 using Dapper;
 using Microsoft.AspNetCore.Builder;
@@ -171,10 +172,37 @@ public static class WebApplicationSetup
             }
         });
 
-        app.MapPut((url), async () =>
-        {
+        app.MapPut((url), async ([FromServices] IHttpContextAccessor accessor, [FromServices] DBHelper dbHelper,
+             [FromServices] IOptionsSnapshot<MaFrameworkOptions> frameworkOption, [FromServices] EasyApi easy) =>
+         {
+             IDbTransaction trans = null;
+             try
+             {
+                 var body = accessor.HttpContext.Request.Body;
+                 List<EasyApiParseResult> parseResults = await easy.ProcessPutRequest(body, frameworkOption.Value);
+                 JsonObject jobj = new JsonObject();
+                 int rows = 0;
+                 dbHelper.Connection.Open();
+                 trans = dbHelper.Connection.BeginTransaction();
+                 foreach (var parseResult in parseResults)
+                 {
+                     if (!Check.HasValue(parseResult.Sql) || parseResult.Success == false)
+                     {
+                         return ApiResult<dynamic>.Fail(parseResult.Msg ?? "解析错误");
+                     }
+                     rows += await dbHelper.Connection.ExecuteAsync(parseResult.Sql);
+                     jobj["rows"] = rows;
+                 }
+                 trans.Commit();
 
-        });
+                 return ApiResult<dynamic>.Ok(jobj);
+             }
+             catch (MySqlException e)
+             {
+                 trans?.Rollback();
+                 throw new MAException("SQL异常", e);
+             }
+         });
 
         app.MapDelete((url), async ([FromServices] IHttpContextAccessor accessor, [FromServices] DBHelper dbHelper,
             [FromServices] IOptionsSnapshot<MaFrameworkOptions> frameworkOption, [FromServices] EasyApi easy) =>

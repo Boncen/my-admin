@@ -5,6 +5,7 @@ using System.Text.Json.Nodes;
 using System.Transactions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.Extensions.Options;
 using MyAdmin.Core.Conf;
 using MyAdmin.Core.Entity;
@@ -386,7 +387,6 @@ public class EasyApi
                     continue;
                 }
 
-                List<string> queryList = new();
                 var result = new EasyApiParseResult()
                 {
                     Page = 1,
@@ -420,6 +420,8 @@ public class EasyApi
                 // }
                 List<string> joinStrs = new();
                 List<string> orderStrs = new();
+                string where = "";
+
                 foreach (var subProperty in subObject)
                 {
                     if (subProperty.Key.Equals("@columns", StringComparison.CurrentCultureIgnoreCase))
@@ -461,25 +463,10 @@ public class EasyApi
                     if (subProperty.Key.Equals("@join", StringComparison.CurrentCultureIgnoreCase))
                     {
                         ProcessJoinPart(subProperty, joinStrs, result.Table);
-                        // column 添加表名前缀
-                        //var cols = result.Columns.Split()
                     }
                     if (subProperty.Key.Equals("@where", StringComparison.CurrentCultureIgnoreCase))
                     {
-                        foreach (var whereField in subProperty.Value.AsObject())
-                        {
-                            string fieldName = MakeSureHavaTablePrefix(whereField.Key, result.Table);
-                            if (whereField.Value == null)
-                            {
-                                continue;
-                            }
-                            var fieldType = whereField.Value?.AsObject()["type"]?.ToString();
-                            var fieldValue = whereField.Value?.AsObject()["value"]?.ToString();
-                            if (Check.HasValue(fieldValue))
-                            {
-                                queryList.Add(GetOperatorNotationByWhereType(fieldType, option.DBType, fieldName, fieldValue, result.Table));
-                            }
-                        }
+                        where = HandleWhereParam(result, subProperty.Value);
                     }
                     if (subProperty.Key.Equals("@order", StringComparison.CurrentCultureIgnoreCase))
                     {
@@ -487,13 +474,8 @@ public class EasyApi
                     }
                 } // for property
                   // 查询的情况
-                string where = "";
                 string joinStr = string.Empty;
                 string orderStr = string.Empty;
-                if (queryList.Count > 0)
-                {
-                    where += " WHERE " + string.Join(" AND ", queryList);
-                }
                 if (joinStrs.Count > 0)
                 {
                     joinStr = string.Join(' ', joinStrs);
@@ -514,6 +496,28 @@ public class EasyApi
 
         return results;
     }
+
+    private string HandleWhereParam(EasyApiParseResult result, JsonNode node)
+    {
+        List<string> tmps = new();
+
+        foreach (var whereField in node.AsObject())
+        {
+            string fieldName = MakeSureHavaTablePrefix(whereField.Key, result.Table);
+            if (whereField.Value == null)
+            {
+                continue;
+            }
+            var fieldType = whereField.Value?.AsObject()["type"]?.ToString();
+            var fieldValue = whereField.Value?.AsObject()["value"]?.ToString();
+            if (Check.HasValue(fieldValue))
+            {
+                tmps.Add(GetOperatorNotationByWhereType(fieldType, _maFrameworkOptions.DBType, fieldName, fieldValue));
+            }
+        }
+        return tmps.Count > 0 ? " WHERE " + string.Join(" AND ", tmps) : string.Empty;
+    }
+
     /// <summary>
     /// 确保字段名前带上表名前缀 TABLE.COLUMN
     /// </summary>
@@ -534,8 +538,7 @@ public class EasyApi
         }
         else
         {
-
-            return table + "." + fieldName;
+            return Check.HasValue(table) ?  table + "." + fieldName : fieldName;
         }
     }
     private void ProcessOrderByPart(KeyValuePair<string, JsonNode?> subProperty, List<string> orderStrs, string table)
@@ -706,13 +709,9 @@ public class EasyApi
         return result;
     }
 
-    private string GetOperatorNotationByWhereType(string type, DBType dbType, string left, string right, string table)
+    private string GetOperatorNotationByWhereType(string type, DBType dbType, string left, string right)
     {
         string result = string.Empty;
-        if (!left.Contains("."))
-        {
-            left = table + "." + left;
-        }
         switch (type)
         {
             case ConstStrings.WhereConfitionType.Contains:
@@ -762,6 +761,92 @@ public class EasyApi
         }
 
         return result;
+    }
+
+    public async Task<List<EasyApiParseResult>> ProcessPutRequest(Stream body, MaFrameworkOptions value)
+    {
+        List<EasyApiParseResult> results = new();
+
+
+        var root = await JsonNode.ParseAsync(body);
+        if (root == null)
+        {
+            return results;
+        }
+
+        var objArray = root.AsArray();
+        foreach (var obj in objArray)
+        {
+            EasyApiParseResult result = new EasyApiParseResult()
+            {
+                OperationType = SqlOperationType.None
+            };
+            if (obj == null)
+            {
+                continue;
+            }
+            var id = string.Empty;// obj["@id"]?.ToString();
+            var ids = string.Empty;// obj["@ids"]?.ToString();
+            JsonNode? where = null;// obj["@where"];
+
+            var target = string.Empty;//GetTableAlias(obj["@target"]?.ToString());
+            
+            List<string> setList = new();
+            foreach (var prop in obj.AsObject())
+            {
+                if (prop.Key.Equals("@id", StringComparison.CurrentCultureIgnoreCase))
+                {
+                    id = obj["@id"]?.ToString();
+                    continue;
+                }
+                if (prop.Key.Equals("@ids", StringComparison.CurrentCultureIgnoreCase))
+                {
+                    ids = obj["@ids"]?.ToString();
+                    continue;
+                }
+                if (prop.Key.Equals("@where", StringComparison.CurrentCultureIgnoreCase))
+                {
+                    where = obj["@where"];
+                    continue;
+                }
+                if (prop.Key.Equals("@target", StringComparison.CurrentCultureIgnoreCase))
+                {
+                    target = GetTableAlias(obj["@target"]?.ToString());
+                    continue;
+                }
+                var key = GetFieldAlias(prop.Key);
+                var val = prop.Value;
+                setList.Add($"{key}='{val}'");
+            }
+            if (!Check.HasValue(target))
+            {
+                continue;
+            }
+            if (!Check.HasValue(id) && !Check.HasValue(ids) && where == null)
+            {
+                continue;
+            }
+            if (setList.Count > 0)
+            {
+                result.Sql = $"UPDATE {target} SET {string.Join(',', setList)}";
+                if (Check.HasValue(id))
+                {
+                    result.Sql += $" WHERE ID='{id}'";
+                }
+                else if (Check.HasValue(ids))
+                {
+                    var idsTmp = ids.Split(',').ToStringCollection();
+                    result.Sql += $" WHERE ID IN ({string.Join(',', idsTmp)})";
+                }
+                else if (where != null)
+                {
+                    result.Sql += HandleWhereParam(result, where);
+                }
+            }
+            results.Add(result);
+        }
+
+        return results;
     }
 }
 
