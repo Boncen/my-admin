@@ -171,7 +171,11 @@ public class EasyApi
             order = $"ORDER BY " + string.Join(",", orderStrs);
         }
         result.Sql = $"SELECT {result.Columns} from {result.Table} {where} {order} limit {result.Count} offset {(result.Page - 1) * result.Count} ";
-
+        if (!Check.IfSqlFragmentSafe(result.Sql))
+        {
+            result.Success = false;
+            result.Msg = "不安全的SQL";
+        }
 #if DEBUG
         Console.WriteLine(result.Sql);
 #endif
@@ -211,6 +215,11 @@ public class EasyApi
 
         }
         // result.Sql = $"DELETE FROM {result.Table} WHERE {result.Table}.Id  = 1 ";
+        if (!Check.IfSqlFragmentSafe(result.Sql))
+        {
+            result.Success = false;
+            result.Msg = "不安全的SQL";
+        }
         return result;
     }
 
@@ -490,6 +499,11 @@ public class EasyApi
                 }
 
                 result.Sql = $"SELECT {result.Columns} from {result.Table} {joinStr} {where} {orderStr} limit {result.Count} offset {(result.Page - 1) * result.Count} ";
+                if (!Check.IfSqlFragmentSafe(result.Sql))
+                {
+                    result.Success = false;
+                    result.Msg = "不安全的SQL";
+                }
                 results.Add(result);
             }// for table
         }
@@ -538,7 +552,7 @@ public class EasyApi
         }
         else
         {
-            return Check.HasValue(table) ?  table + "." + fieldName : fieldName;
+            return Check.HasValue(table) ? table + "." + fieldName : fieldName;
         }
     }
     private void ProcessOrderByPart(KeyValuePair<string, JsonNode?> subProperty, List<string> orderStrs, string table)
@@ -706,6 +720,11 @@ public class EasyApi
         }
         string originalColumn = string.Join(',', GetOriginalColumn(cols, easyApiOptions));
         result.Sql = $"INSERT INTO {tableName} ({originalColumn}) VALUES {string.Join(',', valuesParts)}";
+        if (!Check.IfSqlFragmentSafe(result.Sql))
+        {
+            result.Success = false;
+            result.Msg = "不安全的SQL";
+        }
         return result;
     }
 
@@ -790,7 +809,7 @@ public class EasyApi
             JsonNode? where = null;// obj["@where"];
 
             var target = string.Empty;//GetTableAlias(obj["@target"]?.ToString());
-            
+
             List<string> setList = new();
             foreach (var prop in obj.AsObject())
             {
@@ -842,6 +861,11 @@ public class EasyApi
                 {
                     result.Sql += HandleWhereParam(result, where);
                 }
+            }
+            if (!Check.IfSqlFragmentSafe(result.Sql))
+            {
+                result.Success = false;
+                result.Msg = "不安全的SQL";
             }
             results.Add(result);
         }
