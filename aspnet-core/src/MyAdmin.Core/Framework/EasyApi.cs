@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.Extensions.Options;
+using Microsoft.OpenApi.Models;
 using MyAdmin.Core.Conf;
 using MyAdmin.Core.Entity;
 using MyAdmin.Core.Exception;
@@ -434,7 +435,6 @@ public class EasyApi
                 List<string> joinStrs = new();
                 List<string> orderStrs = new();
                 string where = "";
-
                 foreach (var subProperty in subObject)
                 {
                     if (subProperty.Key.Equals("@columns", StringComparison.CurrentCultureIgnoreCase))
@@ -485,6 +485,14 @@ public class EasyApi
                     {
                         ProcessOrderByPart(subProperty, orderStrs, result.Table);
                     }
+                    if (subProperty.Key.Equals("@children", StringComparison.CurrentCultureIgnoreCase))
+                    {
+                        if (result.Children == null)
+                        {
+                            result.Children = new List<EasyApiParseResult>();
+                        }
+                        result.Children.Add(ProcessChildrenQuery(subProperty, result.Table));
+                    }
                 } // for property
                   // 查询的情况
                 string joinStr = string.Empty;
@@ -513,6 +521,19 @@ public class EasyApi
         }
 
         return results;
+    }
+
+    private EasyApiParseResult ProcessChildrenQuery(KeyValuePair<string, JsonNode?> subProperty, string table)
+    {
+        //  "children": {
+        // 	"target": "orderItem",
+        // 	"targetField": "orderId",
+        // 	"parentField": "id",
+        // 	"customResultFieldName": "orderItem",
+        // 	"columns": "id, price, field1,field2"
+        //  page,count
+        // }
+        return null;
     }
 
     private string HandleWhereParam(EasyApiParseResult result, JsonNode node)
@@ -982,6 +1003,21 @@ public class EasyApiParseResult()
     public bool Success { get; set; } = true;
     public string Msg { get; set; } = string.Empty;
     public SqlOperationType OperationType { get; set; }
+    /// <summary>
+    /// 嵌套查询
+    /// </summary>
+    public List<EasyApiParseResult>? Children { get; set; }
+    /// <summary>
+    /// 嵌套查询的子对象查询配置
+    /// </summary>
+    public ChildrenQueryConfig? ChildrenConfig { get; set; }
+
+}
+
+public class ChildrenQueryConfig{
+    public string KeyName { get; set; }
+    public string ChildField { get; set; }
+    public string ParentField { get; set; }
 }
 
 public class WhereField
@@ -1024,7 +1060,10 @@ public enum SqlOperationType
     Scalar = 1,
     Row = 2,
     Table = 3,
-
+    /// <summary>
+    /// 嵌套查询
+    /// </summary>
+    NestTable = 4,
 }
 
 public class TableColType

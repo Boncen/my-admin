@@ -136,7 +136,8 @@ public static class WebApplicationSetup
                         {
                             jobj[parseResult.Target] = parseResult.Msg ?? "解析失败";
                         }
-                        else{
+                        else
+                        {
                             jobj["target" + index] = parseResult.Msg ?? "解析失败";
                         }
                         continue;
