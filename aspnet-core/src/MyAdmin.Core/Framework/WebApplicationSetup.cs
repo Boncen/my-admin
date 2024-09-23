@@ -157,7 +157,10 @@ public static class WebApplicationSetup
 
                             if (parseResult.Page == 1 && parseResult.Count == 1)
                             {
-                                easy.ProcessResultChildren(parseResult.Children, easy, frameworkOption.Value, result);
+                                if (parseResult.Children != null)
+                                {
+                                    easy.ProcessResultChildren(parseResult.Children, easy, frameworkOption.Value, result);
+                                }
                                 jobj.Add(parseResult.Target, result.FirstOrDefault());
                             }
                             else
@@ -170,7 +173,10 @@ public static class WebApplicationSetup
                                 }
                                 pageResultJobj["list"] = new JsonArray(result.ToArray());
                                 // 获取父级列表数据id集合
-                                easy.ProcessResultChildren(parseResult.Children, easy, frameworkOption.Value, result);
+                                if (parseResult.Children != null)
+                                {
+                                    easy.ProcessResultChildren(parseResult.Children, easy, frameworkOption.Value, result);
+                                }
                                 jobj.Add(parseResult.Target, pageResultJobj);
                             }
                         }

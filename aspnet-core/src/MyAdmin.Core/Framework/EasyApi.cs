@@ -491,7 +491,7 @@ public class EasyApi
                     }
                     if (subProperty.Key.Equals("@where", StringComparison.CurrentCultureIgnoreCase))
                     {
-                        where = HandleWhereParam(result, subProperty.Value);
+                        where = ProcessWhereParam(result, subProperty.Value);
                     }
                     if (subProperty.Key.Equals("@order", StringComparison.CurrentCultureIgnoreCase))
                     {
@@ -649,12 +649,23 @@ public class EasyApi
         return result;
     }
 
-    private string HandleWhereParam(EasyApiParseResult result, JsonNode node)
+    private string ProcessWhereParam(EasyApiParseResult result, JsonNode node)
     {
         List<string> tmps = new();
 
         foreach (var whereField in node.AsObject())
         {
+            // @and  @or
+            string key = whereField.Key;
+            if (key.Equals("@and", StringComparison.CurrentCultureIgnoreCase))
+            {
+                tmps.Add(ProcessWhereAndOr(whereField.Value, result.Table, "AND"));
+            }
+            if (key.Equals("@or", StringComparison.CurrentCultureIgnoreCase))
+            {
+                tmps.Add(ProcessWhereAndOr(whereField.Value, result.Table, "OR"));
+            }
+
             string fieldName = MakeSureHavaTablePrefix(whereField.Key, result.Table);
             if (whereField.Value == null)
             {
@@ -669,6 +680,41 @@ public class EasyApi
         }
         return tmps.Count > 0 ? " WHERE " + string.Join(" AND ", tmps) : string.Empty;
     }
+
+    private string ProcessWhereAndOr(JsonNode? value, string table, string andOr)
+    {
+        if (value == null)
+        {
+            return string.Empty;
+        }
+        List<string> items = new List<string>();
+        var obj = value.AsObject();
+        foreach (var field in obj)
+        {
+            if (field.Value == null)
+            {
+                continue;
+            }
+            if (field.Key.Equals("@and", StringComparison.CurrentCultureIgnoreCase))
+            {
+                items.Add(ProcessWhereAndOr(field.Value, table, "AND"));
+            }
+            if (field.Key.Equals("@or", StringComparison.CurrentCultureIgnoreCase))
+            {
+                items.Add(ProcessWhereAndOr(field.Value, table, "OR"));
+            }
+            string fieldName = MakeSureHavaTablePrefix(field.Key, table);
+
+            var fieldType = field.Value?.AsObject()["type"]?.ToString();
+            var fieldValue = field.Value?.AsObject()["value"]?.ToString();
+            if (Check.HasValue(fieldValue))
+            {
+                items.Add(GetOperatorNotationByWhereType(fieldType, _maFrameworkOptions.DBType, fieldName, fieldValue));
+            }
+        }
+        return items.Count > 0 ? "(" + string.Join(" " + andOr + " ", items) + ")" : string.Empty;
+    }
+
 
     /// <summary>
     /// 确保字段名前带上表名前缀 TABLE.COLUMN
@@ -1086,7 +1132,7 @@ public class EasyApi
                 }
                 else if (where != null)
                 {
-                    result.Sql += HandleWhereParam(result, where);
+                    result.Sql += ProcessWhereParam(result, where);
                 }
             }
             if (!Check.IfSqlFragmentSafe(result.Sql))
