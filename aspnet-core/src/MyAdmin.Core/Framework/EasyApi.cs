@@ -175,7 +175,7 @@ public class EasyApi
         {
             order = $"ORDER BY " + string.Join(",", orderStrs);
         }
-        result.Sql = $"SELECT {result.Columns} from {result.Table} {where} {order} limit {result.Count} offset {(result.Page - 1) * result.Count} ";
+        result.Sql = $"SELECT {result.Columns} from {result.Table} {where} {order} {ProcessPagedSql(result.Page, result.Count)}";
         if (!Check.IfSqlFragmentSafe(result.Sql))
         {
             result.Success = false;
@@ -262,14 +262,23 @@ public class EasyApi
         return colList.Count == 0 ? columns : string.Join(',', colList);
     }
 
+    private List<string> GetOriginalColumn(string columns)
+    {
+        if (!Check.HasValue(columns))
+        {
+            return new List<string>();
+        }
+        return GetOriginalColumn(columns.Split(",").ToList());
+    }
     /// <summary>
     /// 列别名转为表列名
     /// </summary>
     /// <param name="columns"></param>
     /// <param name="option"></param>
     /// <returns></returns>
-    private List<string> GetOriginalColumn(List<string> columns, EasyApiOptions option)
+    private List<string> GetOriginalColumn(List<string> columns)//, EasyApiOptions option)
     {
+        var option = _maFrameworkOptions.EasyApi;
         if (option.ColumnAlias == null)
         {
             return default;
@@ -348,6 +357,7 @@ public class EasyApi
         string table)
     {
         DataTable dt = new DataTable();
+
         dt.Load(data);
 
         List<JsonObject> result = new List<JsonObject>();
@@ -374,6 +384,8 @@ public class EasyApi
         }
 
         return result;
+
+
     }
     /// <summary>
     /// 
@@ -487,11 +499,12 @@ public class EasyApi
                     }
                     if (subProperty.Key.Equals("@children", StringComparison.CurrentCultureIgnoreCase))
                     {
-                        if (result.Children == null)
+                        result.Children = ProcessChildrenQuery(subProperty.Value, result.Table);
+
+                        if (Check.HasValue(result.Children.ChildrenConfig?.ParentField) && result.Columns?.Trim() != "*" && !result.Columns.Contains(result.Children.ChildrenConfig?.ParentField))
                         {
-                            result.Children = new List<EasyApiParseResult>();
+                            result.Columns += $",{result.Children.ChildrenConfig?.ParentField}";
                         }
-                        result.Children.Add(ProcessChildrenQuery(subProperty, result.Table));
                     }
                 } // for property
                   // 查询的情况
@@ -510,7 +523,7 @@ public class EasyApi
                     orderStr = " ORDER BY " + string.Join(',', orderStrs);
                 }
 
-                result.Sql = $"SELECT {result.Columns} from {result.Table} {joinStr} {where} {orderStr} limit {result.Count} offset {(result.Page - 1) * result.Count} ";
+                result.Sql = $"SELECT {result.Columns} from {result.Table} {joinStr} {where} {orderStr} {ProcessPagedSql(result.Page, result.Count)} ";
                 if (!Check.IfSqlFragmentSafe(result.Sql))
                 {
                     result.Success = false;
@@ -523,17 +536,117 @@ public class EasyApi
         return results;
     }
 
-    private EasyApiParseResult ProcessChildrenQuery(KeyValuePair<string, JsonNode?> subProperty, string table)
+    public string ProcessPagedSql(in int page, in int count)
     {
-        //  "children": {
-        // 	"target": "orderItem",
-        // 	"targetField": "orderId",
-        // 	"parentField": "id",
-        // 	"customResultFieldName": "orderItem",
-        // 	"columns": "id, price, field1,field2"
-        //  page,count
-        // }
-        return null;
+        int p = page < 1 ? 1 : page;
+        int c = count < 1 ? 1 : count;
+        return $" limit {c} offset {(p - 1) * c} ";
+    }
+    /// <summary>
+    /// 处理子表sql
+    /// </summary>
+    /// <param name="childResult"></param>
+    public void ProcessResultChildren(EasyApiParseResult childResult, EasyApi easy, MaFrameworkOptions frameworkOption, List<JsonObject> parentListData = null)
+    {
+        ChildrenQueryConfig config = childResult.ChildrenConfig;
+        if (childResult == null || !Check.HasValue(config.ChildField) || !Check.HasValue(config.ParentField))
+        {
+            return;
+        }
+        if (parentListData == null || parentListData.Count < 1)
+        {
+            return;
+        }
+        string sql = string.Empty;
+        string parentIdFieldName = config.ParentField ?? "Id";
+        if (childResult.Page > 0 && childResult.Count > 0)
+        {
+            foreach (var parent in parentListData)
+            {
+                // 分页查询
+                sql = childResult.Sql.Replace("@" + config.ParentField, parent[config.ParentField]?.ToString());
+                if (Check.HasValue(sql))
+                {
+                    var data = _dbHelper.Connection.ExecuteReader(sql);
+                    var childList = easy.HandleDataReader(data, frameworkOption?.EasyApi?.ColumnAlias, childResult.Table).ToArray();
+                    parent[config.KeyName ?? "children"] = new JsonArray(childList);
+                }
+            }
+        }
+        else
+        {
+            // 不分页，直接查询全部子项
+            int whereIndex = childResult.Sql.IndexOf("WHERE");
+            sql = childResult.Sql.Substring(0, whereIndex);
+            if (parentListData.Any(x => x.ContainsKey(parentIdFieldName)))
+            {
+                var ids = parentListData.Select(x => x[parentIdFieldName]?.ToString()).ToSplitableString();
+                sql += $" WHERE {config.ChildField} IN ({ids})";
+            }
+            var data = _dbHelper.Connection.ExecuteReader(sql);
+            var childList = easy.HandleDataReader(data, frameworkOption?.EasyApi?.ColumnAlias, childResult.Table);
+            if (childList.Count > 0)
+            {
+                foreach (var parent in parentListData)
+                {
+                    if (parent.ContainsKey(parentIdFieldName))
+                    {
+                        var childs = childList.Where(x => x[config.ChildField].ToString() == parent[parentIdFieldName].ToString()).ToArray();
+                        parent[config.KeyName ?? "children"] = new JsonArray(childs);
+                    }
+                }
+            }
+        }
+        return;
+    }
+    private EasyApiParseResult ProcessChildrenQuery(JsonNode? childBody, string table)
+    {
+        EasyApiParseResult result = new EasyApiParseResult()
+        {
+            OperationType = SqlOperationType.Table,
+            Target = childBody?["target"]?.ToString()
+        };
+
+        string? target = GetTableAlias(childBody?["target"]?.ToString());
+        string targetField = childBody?["targetField"]?.ToString();
+        string parentField = childBody?["parentField"]?.ToString();
+        string pageStr = childBody?["page"]?.ToString();
+        string countStr = childBody?["count"]?.ToString();
+        string customResultFieldName = childBody?["customResultFieldName"]?.ToString();
+        string columns = childBody?["columns"]?.ToString() ?? "*";
+
+        if (columns.Trim() != "*" && !columns.Contains(targetField))
+        {
+            columns += $",{targetField}";
+        }
+
+        int page = 1;
+        int count = 20;
+        int.TryParse(pageStr, out page);
+        int.TryParse(countStr, out count);
+        result.Page = page;
+        result.Count = count;
+
+        var child = childBody?["children"];
+        if (child != null)
+        {
+            result.Children = new();
+            var childResult = ProcessChildrenQuery(child, target);
+            if (childResult != null)
+            {
+                result.Children = childResult;
+            }
+        }
+        string originalColumn = string.Join(',', GetOriginalColumn(columns));
+        result.Sql = $"SELECT {originalColumn} FROM {target} WHERE {targetField} = @{parentField} {ProcessPagedSql(page, count)} ";
+        result.ChildrenConfig = new ChildrenQueryConfig()
+        {
+            KeyName = customResultFieldName,
+            ChildField = targetField,
+            ParentField = parentField
+        };
+        result.Table = target;
+        return result;
     }
 
     private string HandleWhereParam(EasyApiParseResult result, JsonNode node)
@@ -753,7 +866,7 @@ public class EasyApi
             vals.Clear();
             HandleValue(bulkItem, cols, vals, valuesParts);
         }
-        string originalColumn = string.Join(',', GetOriginalColumn(cols, easyApiOptions));
+        string originalColumn = string.Join(',', GetOriginalColumn(cols));
         result.Sql = $"INSERT INTO {tableName} ({originalColumn}) VALUES {string.Join(',', valuesParts)}";
         if (!Check.IfSqlFragmentSafe(result.Sql))
         {
@@ -1006,18 +1119,23 @@ public class EasyApiParseResult()
     /// <summary>
     /// 嵌套查询
     /// </summary>
-    public List<EasyApiParseResult>? Children { get; set; }
+    public EasyApiParseResult? Children { get; set; }
     /// <summary>
     /// 嵌套查询的子对象查询配置
     /// </summary>
     public ChildrenQueryConfig? ChildrenConfig { get; set; }
-
+    /// <summary>
+    /// 子表查询的数据
+    /// </summary>
 }
 
-public class ChildrenQueryConfig{
+public class ChildrenQueryConfig
+{
     public string KeyName { get; set; }
     public string ChildField { get; set; }
     public string ParentField { get; set; }
+    // public List<JsonObject>? ChildData { get; set; }
+
 }
 
 public class WhereField

@@ -24,12 +24,18 @@ public static class CollectionExtensions
         return true;
     }
 
-    public static ICollection<string> ToStringCollection(this ICollection<dynamic> source){
+    public static ICollection<string> ToStringCollection(this ICollection<dynamic> source)
+    {
         ICollection<string> result = new List<string>();
         foreach (var item in source)
         {
             result.Add("'" + item + "'");
         }
         return result;
+    }
+
+    public static string ToSplitableString(this IEnumerable<dynamic> source, char seperator = ',')
+    {
+        return string.Join(seperator, source);
     }
 }

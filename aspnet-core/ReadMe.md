@@ -229,7 +229,7 @@ WHERE MaUser.salt < '8894561230' AND MaRole.Name='dev' limit 10 offset 0
 }
 ```
 
-#### 删除
+### 删除
 批量删除
 ```json
 http://localhost:5066/easy?target=TestEasy&ids=17,18
@@ -240,7 +240,7 @@ http://localhost:5066/easy?target=TestEasy&ids=17,18
 http://localhost:5066/easy?target=TestEasy&id=17
 ```
 
-#### 更新
+### 更新
 ```json
 [
   {
@@ -288,3 +288,30 @@ http://localhost:5066/easy?target=TestEasy&id=17
 ]
 ```
 
+### 子表查询
+
+```json
+{
+  "TestEasy": {
+    "@page": 1,
+    "@count": 10,
+    "@total": 0,
+    "@columns":"Address",
+    "@children": {
+        "target":"TestEasyItem", // 子表名
+        "targetField":"ParentId", // 子表关联父表的列
+        "parentField":"Id",       // 父表id列
+        "page": 1,  
+        "count": 2,
+        "customResultFieldName": "items", //  
+        "columns":"Level"      // 只查询指定列
+    }
+  }
+}
+```
+
+- 子表查询会自动返回 `@children` 中的 `targetField` 列和 `parentField` 列，即使没有指定。
+- 不支持嵌套
+
+
+### 

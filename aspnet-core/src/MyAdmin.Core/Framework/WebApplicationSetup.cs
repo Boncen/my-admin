@@ -8,6 +8,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using MyAdmin.Core.Exception;
+using MyAdmin.Core.Extensions;
 using MyAdmin.Core.Framework.Middlewares;
 using MyAdmin.Core.Model;
 using MyAdmin.Core.Options;
@@ -153,8 +154,10 @@ public static class WebApplicationSetup
                         {
                             var data = await dbHelper.Connection.ExecuteReaderAsync(parseResult.Sql);
                             var result = easy.HandleDataReader(data, frameworkOption.Value?.EasyApi?.ColumnAlias, parseResult.Table);
+
                             if (parseResult.Page == 1 && parseResult.Count == 1)
                             {
+                                easy.ProcessResultChildren(parseResult.Children, easy, frameworkOption.Value, result);
                                 jobj.Add(parseResult.Target, result.FirstOrDefault());
                             }
                             else
@@ -166,6 +169,8 @@ public static class WebApplicationSetup
                                     pageResultJobj["total"] = total;
                                 }
                                 pageResultJobj["list"] = new JsonArray(result.ToArray());
+                                // 获取父级列表数据id集合
+                                easy.ProcessResultChildren(parseResult.Children, easy, frameworkOption.Value, result);
                                 jobj.Add(parseResult.Target, pageResultJobj);
                             }
                         }
@@ -241,4 +246,5 @@ public static class WebApplicationSetup
             }
         });
     }
+   
 }
