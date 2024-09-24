@@ -1,6 +1,7 @@
 using System.Data;
 using System.Text.Json.Nodes;
 using Dapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -74,52 +75,52 @@ public static class WebApplicationSetup
         {
             app.UseMiddleware<RequestMonitorMiddleware>();
         }
-        app.UseEasyApi();
+        app.UseEasyApi(config.EasyApi);
     }
 
-    public static void UseEasyApi(this WebApplication app, string url = "/easy")
+    public static void UseEasyApi(this WebApplication app, EasyApiOptions easyApiOption, string url = "/easy")
     {
         // 简单的查询，分页查询
-        app.MapGet((url), async ([FromServices] IHttpContextAccessor accessor, [FromServices] DBHelper dbHelper,
-            [FromServices] IOptionsSnapshot<MaFrameworkOptions> frameworkOption, [FromServices] EasyApi easy) =>
-        {
-            try
-            {
-                var queryCollection = accessor.HttpContext.Request.Query;
-                EasyApiOptions? easyApiOptions = frameworkOption.Value?.EasyApi ?? new();
+        var easyGet = app.MapGet((url), async ([FromServices] IHttpContextAccessor accessor, [FromServices] DBHelper dbHelper,
+             [FromServices] IOptionsSnapshot<MaFrameworkOptions> frameworkOption, [FromServices] EasyApi easy) =>
+         {
+             try
+             {
+                 var queryCollection = accessor.HttpContext.Request.Query;
+                 EasyApiOptions? easyApiOptions = frameworkOption.Value?.EasyApi ?? new();
 
-                var parseResult = easy.ProcessQueryRequest(queryCollection);
-                if (parseResult.Success == false)
-                {
-                    return ApiResult.Fail(parseResult.Msg);
-                }
-                if (!Check.HasValue(parseResult.Sql))
-                {
-                    return ApiResult.Ok();
-                }
+                 var parseResult = easy.ProcessQueryRequest(queryCollection);
+                 if (parseResult.Success == false)
+                 {
+                     return ApiResult.Fail(parseResult.Msg);
+                 }
+                 if (!Check.HasValue(parseResult.Sql))
+                 {
+                     return ApiResult.Ok();
+                 }
 
-                var data = await dbHelper.Connection.ExecuteReaderAsync(parseResult.Sql);
-                var result = easy.HandleDataReader(data, easyApiOptions.ColumnAlias, parseResult.Table);
-                if (parseResult.Page == 1 && parseResult.Count == 1)
-                {
-                    return ApiResult<dynamic>.Ok(result.FirstOrDefault());
-                }
-                if (Check.HasValue(parseResult.TotalSql))
-                {
-                    var total = dbHelper.Connection.ExecuteScalar<int>(parseResult.TotalSql);
-                    // return ApiResult<dynamic>.Ok(PageResult<dynamic>.Ok(result, total));
-                    return ApiResult<dynamic>.Ok(new { list = result, total });
-                }
-                return ApiResult<dynamic>.Ok(result);
-            }
-            catch (MySqlException e)
-            {
-                throw new MAException("SQL异常", e);
-            }
-        });
+                 var data = await dbHelper.Connection.ExecuteReaderAsync(parseResult.Sql);
+                 var result = easy.HandleDataReader(data, easyApiOptions.ColumnAlias, parseResult.Table);
+                 if (parseResult.Page == 1 && parseResult.Count == 1)
+                 {
+                     return ApiResult<dynamic>.Ok(result.FirstOrDefault());
+                 }
+                 if (Check.HasValue(parseResult.TotalSql))
+                 {
+                     var total = dbHelper.Connection.ExecuteScalar<int>(parseResult.TotalSql);
+                     // return ApiResult<dynamic>.Ok(PageResult<dynamic>.Ok(result, total));
+                     return ApiResult<dynamic>.Ok(new { list = result, total });
+                 }
+                 return ApiResult<dynamic>.Ok(result);
+             }
+             catch (MySqlException e)
+             {
+                 throw new MAException("SQL异常", e);
+             }
+         }).RequireAuthorization(Check.HasValue(easyApiOption.RequireRole) ? new AuthorizeAttribute() { Roles = easyApiOption.RequireRole } : new AuthorizeAttribute());
 
         // 新增数据，复杂查询
-        app.MapPost((url), async ([FromServices] IHttpContextAccessor accessor, [FromServices] DBHelper dbHelper,
+        var easyPost = app.MapPost((url), async ([FromServices] IHttpContextAccessor accessor, [FromServices] DBHelper dbHelper,
             [FromServices] IOptionsSnapshot<MaFrameworkOptions> frameworkOption, [FromServices] EasyApi easy) =>
         {
             try
@@ -189,9 +190,9 @@ public static class WebApplicationSetup
             {
                 throw new MAException("SQL异常", e);
             }
-        });
+        }).RequireAuthorization(Check.HasValue(easyApiOption.RequireRole) ? new AuthorizeAttribute() { Roles = easyApiOption.RequireRole } : new AuthorizeAttribute());
 
-        app.MapPut((url), async ([FromServices] IHttpContextAccessor accessor, [FromServices] DBHelper dbHelper,
+        var easyPut = app.MapPut((url), async ([FromServices] IHttpContextAccessor accessor, [FromServices] DBHelper dbHelper,
              [FromServices] IOptionsSnapshot<MaFrameworkOptions> frameworkOption, [FromServices] EasyApi easy) =>
          {
              IDbTransaction trans = null;
@@ -221,9 +222,9 @@ public static class WebApplicationSetup
                  trans?.Rollback();
                  throw new MAException("SQL异常", e);
              }
-         });
+         }).RequireAuthorization(Check.HasValue(easyApiOption.RequireRole) ? new AuthorizeAttribute() { Roles = easyApiOption.RequireRole } : new AuthorizeAttribute());
 
-        app.MapDelete((url), async ([FromServices] IHttpContextAccessor accessor, [FromServices] DBHelper dbHelper,
+        var easyDelete = app.MapDelete((url), async ([FromServices] IHttpContextAccessor accessor, [FromServices] DBHelper dbHelper,
             [FromServices] IOptionsSnapshot<MaFrameworkOptions> frameworkOption, [FromServices] EasyApi easy) =>
         {
             try
@@ -250,7 +251,18 @@ public static class WebApplicationSetup
             {
                 throw new MAException("SQL异常", e);
             }
-        });
+        }).RequireAuthorization(Check.HasValue(easyApiOption.RequireRole) ? new AuthorizeAttribute() { Roles = easyApiOption.RequireRole } : new AuthorizeAttribute());
+
+        if (easyApiOption != null)
+        {
+            if (easyApiOption.AllowAnonymous == true)
+            {
+                easyGet.AllowAnonymous();
+                easyDelete.AllowAnonymous();
+                easyPost.AllowAnonymous();
+                easyPut.AllowAnonymous();
+            }
+        }
     }
-   
+
 }

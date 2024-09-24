@@ -41,6 +41,15 @@ public enum CacheTypeEnum
 
 public class EasyApiOptions
 {
+    public bool? AllowAnonymous { get; set; }
+    /// <summary>
+    /// 角色要求
+    /// </summary>
+    public string? RequireRole { get; set; }
+    /// <summary>
+    /// 排除的表，多个表用逗号分隔
+    /// </summary>
+    public string? ExcludeTable { get; set; }
     /// <summary>
     /// alias: actualName
     /// </summary>

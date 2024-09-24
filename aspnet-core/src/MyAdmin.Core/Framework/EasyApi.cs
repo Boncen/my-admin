@@ -338,6 +338,8 @@ public class EasyApi
         {
             return target;
         }
+        string result = target;
+
         if (_maFrameworkOptions.EasyApi?.TableAlias != null)
         {
             if (_maFrameworkOptions.EasyApi.TableAlias.ContainsKey(target))
@@ -345,12 +347,25 @@ public class EasyApi
                 var val = _maFrameworkOptions.EasyApi.TableAlias[target];
                 if (Check.HasValue(val))
                 {
-                    return Check.HasValue(val) ? val : target;
+                    result = val;
                 }
             }
         }
+        CheckExcludeTable(result);
+        return result;
+    }
 
-        return target;
+    private void CheckExcludeTable(string table)
+    {
+        if (!Check.HasValue(table) || !Check.HasValue(_maFrameworkOptions.EasyApi.ExcludeTable))
+        {
+            return;
+        }
+        var excludes = _maFrameworkOptions.EasyApi.ExcludeTable.Split(',');
+        if (excludes.Any(x => x.Equals(table, StringComparison.CurrentCultureIgnoreCase)))
+        {
+            throw new MAException("不允许操作的表");
+        }
     }
 
     public List<JsonObject> HandleDataReader(IDataReader data, Dictionary<string, string>? columnAlias,
