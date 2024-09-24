@@ -1,59 +1,37 @@
-﻿using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
-using MyAdmin.ApiHost.db;
+using MyAdmin.ApiHost.Db;
+using MyAdmin.Core.Model.BuildIn;
 using MyAdmin.Core.Repository;
-using ILogger = MyAdmin.Core.Logger.ILogger;
+using Order = MyAdmin.ApiHost.models.Order;
 
-namespace MyAdmin.ApiHost;
+namespace MyAdmin.ApiHost.Controller;
 
 [ApiController]
-[ApiVersion("1.0")]
+[Route("/api/[controller]/[action]")]
 public class TestController : ControllerBase
 {
-    // private readonly ILogger<TestController> _logger;
-    private readonly ILogger _logger;
-    private readonly IRepository<Log,Guid> _logRepository;
-    private readonly ILogRepository _logRe;
-    public TestController(ILogger logger, IRepository<Log,Guid> logRepository,ILogRepository logRe)
+    private readonly DBHelper _dbHelper;
+    private readonly IRepository<MaUser, Guid> _repository;
+    private readonly IRepository<Order, Guid, AdminTemplateDbContext> _orderRepository;
+
+    public TestController(DBHelper dbHelper, IRepository<MaUser, Guid> repository, IRepository<Order, Guid,AdminTemplateDbContext> orderRepository)
     {
-        _logger = logger;
-        _logRepository = logRepository;
-        _logRe = logRe;
+        _dbHelper = dbHelper;
+        _repository = repository;
+        _orderRepository = orderRepository;
     }
 
-
-    [HttpGet(ApiEndpoints.Test.TestMethod)]
-    [MapToApiVersion("1.0")]
-    public Task<string> TestGet()
+    [HttpGet]
+    public Task<MaUser> GetUser()
     {
-        _logger.LogDebug("测试日志打印到控制台的样子");
-        _logger.LogCritical("测试日志打印到控制台的样子");
-        _logger.LogInformation("测试日志打印到控制台的样子");
-        _logger.LogTrace("测试日志打印到控制台的样子");
-        _logger.LogWarning("测试日志打印到控制台的样子");
-        
-        _logRe.InsertAsync(new Log()
-        {
-            Id = Guid.NewGuid(),
-            Content = "Test2"
-        }, true);
-        // int a = 0;
-        // int k = 100 / a;
- 
-        var s =  string.Format("level: {0}", new {level="llle"});
-
-        return Task.FromResult("v1" + s);
+        var user = _repository.FindOneAsync(x => x.Name.Length < 6);
+        return user;
     }
-
-    [HttpGet(ApiEndpoints.Test.TestMethod2)]
-    [MapToApiVersion("1.0")]
-    public Task<string> TestGetv2(CancellationToken cancellationToken)
+    
+    [HttpGet]
+    public Task<Order> GetOrder()
     {
-        _logRepository.InsertAsync(new Log()
-        {
-            Id = Guid.NewGuid(),
-            Content = "Test"
-        }, true, cancellationToken);
-        return Task.FromResult("v1-1");
+        var order = _orderRepository.FindOneAsync(x => x.OrderNo == "123456");
+        return order;
     }
 }

@@ -1,8 +1,11 @@
+using Microsoft.EntityFrameworkCore;
 using MyAdmin.Core.Entity.Auditing;
 
 namespace MyAdmin.Core.Entity;
 
-public abstract class Entity<TKey> : IEntity<TKey>
+public abstract class Entity{}
+
+public abstract class Entity<TKey> :Entity, IEntity<TKey>
 {
     public virtual required TKey Id { get; set; }
     public object?[] GetKeys()
@@ -14,20 +17,16 @@ public abstract class Entity<TKey> : IEntity<TKey>
 [Serializable]
 public abstract class CreationAuditedEntity<TKey> : ICreationAuditedObject<TKey>
 {
-    /// <inheritdoc />
-    public virtual DateTime CreationTime { get; protected set; }
+    public virtual DateTime CreationTime { get; set; } = DateTime.Now;
 
-    /// <inheritdoc />
-    public virtual TKey? CreatorId { get; protected set; }
+    public virtual TKey? CreatorId { get; set; }
 }
 
 [Serializable]
 public abstract class AuditedEntity<TKey> : CreationAuditedEntity<TKey>, IAuditedObject<TKey>
 {
-    /// <inheritdoc />
     public virtual DateTime? LastModificationTime { get; set; }
 
-    /// <inheritdoc />
     public virtual TKey? LastModifierId { get; set; }
 
 }

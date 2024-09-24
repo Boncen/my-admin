@@ -1,41 +1,10 @@
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging.Console;
-using MyAdmin.ApiHost;
-using MyAdmin.ApiHost.db;
-using MyAdmin.Core.Extensions;
+using System.Reflection;
+using MyAdmin.Core.Framework;
 
 var builder = WebApplication.CreateBuilder(args);
-
-builder.Services.AddControllers();
-
 builder.Services.AddMaFramework( builder.Configuration, (o)=>{
-    o.UseApiVersioning(builder.Configuration);
-});
-
-// db
-var serverVersion = new MySqlServerVersion(new Version(9, 0, 0));
-builder.Services.AddDbContext<MaDbContext>(
-           dbContextOptions => dbContextOptions
-               .UseMySql(builder.Configuration["ConnectionStrings:MySQL"], serverVersion)
-               .LogTo(Console.WriteLine, LogLevel.Information)
-               .EnableSensitiveDataLogging()
-               .EnableDetailedErrors()
-       );
-builder.Services.AddTransient<Microsoft.EntityFrameworkCore.DbContext, MaDbContext>();
-builder.Services.AddTransient<ILogRepository, LogRepository>();
+    // o.UseApiVersioning(builder.Configuration);
+}, Assembly.GetExecutingAssembly());
 var app = builder.Build();
-
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.SetupSwaggerUI(builder.Configuration);
-}
-
-app.UseErrorHandleMiddleware();
-app.UseHttpsRedirection();
-app.MapControllers();
-
-
-
+app.UseMaFramework(builder.Configuration);
 app.Run();

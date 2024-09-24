@@ -21,5 +21,11 @@
     <ProjectReference Include="..\MyAdmin.Core\MyAdmin.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Dto\" />
+    <Folder Include="logs\" />
+    <Folder Include="Migrations\" />
+  </ItemGroup>
+
 
 </Project>

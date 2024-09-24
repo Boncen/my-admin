@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyAdmin.Core", "src\MyAdmin
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyAdmin.ApiHost", "src\MyAdmin.ApiHost\MyAdmin.ApiHost.csproj", "{CD5A8607-DDBF-4723-87E3-00977190A9B4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyAdmin.Test", "src\MyAdmin.Test\MyAdmin.Test.csproj", "{01212B34-9865-44E7-AC73-8D19162A0A50}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -23,6 +25,14 @@ Global
 		{CD5A8607-DDBF-4723-87E3-00977190A9B4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CD5A8607-DDBF-4723-87E3-00977190A9B4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CD5A8607-DDBF-4723-87E3-00977190A9B4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{70D3417C-0293-48CA-B526-FCB82472E971}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{70D3417C-0293-48CA-B526-FCB82472E971}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{70D3417C-0293-48CA-B526-FCB82472E971}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{70D3417C-0293-48CA-B526-FCB82472E971}.Release|Any CPU.Build.0 = Release|Any CPU
+		{01212B34-9865-44E7-AC73-8D19162A0A50}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{01212B34-9865-44E7-AC73-8D19162A0A50}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{01212B34-9865-44E7-AC73-8D19162A0A50}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{01212B34-9865-44E7-AC73-8D19162A0A50}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -30,5 +40,7 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{A25A3783-F3AE-49E9-B796-24055D89309B} = {048E4B11-4EAA-4031-8DFF-C6BAF421B9A6}
 		{CD5A8607-DDBF-4723-87E3-00977190A9B4} = {048E4B11-4EAA-4031-8DFF-C6BAF421B9A6}
+		{70D3417C-0293-48CA-B526-FCB82472E971} = {048E4B11-4EAA-4031-8DFF-C6BAF421B9A6}
+		{01212B34-9865-44E7-AC73-8D19162A0A50} = {048E4B11-4EAA-4031-8DFF-C6BAF421B9A6}
 	EndGlobalSection
 EndGlobal

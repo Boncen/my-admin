@@ -11,20 +11,20 @@ public interface ICreationAuditedObject<TKey> : IHasCreationTime, IMayHaveCreato
 
 public interface IHasCreationTime
 {
-    DateTime CreationTime { get; }
+    DateTime CreationTime { get;set; }
 }
 public interface IHasModificationTime
 {
-    DateTime? LastModificationTime { get; }
+    DateTime? LastModificationTime { get;set; }
 }
 
 public interface IMayHaveCreator<TKey>
 {
-    TKey? CreatorId { get; }
+    TKey? CreatorId { get;set; }
 }
 public interface IModificationAuditedObject<TKey> : IHasModificationTime
 {
-    TKey? LastModifierId { get; }
+    TKey? LastModifierId { get;set; }
 }
 public interface ISoftDelete
 {
@@ -37,7 +37,7 @@ public interface IHasDeletionTime : ISoftDelete
 }
 public interface IDeletionAuditedObject<TKey> : IHasDeletionTime
 {
-    TKey? DeleterId { get; }
+    TKey? DeleterId { get; set;}
 }
 public interface IFullAuditedObject<TKey> : IAuditedObject<TKey>, IDeletionAuditedObject<TKey>
 {
@@ -47,12 +47,9 @@ public interface IFullAuditedObject<TKey> : IAuditedObject<TKey>, IDeletionAudit
 [Serializable]
 public abstract class FullAuditedEntity<TKey> : AuditedEntity<TKey>, IFullAuditedObject<TKey>
 {
-    /// <inheritdoc />
-    public virtual bool IsDeleted { get; set; }
+    public virtual bool IsDeleted { get; set; } = false;
 
-    /// <inheritdoc />
     public virtual TKey? DeleterId { get; set; }
 
-    /// <inheritdoc />
     public virtual DateTime? DeletionTime { get; set; }
 }

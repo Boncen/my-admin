@@ -7,9 +7,11 @@ public interface IEntity
     /// Returns an array of ordered keys for this entity.
     /// </summary>
     /// <returns></returns>
-    object?[] GetKeys();
+    // object?[] GetKeys();
+    
 }
 public interface IEntity<TKey>: IEntity
 {
     public TKey Id { get; set; }
+
 }
