@@ -16,7 +16,7 @@ public class ListRequest : Request
     /// </summary>
     public string? SortField
     {
-        get => Check.HasValue(_sortField) ? CultureInfo.CurrentCulture.TextInfo.ToTitleCase(_sortField) : string.Empty;
+        get => Check.HasValue(_sortField) ? CultureInfo.CurrentCulture.TextInfo.ToTitleCase(_sortField!) : string.Empty;
         set => _sortField = value;
     }
 
@@ -50,5 +50,5 @@ public enum FieldRequestType
 public class RequestField
 {
     public FieldRequestType Type { get; set; }
-    public dynamic Value { get; set; }
+    public dynamic? Value { get; set; }
 }

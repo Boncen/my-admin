@@ -10,9 +10,9 @@ public class CurrentUser:ICurrentUser
     {
         _httpContextAccessor = httpContextAccessor;
     }
-    public LoginedUser GetCurrentUser()
+    public LoginedUser? GetCurrentUser()
     {
-        var user = _httpContextAccessor.HttpContext.User;
+        var user = _httpContextAccessor.HttpContext?.User;
         if (user == null || user.Claims.Count() < 1)
         {
             return null;

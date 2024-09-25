@@ -60,7 +60,7 @@ public static class StreamHandler
         {
             stream.Seek(0, SeekOrigin.Begin);
         }
-        StreamReader reader = null;
+        StreamReader? reader = null;
         try
         {
             reader = new StreamReader(stream);

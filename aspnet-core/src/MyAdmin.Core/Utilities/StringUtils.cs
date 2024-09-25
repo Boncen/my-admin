@@ -24,7 +24,7 @@ public static class StringUtils
     }
     public static string GenerateSecureRandomString(int length, bool upper = false)
     {
-        using (var rng = new RNGCryptoServiceProvider())
+        using (var rng = RandomNumberGenerator.Create())
         {
             var charBytes = new byte[length];
             rng.GetBytes(charBytes);

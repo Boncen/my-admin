@@ -4,7 +4,7 @@ namespace MyAdmin.Core.Identity;
 
 public interface ICurrentUser
 {
-    LoginedUser GetCurrentUser();
+    LoginedUser? GetCurrentUser();
 }
 
-public record LoginedUser(dynamic id, string account, string role, IEnumerable<Claim> claims);
+public record LoginedUser(dynamic? id, string? account, string? role, IEnumerable<Claim> claims);

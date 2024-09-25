@@ -285,7 +285,7 @@ public static class MaFrameworkBuilder
                     var key = singletonAttr.Key;
                     if (Check.HasValue(key))
                     {
-                        service.TryAddKeyedSingleton<string>(t, key);
+                        service.TryAddKeyedSingleton<string>(t, key!);
                         continue;
                     }
                     else

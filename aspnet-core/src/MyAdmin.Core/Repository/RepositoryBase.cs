@@ -124,7 +124,7 @@ public class RepositoryBase<TEntity>
         }
     }
 
-    public async Task<List<TEntity>> GetListAsync(Expression<Func<TEntity, bool>> queryPredicate, string? sortField,
+    public async Task<List<TEntity>> GetListAsync(Expression<Func<TEntity, bool>>? queryPredicate, string? sortField,
         SortOrder sortOrder,
         params Expression<Func<TEntity, dynamic>>[] eagerLoadingProperties)
     {
@@ -169,7 +169,7 @@ public class RepositoryBase<TEntity>
     }
 
     public async Task<(List<TEntity>, int)> GetPagedListWithTotalAsync(
-        Expression<Func<TEntity, bool>> queryPredicate, Expression<Func<TEntity, dynamic>>? sortPredicate,
+        Expression<Func<TEntity, bool>>? queryPredicate, Expression<Func<TEntity, dynamic>>? sortPredicate,
         SortOrder sortOrder, int pageNumber, int pageSize,
         params Expression<Func<TEntity, dynamic>>[] eagerLoadingProperties)
     {

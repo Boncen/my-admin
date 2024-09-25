@@ -8,9 +8,9 @@ public abstract class Entity{}
 public abstract class Entity<TKey> :Entity, IEntity<TKey>
 {
     public virtual required TKey Id { get; set; }
-    public object?[] GetKeys()
+    public object[] GetKeys()
     {
-        return new object[] { Id };
+        return new object[] { Id! };
     }
 }
 

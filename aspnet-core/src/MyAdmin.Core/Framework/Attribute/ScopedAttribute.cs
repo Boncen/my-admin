@@ -5,7 +5,7 @@ public class ScopedAttribute: System.Attribute
     /// <summary>
     /// for keyedService
     /// </summary>
-    public string Key { get; set; }
+    public string? Key { get; set; }
     public ScopedAttribute()
     {
         

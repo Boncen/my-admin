@@ -69,7 +69,10 @@ public static class CommonExtension
         {
             var name = prop.Name;
             var value = prop.GetValue(obj);
-            dic.Add(name, value);
+            if (value != null)
+            {
+                dic.Add(name, value);
+            }
         }
         return dic;
     }

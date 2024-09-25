@@ -179,8 +179,8 @@ public class CrudController<TEntity, TKey, TAdd, TPageListSearch, TResponse> : M
                 // {
                 //     continue;
                 // }
-                Expression constantExpr = Expression.Constant(fieldValue.ToString(), typeof(object));
-                if (entityProp.PropertyType != field.Value.GetType())
+                Expression constantExpr = Expression.Constant(fieldValue?.ToString(), typeof(object));
+                if (entityProp.PropertyType != field.Value?.GetType())
                     constantExpr = Expression.Convert(constantExpr, entityProp.PropertyType);
                 
                 switch (reqType)
