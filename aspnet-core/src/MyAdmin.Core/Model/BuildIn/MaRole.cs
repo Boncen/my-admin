@@ -15,10 +15,10 @@ public class MaRole:FullAuditedEntity<Guid>, IEnableObject, ITenantObject<Guid?>
     [Key]
     public Guid Id { get; set; }
 
-    public string Name { get; set; }
+    public required string Name { get; set; }
     public string? Description { get; set; }
     [Comment("角色编码")]
-    public string Code { get; set; }
+    public string? Code { get; set; }
     
     // public ICollection<RoleMenu> RoleMenus { get; set; }
     // public ICollection<UserRole> UserRoles { get; set; }

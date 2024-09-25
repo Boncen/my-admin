@@ -12,7 +12,7 @@ using MyAdmin.Core.Utilities;
 
 namespace MyAdmin.ApiHost.Controller;
 
-[Route("/login")]
+[Route("api/login")]
 [AllowAnonymous]
 public class LoginController : MAController
 {
@@ -45,7 +45,7 @@ public class LoginController : MAController
     [HttpPost]
     public async Task<ApiResult> Login([FromBody] LoginReq req, CancellationToken cancellationToken)
     {
-        MaTenant tenant = null;
+        MaTenant? tenant = null;
         if (req.tenantId.HasValue)
         {
             tenant = await _tenantRepository.GetByIdAsync(req.tenantId.Value, cancellationToken);
@@ -68,7 +68,7 @@ public class LoginController : MAController
             return ApiResult.Fail("登录名或者密码错误");
         }
 
-        var hashPasswd = PasswordHelper.HashPassword(req.password, user.Salt);
+        var hashPasswd = PasswordHelper.HashPassword(req.password, user.Salt!);
         if (!user.Password.Equals(hashPasswd))
         {
             return ApiResult.Fail("登录名或者密码错误!");

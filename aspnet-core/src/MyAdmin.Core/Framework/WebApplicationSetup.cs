@@ -78,7 +78,7 @@ public static class WebApplicationSetup
         app.UseEasyApi(config.EasyApi);
     }
 
-    public static void UseEasyApi(this WebApplication app, EasyApiOptions easyApiOption, string url = "/easy")
+    public static void UseEasyApi(this WebApplication app, EasyApiOptions? easyApiOption, string url = "/api/easy")
     {
         // 简单的查询，分页查询
         var easyGet = app.MapGet((url), async ([FromServices] IHttpContextAccessor accessor, [FromServices] DBHelper dbHelper,
@@ -86,6 +86,10 @@ public static class WebApplicationSetup
          {
              try
              {
+                 if (accessor?.HttpContext == null)
+                 {
+                     return ApiResult.Fail("参数异常");
+                 }
                  var queryCollection = accessor.HttpContext.Request.Query;
                  EasyApiOptions? easyApiOptions = frameworkOption.Value?.EasyApi ?? new();
 
@@ -99,7 +103,7 @@ public static class WebApplicationSetup
                      return ApiResult.Ok();
                  }
 
-                 var data = await dbHelper.Connection.ExecuteReaderAsync(parseResult.Sql);
+                 var data = await dbHelper.Connection.ExecuteReaderAsync(parseResult.Sql!);
                  var result = easy.HandleDataReader(data, easyApiOptions.ColumnAlias, parseResult.Table);
                  if (parseResult.Page == 1 && parseResult.Count == 1)
                  {
@@ -107,7 +111,7 @@ public static class WebApplicationSetup
                  }
                  if (Check.HasValue(parseResult.TotalSql))
                  {
-                     var total = dbHelper.Connection.ExecuteScalar<int>(parseResult.TotalSql);
+                     var total = dbHelper.Connection.ExecuteScalar<int>(parseResult.TotalSql!);
                      // return ApiResult<dynamic>.Ok(PageResult<dynamic>.Ok(result, total));
                      return ApiResult<dynamic>.Ok(new { list = result, total });
                  }
@@ -117,7 +121,7 @@ public static class WebApplicationSetup
              {
                  throw new MAException("SQL异常", e);
              }
-         }).RequireAuthorization(Check.HasValue(easyApiOption.RequireRole) ? new AuthorizeAttribute() { Roles = easyApiOption.RequireRole } : new AuthorizeAttribute());
+         }).RequireAuthorization(Check.HasValue(easyApiOption?.RequireRole) ? new AuthorizeAttribute() { Roles = easyApiOption?.RequireRole } : new AuthorizeAttribute());
 
         // 新增数据，复杂查询
         var easyPost = app.MapPost((url), async ([FromServices] IHttpContextAccessor accessor, [FromServices] DBHelper dbHelper,
@@ -125,6 +129,10 @@ public static class WebApplicationSetup
         {
             try
             {
+                if (accessor?.HttpContext == null)
+                {
+                    return ApiResult.Fail("参数异常");
+                }
                 var body = accessor.HttpContext.Request.Body;
                 var parseResults = await easy.ProcessPostRequest(body, frameworkOption.Value);
                 JsonObject jobj = new JsonObject(); // table node
@@ -136,7 +144,7 @@ public static class WebApplicationSetup
                     {
                         if (Check.HasValue(parseResult.Target))
                         {
-                            jobj[parseResult.Target] = parseResult.Msg ?? "解析失败";
+                            jobj[parseResult.Target!] = parseResult.Msg ?? "解析失败";
                         }
                         else
                         {
@@ -148,12 +156,12 @@ public static class WebApplicationSetup
                     {
                         if (parseResult.OperationType == SqlOperationType.None)
                         {
-                            int affectRows = await dbHelper.Connection.ExecuteAsync(parseResult.Sql);
+                            int affectRows = await dbHelper.Connection.ExecuteAsync(parseResult.Sql!);
                             jobj["rows"] = affectRows;
                         }
                         else
                         {
-                            var data = await dbHelper.Connection.ExecuteReaderAsync(parseResult.Sql);
+                            var data = await dbHelper.Connection.ExecuteReaderAsync(parseResult.Sql!);
                             var result = easy.HandleDataReader(data, frameworkOption.Value?.EasyApi?.ColumnAlias, parseResult.Table);
 
                             if (parseResult.Page == 1 && parseResult.Count == 1)
@@ -162,14 +170,14 @@ public static class WebApplicationSetup
                                 {
                                     easy.ProcessResultChildren(parseResult.Children, easy, frameworkOption.Value, result);
                                 }
-                                jobj.Add(parseResult.Target, result.FirstOrDefault());
+                                jobj.Add(parseResult.Target!, result.FirstOrDefault());
                             }
                             else
                             {
                                 JsonObject pageResultJobj = new JsonObject();
                                 if (Check.HasValue(parseResult.TotalSql))
                                 {
-                                    var total = dbHelper.Connection.ExecuteScalar<int>(parseResult.TotalSql);
+                                    var total = dbHelper.Connection.ExecuteScalar<int>(parseResult.TotalSql!);
                                     pageResultJobj["total"] = total;
                                 }
                                 pageResultJobj["list"] = new JsonArray(result.ToArray());
@@ -178,7 +186,7 @@ public static class WebApplicationSetup
                                 {
                                     easy.ProcessResultChildren(parseResult.Children, easy, frameworkOption.Value, result);
                                 }
-                                jobj.Add(parseResult.Target, pageResultJobj);
+                                jobj.Add(parseResult.Target!, pageResultJobj);
                             }
                         }
                     }
@@ -190,14 +198,18 @@ public static class WebApplicationSetup
             {
                 throw new MAException("SQL异常", e);
             }
-        }).RequireAuthorization(Check.HasValue(easyApiOption.RequireRole) ? new AuthorizeAttribute() { Roles = easyApiOption.RequireRole } : new AuthorizeAttribute());
+        }).RequireAuthorization(Check.HasValue(easyApiOption?.RequireRole) ? new AuthorizeAttribute() { Roles = easyApiOption?.RequireRole } : new AuthorizeAttribute());
 
         var easyPut = app.MapPut((url), async ([FromServices] IHttpContextAccessor accessor, [FromServices] DBHelper dbHelper,
              [FromServices] IOptionsSnapshot<MaFrameworkOptions> frameworkOption, [FromServices] EasyApi easy) =>
          {
-             IDbTransaction trans = null;
+             IDbTransaction? trans = null;
              try
              {
+                if (accessor?.HttpContext == null)
+                {
+                    return ApiResult.Fail("参数异常");
+                }
                  var body = accessor.HttpContext.Request.Body;
                  List<EasyApiParseResult> parseResults = await easy.ProcessPutRequest(body, frameworkOption.Value);
                  JsonObject jobj = new JsonObject();
@@ -210,7 +222,7 @@ public static class WebApplicationSetup
                      {
                          return ApiResult<dynamic>.Fail(parseResult.Msg ?? "解析错误");
                      }
-                     rows += await dbHelper.Connection.ExecuteAsync(parseResult.Sql);
+                     rows += await dbHelper.Connection.ExecuteAsync(parseResult.Sql!);
                      jobj["rows"] = rows;
                  }
                  trans.Commit();
@@ -222,14 +234,18 @@ public static class WebApplicationSetup
                  trans?.Rollback();
                  throw new MAException("SQL异常", e);
              }
-         }).RequireAuthorization(Check.HasValue(easyApiOption.RequireRole) ? new AuthorizeAttribute() { Roles = easyApiOption.RequireRole } : new AuthorizeAttribute());
+         }).RequireAuthorization(Check.HasValue(easyApiOption?.RequireRole) ? new AuthorizeAttribute() { Roles = easyApiOption?.RequireRole } : new AuthorizeAttribute());
 
         var easyDelete = app.MapDelete((url), async ([FromServices] IHttpContextAccessor accessor, [FromServices] DBHelper dbHelper,
             [FromServices] IOptionsSnapshot<MaFrameworkOptions> frameworkOption, [FromServices] EasyApi easy) =>
         {
             try
             {
-                var queryCollection = accessor.HttpContext.Request.Query;
+                if (accessor?.HttpContext == null)
+                {
+                    return ApiResult.Fail("参数异常");
+                }
+                var queryCollection = accessor!.HttpContext!.Request.Query;
                 EasyApiOptions? easyApiOptions = frameworkOption.Value?.EasyApi ?? new();
 
                 var parseResult = easy.ProcessDeleteRequest(queryCollection);
@@ -242,7 +258,7 @@ public static class WebApplicationSetup
                     return ApiResult.Ok();
                 }
                 JsonObject jobj = new JsonObject();
-                int affectRows = await dbHelper.Connection.ExecuteAsync(parseResult.Sql);
+                int affectRows = await dbHelper.Connection.ExecuteAsync(parseResult.Sql!);
                 jobj["rows"] = affectRows;
 
                 return ApiResult<dynamic>.Ok(jobj);
@@ -251,7 +267,7 @@ public static class WebApplicationSetup
             {
                 throw new MAException("SQL异常", e);
             }
-        }).RequireAuthorization(Check.HasValue(easyApiOption.RequireRole) ? new AuthorizeAttribute() { Roles = easyApiOption.RequireRole } : new AuthorizeAttribute());
+        }).RequireAuthorization(Check.HasValue(easyApiOption?.RequireRole) ? new AuthorizeAttribute() { Roles = easyApiOption?.RequireRole } : new AuthorizeAttribute());
 
         if (easyApiOption != null)
         {

@@ -17,7 +17,7 @@ public class Logger : ILogger
 stackTrace: {1}
     ";
     protected readonly LoggerOption _loggerOption;
-    private readonly IRepository<MaLog> _repository;
+    private readonly IRepository<MaLog>? _repository;
     public Logger(IOptions<LoggerOption> loggerOption, IServiceScopeFactory serviceScopeFactory) //, IRepository<Log> repository)
     {
         _loggerOption = loggerOption.Value;
@@ -128,7 +128,7 @@ stackTrace: {1}
 
         if (_loggerOption.SaveToDatabase == true)
         {
-            _repository.InsertAsync(maLog, true);
+            _repository?.InsertAsync(maLog, true);
         }
     }
 
@@ -136,7 +136,7 @@ stackTrace: {1}
     {
         string location = GetLocation();
         string extraInfo = FormatExtraInfo(level, location);
-        string exceptionInfo = exception?.FullMessage();
+        string? exceptionInfo = exception?.FullMessage();
         WriteToConsole(extraInfo + content + exceptionInfo, level);
         
         if (_loggerOption.SaveToFile == true)
@@ -181,7 +181,7 @@ stackTrace: {1}
             return;
         }
 
-        _repository.InsertAsync(new MaLog()
+        _repository?.InsertAsync(new MaLog()
         {
             Id = Guid.NewGuid(),
             Content = log,

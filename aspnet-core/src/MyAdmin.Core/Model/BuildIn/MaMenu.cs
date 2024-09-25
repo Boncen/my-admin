@@ -14,7 +14,7 @@ public class MaMenu:FullAuditedEntity<Guid>,  ITenantObject<Guid?>,IEntity<Guid>
     public Guid Id { get; set; }
 
     public Guid? ParentId { get; set; }
-    public string Name { get; set; }
+    public required string Name { get; set; }
     [Comment("路由路径")]
     public string? Url { get; set; }
 
@@ -22,7 +22,7 @@ public class MaMenu:FullAuditedEntity<Guid>,  ITenantObject<Guid?>,IEntity<Guid>
     public int Order { get; set; } = 0;
     public MenuType MenuType { get; set; } = MenuType.Page;
     public int Level { get; set; } = 0;
-    public string Code { get; set; }
+    public required string Code { get; set; }
     
     // public ICollection<RoleMenu> RoleMenus { get; set; }
     // public MaUser? Creator { get; set; }

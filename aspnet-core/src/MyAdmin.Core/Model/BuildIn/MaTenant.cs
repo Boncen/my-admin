@@ -10,7 +10,7 @@ namespace MyAdmin.Core.Model.BuildIn;
 public class MaTenant:FullAuditedEntity<Guid>,IEntity<Guid>,IEnableObject
 {
     public Guid Id { get; set; }
-    public string Name { get; set; }
+    public required string Name { get; set; }
     // public string? FullName { get; set; }
     public bool IsEnabled { get; set; }
     public DateTime? ExpirationDate { get; set; }

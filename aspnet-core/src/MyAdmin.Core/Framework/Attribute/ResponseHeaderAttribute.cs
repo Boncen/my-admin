@@ -10,7 +10,7 @@ public class ResponseHeaderAttribute:ActionFilterAttribute
 
     public async override Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
     {
-        context.HttpContext.Response.Headers.Add(_name, _value);
+        context.HttpContext.Response.Headers.TryAdd(_name, _value);
         await next();
     }
 }

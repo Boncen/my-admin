@@ -47,7 +47,7 @@ public class ApiResult<T> : ApiResult
 
 public class PageResult:ApiResult
 {
-    public virtual List<dynamic> List { get; set; }
+    public virtual List<dynamic>? List { get; set; }
     public int? Total { get; set; }
 }
 

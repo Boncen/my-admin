@@ -19,16 +19,16 @@ public interface IRepository<TEntity> : IRepository where TEntity : class, IEnti
     Task DeleteAsync(TEntity entity, bool autoSave = false, CancellationToken cancellationToken = default);
     Task DeleteManyAsync(IEnumerable<TEntity> entities, bool autoSave = false, CancellationToken cancellationToken = default);
 
-    Task<List<TEntity>> GetListAsync(Expression<Func<TEntity, bool>> queryPredicate,string? sortField = null, SortOrder sortOrder = SortOrder.Unspecified,params Expression<Func<TEntity, dynamic>>[] eagerLoadingProperties);
+    Task<List<TEntity>> GetListAsync(Expression<Func<TEntity, bool>>? queryPredicate,string? sortField = null, SortOrder sortOrder = SortOrder.Unspecified,params Expression<Func<TEntity, dynamic>>[] eagerLoadingProperties);
     Task<List<TEntity>> GetPagedListAsync(
-        Expression<Func<TEntity, bool>> queryPredicate, Expression<Func<TEntity, dynamic>>? sortPredicate, SortOrder sortOrder, int pageNumber, int pageSize,
+        Expression<Func<TEntity, bool>>? queryPredicate, Expression<Func<TEntity, dynamic>>? sortPredicate, SortOrder sortOrder, int pageNumber, int pageSize,
         params Expression<Func<TEntity, dynamic>>[] eagerLoadingProperties);
 
     Task<(List<TEntity>, int)> GetPagedListWithTotalAsync(
-        Expression<Func<TEntity, bool>> queryPredicate, Expression<Func<TEntity, dynamic>>? sortPredicate, SortOrder sortOrder, int pageNumber, int pageSize,
+        Expression<Func<TEntity, bool>>? queryPredicate, Expression<Func<TEntity, dynamic>>? sortPredicate, SortOrder sortOrder, int pageNumber, int pageSize,
         params Expression<Func<TEntity, dynamic>>[] eagerLoadingProperties);
 
-    Task<TEntity> FindOneAsync(Expression<Func<TEntity, bool>> queryPredicate,
+    Task<TEntity?> FindOneAsync(Expression<Func<TEntity, bool>> queryPredicate,
         CancellationToken cancellationToken = default, params Expression<Func<TEntity, dynamic>>[] eagerLoadingProperties);
 }
 

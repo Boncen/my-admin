@@ -9,7 +9,7 @@ public class Request
 
 public class ListRequest : Request
 {
-    private string _sortField;
+    private string? _sortField;
 
     /// <summary>
     ///     排序字段

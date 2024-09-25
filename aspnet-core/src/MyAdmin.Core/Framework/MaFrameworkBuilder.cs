@@ -27,17 +27,22 @@ namespace MyAdmin.Core.Framework;
 public static class MaFrameworkBuilder
 {
     public static IServiceCollection AddMaFramework(this IServiceCollection service, ConfigurationManager configuration,
-        Action<Core.MaFrameworkBuilder> builderAction = null, params Assembly[] assemblies)
+        Action<Core.MaFrameworkBuilder>? builderAction = null, params Assembly[] assemblies)
     {
         var config = new MaFrameworkOptions();
         var frameworkOptions = configuration.GetSection("MaFrameworkOptions");
         frameworkOptions.Bind(config);
         if (assemblies == null)
         {
-            assemblies = new Assembly[]{ Assembly.GetEntryAssembly() };
+            assemblies = new Assembly[]{ Assembly.GetEntryAssembly()! };
         }
         var builder = new Core.MaFrameworkBuilder(service, assemblies);
-        builder.Assemblies.Add(Assembly.GetAssembly(typeof(MaFrameworkBuilder)));
+        
+        var frameworkAssemble = Assembly.GetAssembly(typeof(MaFrameworkBuilder));
+        if (frameworkAssemble != null)
+        {
+            builder.Assemblies.Add(frameworkAssemble);
+        }
         
         service.AddSingleton<Core.MaFrameworkBuilder>(builder);
         builderAction?.Invoke(builder);
@@ -78,7 +83,7 @@ public static class MaFrameworkBuilder
 
     private static void AddCache(this IServiceCollection service, MaFrameworkOptions config)
     {
-        switch (config.Cache.CacheType)
+        switch (config.Cache?.CacheType)
         {
             case CacheTypeEnum.Redis:
                 throw new UnSupposedFeatureException();
@@ -113,7 +118,7 @@ public static class MaFrameworkBuilder
                 ValidAudience = configuration["Jwt:Audience"], //订阅人Audience
                 ValidateIssuerSigningKey = true, //是否验证SecurityKey
                 IssuerSigningKey =
-                    new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:SecretKey"])), //SecurityKey
+                    new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:SecretKey"]!)), //SecurityKey
                 ValidateLifetime = true, //是否验证失效时间
                 ClockSkew = TimeSpan.FromHours(
                     Convert.ToInt16(configuration["Jwt:ExpireHour"])), //过期时间容错值，解决服务器端时间不同步问题（秒）
@@ -242,10 +247,8 @@ public static class MaFrameworkBuilder
                     break;
                 case DBType.MsSql:
                     throw new UnSupposedFeatureException();
-                    break;
                 case DBType.Postgre:
                     throw new UnSupposedFeatureException();
-                    break;
             }
         }
     }

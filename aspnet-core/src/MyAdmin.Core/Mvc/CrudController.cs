@@ -35,6 +35,10 @@ public class CrudController<TEntity, TKey, TAdd, TPageListSearch, TResponse> : M
 
     private async Task Validate(TAdd addInput)
     {
+        if (addInput == null)
+        {
+            return;
+        }
         var type = addInput.GetType();
         var properties = type.GetProperties();
         foreach (var property in properties)
@@ -102,12 +106,12 @@ public class CrudController<TEntity, TKey, TAdd, TPageListSearch, TResponse> : M
         CancellationToken cancellationToken)
     {
         _repository.IsChangeTrackingEnabled = false;
-        List<TEntity> entities = default;
+        List<TEntity>? entities = default;
         var total = 0;
         var query = GenerateQueryPredicate(search);
         var sortType = search?.Desc == true ? SortOrder.Descending :
             search?.Desc == false ? SortOrder.Ascending : SortOrder.Unspecified;
-        Expression<Func<TEntity, dynamic>> sortPredicate = null;
+        Expression<Func<TEntity, dynamic>>? sortPredicate = null;
         if (Check.HasValue(search?.SortField)) sortPredicate = GenerateSortPredicate(search?.SortField);
         if (search?.ReturnTotal == true)
         {
@@ -126,11 +130,11 @@ public class CrudController<TEntity, TKey, TAdd, TPageListSearch, TResponse> : M
         return PageResult<TResponse>.Ok(rsp, total);
     }
 
-    private Expression<Func<TEntity, dynamic>>? GenerateSortPredicate(string requestSortField)
+    private Expression<Func<TEntity, dynamic>>? GenerateSortPredicate(string? requestSortField)
     {
         if (!Check.HasValue(requestSortField)) return null;
 
-        var entityProp = typeof(TEntity).GetProperty(requestSortField);
+        var entityProp = typeof(TEntity).GetProperty(requestSortField!);
         if (entityProp == null) return null;
 
         var paramExpr = Expression.Parameter(typeof(TEntity), "entity");
@@ -146,7 +150,7 @@ public class CrudController<TEntity, TKey, TAdd, TPageListSearch, TResponse> : M
     /// <param name="search"></param>
     /// <typeparam name="TSearch"></typeparam>
     /// <returns></returns>
-    private Expression<Func<TEntity, bool>> GenerateQueryPredicate<TSearch>(TSearch? search)
+    private Expression<Func<TEntity, bool>>? GenerateQueryPredicate<TSearch>(TSearch? search)
     {
         if (search == null) return null;
 
@@ -184,7 +188,7 @@ public class CrudController<TEntity, TKey, TAdd, TPageListSearch, TResponse> : M
                     case FieldRequestType.Contain:
                         var methodCallExpr = Expression.Call(
                             propertyAccessExpr,
-                            typeof(string).GetMethod("Contains", new[] { typeof(string) }),
+                            typeof(string).GetMethod("Contains", new[] { typeof(string) })!,
                             constantExpr
                         );
                         conditions.Add(methodCallExpr);

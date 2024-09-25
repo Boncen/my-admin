@@ -4,7 +4,7 @@ namespace MyAdmin.Core;
 
 public class Check
 {
-    public static bool HasValue(string input){
+    public static bool HasValue(string? input){
         return !string.IsNullOrEmpty(input) && !string.IsNullOrWhiteSpace(input);
     }
 
@@ -28,14 +28,14 @@ public class Check
     /// </summary>
     /// <param name="sql"></param>
     /// <returns></returns>
-    public static bool IfSqlFragmentSafe(string sql)
+    public static bool IfSqlFragmentSafe(string? sql)
     {
         if (!HasValue(sql))
         {
             return true;
         }
 
-        if (sql.Contains("--") || sql.Contains("//") || sql.Contains("truncate"))// || sql.Contains('(')|| sql.Contains(')'))
+        if (sql!.Contains("--") || sql.Contains("//") || sql.Contains("truncate"))// || sql.Contains('(')|| sql.Contains(')'))
         {
             return false;
         }

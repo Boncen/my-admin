@@ -13,10 +13,10 @@ public class MaUser:FullAuditedEntity<Guid>, IEnableObject, ITenantObject<Guid?>
 {
     public Guid Id { get; set; }
     public bool IsEnabled { get; set; }
-    public string Name { get; set; }
-    public string Password { get; set; }
+    public required string Name { get; set; }
+    public required string Password { get; set; }
     public string? Salt { get; set; }
-    public string Account { get; set; }
+    public required string Account { get; set; }
     public string? Email { get; set; }
     public string? Mobile { get; set; }
     public Guid? TenantId { get; set; }

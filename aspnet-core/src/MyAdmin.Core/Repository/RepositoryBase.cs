@@ -71,7 +71,7 @@ public class RepositoryBase<TEntity>
         }
        // var entityProp = typeof(TEntity).GetProperty(requestSortField);
         ParameterExpression parameterExpression = Expression.Parameter(typeof(TEntity), "x");
-        MemberExpression memberExpression = Expression.Property(parameterExpression, sortField);
+        MemberExpression memberExpression = Expression.Property(parameterExpression, sortField!);
         UnaryExpression conversion = Expression.TypeAs(memberExpression, typeof(object));
         Expression<Func<TEntity, dynamic>> expression =
             Expression.Lambda<Func<TEntity, dynamic>>(conversion, parameterExpression);
@@ -200,7 +200,7 @@ public class RepositoryBase<TEntity>
         return (list, total);
     }
 
-    public async Task<TEntity> FindOneAsync(Expression<Func<TEntity, bool>> queryPredicate,
+    public async Task<TEntity?> FindOneAsync(Expression<Func<TEntity, bool>> queryPredicate,
         CancellationToken cancellationToken = default,
         params Expression<Func<TEntity, dynamic>>[] eagerLoadingProperties)
     {
@@ -237,9 +237,9 @@ public class RepositoryBase<TEntity>
         {
             if (entity is IHasCreationTime)
             {
-                if ((entity as IHasCreationTime).CreationTime.IsDefaultValue())
+                if ((entity as IHasCreationTime)!.CreationTime.IsDefaultValue())
                 {
-                    (entity as IHasCreationTime).CreationTime = DateTime.Now;
+                    (entity as IHasCreationTime)!.CreationTime = DateTime.Now;
                 }
             }
         }
@@ -279,9 +279,9 @@ public class RepositoryBase<TEntity>
         {
             if (entity is IHasModificationTime)
             {
-                if (!(entity as IHasModificationTime).LastModificationTime.HasValue)
+                if (!(entity as IHasModificationTime)!.LastModificationTime.HasValue)
                 {
-                    (entity as IHasModificationTime).LastModificationTime = DateTime.Now;
+                    (entity as IHasModificationTime)!.LastModificationTime = DateTime.Now;
                 }
             }
         }
@@ -329,7 +329,7 @@ public class RepositoryBase<TEntity, TKey>(IServiceProvider serviceProvider)
     {
         var query = GetQueryable();
         query = IncludeDetails(query, eagerLoadingProperties);
-        var entity = await query.FirstOrDefaultAsync(e => e.Id.Equals(id), cancellationToken);
+        var entity = await query.FirstOrDefaultAsync(e => e.Id!.Equals(id), cancellationToken);
         return entity;
     }
 

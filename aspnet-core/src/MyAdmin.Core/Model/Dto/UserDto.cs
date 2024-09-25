@@ -8,20 +8,20 @@ public class UserDto: FullAuditedEntity<Guid>
 {
     public Guid Id { get; set; }
     public bool IsEnabled { get; set; }
-    public string Name { get; set; }
-    public string Account { get; set; }
+    public required string Name { get; set; }
+    public required string Account { get; set; }
     public string? Email { get; set; }
     public string? Mobile { get; set; }
     public Guid? TenantId { get; set; }
-    public ICollection<UserRole> UserRoles { get; set; }
+    public ICollection<UserRole>? UserRoles { get; set; }
     public MaTenant? Tenant { get; set; }
 }
 
 public class AddUserDto
 {
-    public string Name { get; set; }
-    public string Account { get; set; }
-    public string Password { get; set; }
+    public required string Name { get; set; }
+    public required string Account { get; set; }
+    public required string Password { get; set; }
     public string? Email { get; set; }
     public string? Mobile { get; set; }
     [ValidateTableField(TableName = nameof(MaTenant), FieldName = nameof(MaTenant.Id), ErrorMessage = "租户不存在")]
@@ -30,8 +30,8 @@ public class AddUserDto
 
 public class UserSearchDto:PageRequest
 {
-    public string Name { get; set; }
-    public string Account { get; set; }
+    public required string Name { get; set; }
+    public required string Account { get; set; }
     public string? Email { get; set; }
     public string? Mobile { get; set; }
     public Guid? TenantId { get; set; }

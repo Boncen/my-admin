@@ -33,10 +33,10 @@ public class EasyApi
         _dbHelper = dbHelper;
     }
 
-    private List<string> GetEntityList()
+    private List<string>? GetEntityList()
     {
         var list = _cacheManager.Get(ConstStrings.MACacheKeyAllEntities);
-        if (list == null || list.Count < 1)
+        if (list == null || list!.Count < 1)
         {
             list = new List<string>();
             foreach (var assembly in _maFrameworkBuilder.Assemblies)
@@ -279,9 +279,9 @@ public class EasyApi
     private List<string> GetOriginalColumn(List<string> columns)//, EasyApiOptions option)
     {
         var option = _maFrameworkOptions.EasyApi;
-        if (option.ColumnAlias == null)
+        if (option?.ColumnAlias == null)
         {
-            return default;
+            return new List<string>();
         }
         List<string> colList = new();
         foreach (var col in columns)
@@ -311,6 +311,10 @@ public class EasyApi
     private bool IsEntity(string target)
     {
         var entities = GetEntityList();
+        if (entities == null)
+        {
+            return false;
+        }
         foreach (var entityFullName in entities)
         {
             if (!Check.HasValue(entityFullName))
@@ -332,44 +336,44 @@ public class EasyApi
     /// </summary>
     /// <param name="target"></param>
     /// <param name="option"></param>
-    private string GetTableAlias(string? target)
+    private string GetTableAlias(string target)
     {
         if (!Check.HasValue(target))
         {
             return target;
         }
-        string result = target;
+        string? result = target;
 
         if (_maFrameworkOptions.EasyApi?.TableAlias != null)
         {
-            if (_maFrameworkOptions.EasyApi.TableAlias.ContainsKey(target))
+            if (_maFrameworkOptions.EasyApi.TableAlias.ContainsKey(target!))
             {
-                var val = _maFrameworkOptions.EasyApi.TableAlias[target];
+                var val = _maFrameworkOptions.EasyApi.TableAlias[target!];
                 if (Check.HasValue(val))
                 {
                     result = val;
                 }
             }
         }
-        CheckExcludeTable(result);
+        CheckExcludeTable(result!);
         return result;
     }
 
     private void CheckExcludeTable(string table)
     {
-        if (!Check.HasValue(table) || !Check.HasValue(_maFrameworkOptions.EasyApi.ExcludeTable))
+        if (!Check.HasValue(table) || !Check.HasValue(_maFrameworkOptions.EasyApi?.ExcludeTable))
         {
             return;
         }
-        var excludes = _maFrameworkOptions.EasyApi.ExcludeTable.Split(',');
-        if (excludes.Any(x => x.Equals(table, StringComparison.CurrentCultureIgnoreCase)))
+        var excludes = _maFrameworkOptions.EasyApi?.ExcludeTable?.Split(',');
+        if (excludes != null && excludes.Any(x => x.Equals(table, StringComparison.CurrentCultureIgnoreCase)))
         {
             throw new MAException("不允许操作的表");
         }
     }
 
     public List<JsonObject> HandleDataReader(IDataReader data, Dictionary<string, string>? columnAlias,
-        string table)
+        string? table)
     {
         DataTable dt = new DataTable();
 
@@ -382,7 +386,7 @@ public class EasyApi
             foreach (DataColumn dtColumn in dt.Columns)
             {
                 var name = dtColumn.ColumnName;
-                if (columnAlias.ContainsValue(name) || columnAlias.ContainsValue(table + "." + name))
+                if (columnAlias != null && (columnAlias.ContainsValue(name) || columnAlias.ContainsValue(table + "." + name)))
                 {
                     name = columnAlias.FirstOrDefault(x =>
                         x.Value.Equals(table + "." + name) || x.Value.Equals(name, StringComparison.CurrentCultureIgnoreCase)).Key;
@@ -464,9 +468,13 @@ public class EasyApi
                 string where = "";
                 foreach (var subProperty in subObject)
                 {
+                    if (subProperty.Value == null)
+                    {
+                        continue;
+                    }
                     if (subProperty.Key.Equals("@columns", StringComparison.CurrentCultureIgnoreCase))
                     {
-                        result.Columns = GetQueryColumnAlias(subProperty.Value.ToString(), option.EasyApi);
+                        result.Columns = GetQueryColumnAlias(subProperty.Value.ToString(), option.EasyApi!);
                         if (!Check.IfSqlFragmentSafe(result.Columns))
                         {
                             result.Success = false;
@@ -514,11 +522,11 @@ public class EasyApi
                     }
                     if (subProperty.Key.Equals("@children", StringComparison.CurrentCultureIgnoreCase))
                     {
-                        result.Children = ProcessChildrenQuery(subProperty.Value, result.Table);
+                        result.Children = ProcessChildrenQuery(subProperty.Value);
 
-                        if (Check.HasValue(result.Children.ChildrenConfig?.ParentField) && result.Columns?.Trim() != "*" && !result.Columns.Contains(result.Children.ChildrenConfig?.ParentField))
+                        if (result.Children != null && Check.HasValue(result.Children.ChildrenConfig?.ParentField) && Check.HasValue(result.Columns) && result.Columns?.Trim() != "*" && !result.Columns!.Contains(result.Children!.ChildrenConfig?.ParentField!))
                         {
-                            result.Columns += $",{result.Children.ChildrenConfig?.ParentField}";
+                            result.Columns += $",{result.Children!.ChildrenConfig?.ParentField}";
                         }
                     }
                 } // for property
@@ -561,8 +569,12 @@ public class EasyApi
     /// 处理子表sql
     /// </summary>
     /// <param name="childResult"></param>
-    public void ProcessResultChildren(EasyApiParseResult childResult, EasyApi easy, MaFrameworkOptions frameworkOption, List<JsonObject> parentListData = null)
+    public void ProcessResultChildren(EasyApiParseResult childResult, EasyApi easy, MaFrameworkOptions? frameworkOption, List<JsonObject>? parentListData = null)
     {
+        if (childResult.ChildrenConfig == null)
+        {
+            return;
+        }
         ChildrenQueryConfig config = childResult.ChildrenConfig;
         if (childResult == null || !Check.HasValue(config.ChildField) || !Check.HasValue(config.ParentField))
         {
@@ -572,18 +584,18 @@ public class EasyApi
         {
             return;
         }
-        string sql = string.Empty;
+        string? sql = string.Empty;
         string parentIdFieldName = config.ParentField ?? "Id";
         if (childResult.Page > 0 && childResult.Count > 0)
         {
             foreach (var parent in parentListData)
             {
                 // 分页查询
-                sql = childResult.Sql.Replace("@" + config.ParentField, parent[config.ParentField]?.ToString());
+                sql = childResult.Sql?.Replace("@" + config.ParentField, parent[config.ParentField!]?.ToString());
                 if (Check.HasValue(sql))
                 {
-                    var data = _dbHelper.Connection.ExecuteReader(sql);
-                    var childList = easy.HandleDataReader(data, frameworkOption?.EasyApi?.ColumnAlias, childResult.Table).ToArray();
+                    var data = _dbHelper.Connection.ExecuteReader(sql!);
+                    var childList = easy.HandleDataReader(data, frameworkOption?.EasyApi?.ColumnAlias, childResult.Table!).ToArray();
                     parent[config.KeyName ?? "children"] = new JsonArray(childList);
                 }
             }
@@ -591,11 +603,11 @@ public class EasyApi
         else
         {
             // 不分页，直接查询全部子项
-            int whereIndex = childResult.Sql.IndexOf("WHERE");
+            int whereIndex = childResult.Sql!.IndexOf("WHERE");
             sql = childResult.Sql.Substring(0, whereIndex);
             if (parentListData.Any(x => x.ContainsKey(parentIdFieldName)))
             {
-                var ids = parentListData.Select(x => x[parentIdFieldName]?.ToString()).ToSplitableString();
+                var ids = parentListData.Select(x => x[parentIdFieldName]!.ToString()).ToSplitableString();
                 sql += $" WHERE {config.ChildField} IN ({ids})";
             }
             var data = _dbHelper.Connection.ExecuteReader(sql);
@@ -606,7 +618,7 @@ public class EasyApi
                 {
                     if (parent.ContainsKey(parentIdFieldName))
                     {
-                        var childs = childList.Where(x => x[config.ChildField].ToString() == parent[parentIdFieldName].ToString()).ToArray();
+                        var childs = childList.Where(x => x[config.ChildField]!.ToString() == parent[parentIdFieldName]!.ToString()).ToArray();
                         parent[config.KeyName ?? "children"] = new JsonArray(childs);
                     }
                 }
@@ -614,23 +626,32 @@ public class EasyApi
         }
         return;
     }
-    private EasyApiParseResult ProcessChildrenQuery(JsonNode? childBody, string table)
+    private EasyApiParseResult? ProcessChildrenQuery(JsonNode? childBody)
     {
+        if (childBody == null)
+        {
+            return null;
+        }
         EasyApiParseResult result = new EasyApiParseResult()
         {
             OperationType = SqlOperationType.Table,
             Target = childBody?["target"]?.ToString()
         };
 
-        string? target = GetTableAlias(childBody?["target"]?.ToString());
-        string targetField = childBody?["targetField"]?.ToString();
-        string parentField = childBody?["parentField"]?.ToString();
-        string pageStr = childBody?["page"]?.ToString();
-        string countStr = childBody?["count"]?.ToString();
-        string customResultFieldName = childBody?["customResultFieldName"]?.ToString();
+        string target = GetTableAlias(childBody!["target"]!.ToString()!);
+        string? targetField = childBody!["targetField"]?.ToString();
+        string? parentField = childBody!["parentField"]?.ToString();
+        if (!Check.HasValue(targetField) || !Check.HasValue(parentField))
+        {
+            return null;
+        }
+
+        string? pageStr = childBody?["page"]?.ToString();
+        string? countStr = childBody?["count"]?.ToString();
+        string? customResultFieldName = childBody?["customResultFieldName"]?.ToString();
         string columns = childBody?["columns"]?.ToString() ?? "*";
 
-        if (columns.Trim() != "*" && !columns.Contains(targetField))
+        if (columns.Trim() != "*" && Check.HasValue(targetField) && !columns.Contains(targetField!))
         {
             columns += $",{targetField}";
         }
@@ -646,7 +667,7 @@ public class EasyApi
         if (child != null)
         {
             result.Children = new();
-            var childResult = ProcessChildrenQuery(child, target);
+            var childResult = ProcessChildrenQuery(child);
             if (childResult != null)
             {
                 result.Children = childResult;
@@ -657,8 +678,8 @@ public class EasyApi
         result.ChildrenConfig = new ChildrenQueryConfig()
         {
             KeyName = customResultFieldName,
-            ChildField = targetField,
-            ParentField = parentField
+            ChildField = targetField!,
+            ParentField = parentField!
         };
         result.Table = target;
         return result;
@@ -690,13 +711,13 @@ public class EasyApi
             var fieldValue = whereField.Value?.AsObject()["value"]?.ToString();
             if (Check.HasValue(fieldValue))
             {
-                tmps.Add(GetOperatorNotationByWhereType(fieldType, _maFrameworkOptions.DBType, fieldName, fieldValue));
+                tmps.Add(GetOperatorNotationByWhereType(fieldType!, _maFrameworkOptions.DBType, fieldName, fieldValue!));
             }
         }
         return tmps.Count > 0 ? " WHERE " + string.Join(" AND ", tmps) : string.Empty;
     }
 
-    private string ProcessWhereAndOr(JsonNode? value, string table, string andOr)
+    private string ProcessWhereAndOr(JsonNode? value, string? table, string andOr)
     {
         if (value == null)
         {
@@ -724,7 +745,7 @@ public class EasyApi
             var fieldValue = field.Value?.AsObject()["value"]?.ToString();
             if (Check.HasValue(fieldValue))
             {
-                items.Add(GetOperatorNotationByWhereType(fieldType, _maFrameworkOptions.DBType, fieldName, fieldValue));
+                items.Add(GetOperatorNotationByWhereType(fieldType!, _maFrameworkOptions.DBType, fieldName, fieldValue!));
             }
         }
         return items.Count > 0 ? "(" + string.Join(" " + andOr + " ", items) + ")" : string.Empty;
@@ -737,15 +758,15 @@ public class EasyApi
     /// <param name="fieldName"></param>
     /// <param name="table"></param>
     /// <returns></returns>
-    private string MakeSureHavaTablePrefix(string fieldName, string table)
+    private string MakeSureHavaTablePrefix(string fieldName, string? table)
     {
         if (fieldName.Contains('.'))
         {
             var fieldNameAray = fieldName.Split('.');
             if (fieldNameAray.Length == 3)
             {
-                string alias = GetTableAlias(fieldNameAray[0]);
-                return alias + "." + fieldNameAray[2];
+                string? alias = GetTableAlias(fieldNameAray[0]);
+                return Check.HasValue(alias) ? alias + "." + fieldNameAray[2] : fieldNameAray[2];
             }
             return fieldName;
         }
@@ -754,7 +775,7 @@ public class EasyApi
             return Check.HasValue(table) ? table + "." + fieldName : fieldName;
         }
     }
-    private void ProcessOrderByPart(KeyValuePair<string, JsonNode?> subProperty, List<string> orderStrs, string table)
+    private void ProcessOrderByPart(KeyValuePair<string, JsonNode?> subProperty, List<string> orderStrs, string? table)
     {
         if (subProperty.Value == null)
         {
@@ -762,6 +783,10 @@ public class EasyApi
         }
         foreach (var item in subProperty.Value.AsArray())
         {
+            if (item == null)
+            {
+                continue;
+            }
             var obj = item.AsObject();
             string? field = obj["field"]?.ToString();
             string? type = obj["type"]?.ToString();
@@ -770,7 +795,7 @@ public class EasyApi
             {
                 continue;
             }
-            field = MakeSureHavaTablePrefix(field, table);
+            field = MakeSureHavaTablePrefix(field!, table);
             if (!Check.HasValue(type))
             {
                 type = "ASC";
@@ -789,6 +814,10 @@ public class EasyApi
         }
         foreach (var item in subProperty.Value.AsArray())
         {
+            if (item == null)
+            {
+                continue;
+            }
             var obj = item.AsObject();
             string? targetJoin = obj["targetJoin"]?.ToString();
             string? targetOn = obj["targetOn"]?.ToString();
@@ -796,7 +825,7 @@ public class EasyApi
             string? onField = obj["onField"]?.ToString();
             string? joinType = obj["type"]?.ToString();
 
-            if (!Check.HasValue(targetJoin) || !Check.HasValue(joinField) || !Check.HasValue(onField)) // || !Check.HasValue(targetField) )
+            if (!Check.HasValue(targetJoin) || !Check.HasValue(joinField) || !Check.HasValue(onField))
             {
                 continue;
             }
@@ -804,11 +833,11 @@ public class EasyApi
             {
                 joinType = "join";
             }
-            targetJoin = GetTableAlias(targetJoin);
-            targetOn = GetTableAlias(targetOn);
-            joinType = GetJoinType(joinType);
-            joinField = GetFieldAlias(joinField);
-            onField = GetFieldAlias(onField);
+            targetJoin = GetTableAlias(targetJoin!);
+            targetOn = GetTableAlias(targetOn!);
+            joinType = GetJoinType(joinType!);
+            joinField = GetFieldAlias(joinField!);
+            onField = GetFieldAlias(onField!);
             string result = string.Empty;
             if (!Check.HasValue(targetOn))
             {
@@ -865,7 +894,7 @@ public class EasyApi
     /// </summary>
     /// <param name="tableNode"></param>
     /// <returns></returns>
-    private EasyApiParseResult ProcessAddData(KeyValuePair<string, JsonNode?> tableNode, EasyApiOptions easyApiOptions, bool isMulti = false)
+    private EasyApiParseResult ProcessAddData(KeyValuePair<string, JsonNode?> tableNode, EasyApiOptions? easyApiOptions, bool isMulti = false)
     {
         EasyApiParseResult result = new EasyApiParseResult()
         {
@@ -885,23 +914,23 @@ public class EasyApi
                 return;
             }
             // 获取主键，自增忽略，非自增自动生成默认值
-            (string k, dynamic v) primaryKey = GetPrimaryKeyDefaultValueOfTable(tableNode.Key);
+            (string? k, dynamic? v) primaryKey = GetPrimaryKeyDefaultValueOfTable(tableNode.Key);
             foreach (var item in node.AsObject())
             {
                 cols.Add(item.Key);
-                if (long.TryParse(item.Value.ToString(), out long v))
+                if (long.TryParse(item.Value?.ToString(), out long v))
                 {
                     vals.Add(v);
                 }
                 else
                 {
-                    vals.Add("'" + item.Value.ToString() + "'");
+                    vals.Add("'" + item.Value?.ToString() + "'");
                 }
             }
-            if (!cols.Contains(primaryKey.k))
+            if (!cols.Contains(primaryKey.k!))
             {
                 // 未包含主键
-                cols.Add(primaryKey.k);
+                cols.Add(primaryKey.k!);
                 vals.Add("'" + primaryKey.v + "'");
             }
             valuesParts.Add("(" + string.Join(',', vals) + ")");
@@ -941,7 +970,7 @@ public class EasyApi
     /// </summary>
     /// <param name="table"></param>
     /// <returns></returns>
-    private (string, dynamic?) GetPrimaryKeyDefaultValueOfTable(string table)
+    private (string?, dynamic?) GetPrimaryKeyDefaultValueOfTable(string table)
     {
         var types = _cacheManager.Get("TableColType") as Dictionary<string, IEnumerable<TableColType>>;
         if (types == null)
@@ -968,7 +997,7 @@ public class EasyApi
         }
 
         var list = types[table];
-        var primaryKey = list.FirstOrDefault(x => x.Key.Contains("PRI"));
+        var primaryKey = list.FirstOrDefault(x => !string.IsNullOrEmpty(x.Key) && x.Key.Contains("PRI"));
         if (primaryKey == null)
         {
             return (string.Empty, null);
@@ -981,7 +1010,7 @@ public class EasyApi
     /// </summary>
     /// <param name="typeLength"></param>
     /// <returns></returns>
-    private dynamic? GetDBTypeDefaultValue(string typeLength, string table, string fieldName)
+    private dynamic? GetDBTypeDefaultValue(string? typeLength, string table, string? fieldName)
     {
         if (!Check.HasValue(typeLength))
         {
@@ -992,7 +1021,7 @@ public class EasyApi
             return Guid.NewGuid().ToString();
         }
 
-        if (typeLength.ToLower().Contains("int")
+        if (typeLength!.ToLower().Contains("int")
             || typeLength.ToLower().Contains("double")
             || typeLength.ToLower().Contains("decimal")
             || typeLength.ToLower().Contains("long")
@@ -1000,7 +1029,7 @@ public class EasyApi
             || typeLength.ToLower().Contains("float"))
         {
             // 获取数据中当前最大值
-            dynamic? val = GetCurrentMaxValue(table, fieldName);
+            dynamic? val = GetCurrentMaxValue(table, fieldName!);
             return val + 1;
         }
 
@@ -1118,7 +1147,7 @@ public class EasyApi
                 }
                 if (prop.Key.Equals("@target", StringComparison.CurrentCultureIgnoreCase))
                 {
-                    target = GetTableAlias(obj["@target"]?.ToString());
+                    target = GetTableAlias(obj["@target"]!.ToString());
                     continue;
                 }
                 var key = GetFieldAlias(prop.Key);
@@ -1142,7 +1171,7 @@ public class EasyApi
                 }
                 else if (Check.HasValue(ids))
                 {
-                    var idsTmp = ids.Split(',').ToStringCollection();
+                    var idsTmp = ids!.Split(',').ToStringCollection();
                     result.Sql += $" WHERE ID IN ({string.Join(',', idsTmp)})";
                 }
                 else if (where != null)
@@ -1168,12 +1197,12 @@ public class EasyApiParseResult()
 {
     public int Page { get; set; }
     public int Count { get; set; }
-    public string Table { get; set; }
-    public string Target { get; set; }
+    public string? Table { get; set; }
+    public string? Target { get; set; }
     public int? Total { get; set; }
-    public string Sql { get; set; }
-    public string TotalSql { get; set; }
-    public string Columns { get; set; }
+    public string? Sql { get; set; }
+    public string? TotalSql { get; set; }
+    public string? Columns { get; set; }
     public bool Success { get; set; } = true;
     public string Msg { get; set; } = string.Empty;
     public SqlOperationType OperationType { get; set; }
@@ -1192,10 +1221,9 @@ public class EasyApiParseResult()
 
 public class ChildrenQueryConfig
 {
-    public string KeyName { get; set; }
-    public string ChildField { get; set; }
-    public string ParentField { get; set; }
-    // public List<JsonObject>? ChildData { get; set; }
+    public string? KeyName { get; set; }
+    public required string ChildField { get; set; }
+    public required string ParentField { get; set; }
 
 }
 
@@ -1205,7 +1233,7 @@ public class WhereField
     /// ConstStrings.WhereConfitionType
     /// </summary>
     public string? Type { get; set; }
-    public object Value { get; set; }
+    public object? Value { get; set; }
 }
 
 public class JoinField
@@ -1213,23 +1241,23 @@ public class JoinField
     /// <summary>
     /// 连表对象
     /// </summary>
-    public string TargetJon { get; set; }
+    public string? TargetJon { get; set; }
     /// <summary>
     /// 
     /// </summary>
-    public string TargetOn { get; set; }
+    public string? TargetOn { get; set; }
     /// <summary>
     /// 连表方式
     /// </summary>
-    public string Type { get; set; }
+    public string? Type { get; set; }
     /// <summary>
     /// ConstStrings.JoinType
     /// </summary>
-    public string TargetField { get; set; }
+    public string? TargetField { get; set; }
     /// <summary>
     /// 连表字段
     /// </summary>
-    public string Field { get; set; }
+    public string? Field { get; set; }
 
 }
 
@@ -1247,9 +1275,9 @@ public enum SqlOperationType
 
 public class TableColType
 {
-    public string Name { get; set; }
-    public string TypeLength { get; set; }
-    public string Key { get; set; }
-    public string Isnull { get; set; }
-    public string Remark { get; set; }
+    public string? Name { get; set; }
+    public string? TypeLength { get; set; }
+    public string? Key { get; set; }
+    public string? Isnull { get; set; }
+    public string? Remark { get; set; }
 }
