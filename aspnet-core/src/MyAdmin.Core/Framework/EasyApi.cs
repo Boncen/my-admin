@@ -1,18 +1,14 @@
 using System.Data;
-using System.Diagnostics;
-using System.Text;
 using System.Text.Json.Nodes;
-using System.Transactions;
 using Dapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
-using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.Extensions.Options;
-using Microsoft.OpenApi.Models;
 using MyAdmin.Core.Conf;
 using MyAdmin.Core.Entity;
 using MyAdmin.Core.Exception;
 using MyAdmin.Core.Extensions;
+using MyAdmin.Core.Identity;
 using MyAdmin.Core.Options;
 using MyAdmin.Core.Repository;
 using MyAdmin.Core.Utilities;
@@ -25,12 +21,15 @@ public class EasyApi
     private readonly ICacheManager _cacheManager;
     private readonly MaFrameworkOptions _maFrameworkOptions;
     private readonly DBHelper _dbHelper;
-    public EasyApi(Core.MaFrameworkBuilder maFrameworkBuilder, ICacheManager cacheManager, IOptionsSnapshot<MaFrameworkOptions> optionSnap, DBHelper dbHelper)
+    private readonly ICurrentUser _currentUser;
+    public EasyApi(Core.MaFrameworkBuilder maFrameworkBuilder, ICacheManager cacheManager,
+         IOptionsSnapshot<MaFrameworkOptions> optionSnap, DBHelper dbHelper, ICurrentUser currentUser)
     {
         _maFrameworkBuilder = maFrameworkBuilder;
         _cacheManager = cacheManager;
         _maFrameworkOptions = optionSnap.Value;
         _dbHelper = dbHelper;
+        _currentUser = currentUser;
     }
 
     private List<string>? GetEntityList()
@@ -82,7 +81,6 @@ public class EasyApi
         {
             return result;
         }
-
 
         List<string> queryList = new();
         List<string> orderStrs = new();
@@ -717,6 +715,7 @@ public class EasyApi
         return tmps.Count > 0 ? " WHERE " + string.Join(" AND ", tmps) : string.Empty;
     }
 
+
     private string ProcessWhereAndOr(JsonNode? value, string? table, string andOr)
     {
         if (value == null)
@@ -1045,8 +1044,13 @@ public class EasyApi
         return _dbHelper.Connection.ExecuteScalar($"SELECT MAX({fieldName}) FROM {table}");
     }
 
-    private string GetOperatorNotationByWhereType(string type, DBType dbType, string left, string right)
+    private string GetOperatorNotationByWhereType(in string type, DBType dbType, string left, in string right)
     {
+        (bool isSpecial, string rightValue) = ProcessConditionValue(left, right);
+        if (isSpecial)
+        {
+            return rightValue;
+        }
         string result = string.Empty;
         switch (type)
         {
@@ -1054,49 +1058,98 @@ public class EasyApi
                 result = $"{left} LIKE '%{right}%'";
                 break;
             case ConstStrings.WhereConfitionType.NotEqual:
-                result = $"{left} != {GetRightPart(right)}";
+                result = $"{left} != {rightValue}";
                 break;
             case ConstStrings.WhereConfitionType.In:
-                result = $"{left} IN {GetRightPart(right)}";
+                result = $"{left} IN {rightValue}";
                 break;
             case ConstStrings.WhereConfitionType.LessThan:
-                result = $"{left} < {GetRightPart(right)}";
+                result = $"{left} < {rightValue}";
                 break;
             case ConstStrings.WhereConfitionType.GreaterThan:
-                result = $"{left} > {GetRightPart(right)}";
+                result = $"{left} > {rightValue}";
                 break;
             case ConstStrings.WhereConfitionType.LessThanOrEqual:
-                result = $"{left} <= {GetRightPart(right)}";
+                result = $"{left} <= {rightValue}";
                 break;
             case ConstStrings.WhereConfitionType.GreaterThanOrEqual:
-                result = $"{left} >= {GetRightPart(right)}";
+                result = $"{left} >= {rightValue}";
                 break;
             case ConstStrings.WhereConfitionType.Equal:
             default:
-                result = $"{left}={GetRightPart(right)}";
+                result = $"{left}={rightValue}";
                 break;
         }
 
-        string GetRightPart(string right)
+        return result;
+    }
+    /// <summary>
+    /// 处理条件的值
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    private (bool, string) ProcessConditionValue(string field, string input)
+    {
+        if (input.Contains("$CURRENT_USER_ID$"))
         {
-            List<string> tmp = new();
-            var cols = right.Split(',');
-            foreach (var item in cols)
+            if (_currentUser != null)
             {
-                if (int.TryParse(item, out int v))
-                {
-                    tmp.Add(item);
-                }
-                else
-                {
-                    tmp.Add("'" + item + "'");
-                }
+                var currentUser = _currentUser.GetCurrentUser(true);
+                input = input.Replace("$CURRENT_USER_ID$", currentUser!.id?.ToString());
             }
-
-            return string.Join(',', tmp);
+        }
+        if (input.Contains("$DATE_NOW$"))
+        {
+            input = input.Replace("$DATE_NOW$", DateTime.Now.ToString("yyyy-MM-dd"));
+        }
+        if (input.Contains("$DATETIME_NOW$"))
+        {
+            input = input.Replace("$DATETIME_NOW$", DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
+        }
+        // 今日
+        if (input.Equals("$TODAY$", StringComparison.CurrentCultureIgnoreCase))
+        {
+            input = $"(TO_DAYS({field}) = TO_DAYS(NOW()))";
+            return (true, input);
+        }
+        // 昨日
+        if (input.Equals("$YESTERDAY$", StringComparison.CurrentCultureIgnoreCase))
+        {
+            input = $"(TO_DAYS(NOW()) - TO_DAYS({field}) = 1)";
+            return (true, input);
+        }
+        // 明日
+        if (input.Equals("$TOMORROW$", StringComparison.CurrentCultureIgnoreCase))
+        {
+            input = $"(TO_DAYS({field}) - TO_DAYS(NOW()) = 1)";
+            return (true, input);
+        }
+        // 这个月
+        if (input.Equals("$THIS_MONTH$", StringComparison.CurrentCultureIgnoreCase))
+        {
+            input = $"(MONTH({field}) = MONTH(NOW()) AND YEAR({field}) = YEAR(NOW()))";
+            return (true, input);
+        }
+        // 过去7天
+        if (input.Equals("$LAST_7_DAYS$", StringComparison.CurrentCultureIgnoreCase))
+        {
+            input = $"(DATE_SUB(CURDATE(), INTERVAL 7 DAY) < date({field}))";
+            return (true, input);
+        }
+        // 过去6个月
+        if (input.Equals("$LAST_6_MONTH$", StringComparison.CurrentCultureIgnoreCase))
+        {
+            input = $"(PERIOD_DIFF(DATE_FORMAT(NOW(),'%Y%m'), DATE_FORMAT({field},'%Y%m')) <=5)";
+            return (true, input);
+        }
+        // 今年
+        if (input.Equals("$THIS_YEAR$", StringComparison.CurrentCultureIgnoreCase))
+        {
+            input = $"(YEAR({field})=YEAR(NOW()))";
+            return (true, input);
         }
 
-        return result;
+        return (false, input);
     }
 
     public async Task<List<EasyApiParseResult>> ProcessPutRequest(Stream body, MaFrameworkOptions value)
@@ -1121,9 +1174,9 @@ public class EasyApi
             {
                 continue;
             }
-            var id = string.Empty;// obj["@id"]?.ToString();
-            var ids = string.Empty;// obj["@ids"]?.ToString();
-            JsonNode? where = null;// obj["@where"];
+            var id = string.Empty;
+            var ids = string.Empty;
+            JsonNode? where = null;
 
             var target = string.Empty;//GetTableAlias(obj["@target"]?.ToString());
 
@@ -1189,6 +1242,8 @@ public class EasyApi
 
         return results;
     }
+
+
 }
 
 

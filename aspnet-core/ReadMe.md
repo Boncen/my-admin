@@ -363,3 +363,34 @@ http://localhost:5066/easy?target=TestEasy&id=17
 -   不支持嵌套
 
 ###
+
+### 特殊值
+
+框架预设了一些特殊变量，以供特殊场景。
+
+如下所示，通过指定id为 `$CURRENT_USER_ID$` 表示查询当前登录用户。
+```json
+{
+  "user": {
+    "@page": 1,
+    "@count": 1,
+    "@where": {
+      "id": {
+        "value": "$CURRENT_USER_ID$"
+      }
+    },
+    "@order": [
+      {
+        "field": "name",
+        "type": "asc"
+      }
+    ]
+  }
+}
+```
+
+特殊值：
+- $CURRENT_USER_ID$
+- $DATE_NOW$
+- $DATETIME_NOW$
+
