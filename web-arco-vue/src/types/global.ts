@@ -35,3 +35,10 @@ export interface GeneralChart {
   xAxis: string[];
   data: Array<{ name: string; value: number[] }>;
 }
+
+
+export interface RequestResult {
+  error?: string;
+  errCode: number;
+  data?: unknown;
+}

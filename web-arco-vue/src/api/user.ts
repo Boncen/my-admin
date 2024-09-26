@@ -1,9 +1,10 @@
 import axios from 'axios';
 import type { RouteRecordNormalized } from 'vue-router';
 import { UserState } from '@/store/modules/user/types';
+import { RequestResult } from '@/types/global';
 
 export interface LoginData {
-  username: string;
+  account: string;
   password: string;
 }
 
@@ -11,7 +12,7 @@ export interface LoginRes {
   token: string;
 }
 export function login(data: LoginData) {
-  return axios.post<LoginRes>('/api/login', data);
+  return axios.post('/api/login', data);
 }
 
 export function logout() {

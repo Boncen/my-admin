@@ -1,16 +1,16 @@
-import { defineStore } from 'pinia';
+import { defineStore } from "pinia";
 import {
   login as userLogin,
   logout as userLogout,
   getUserInfo,
   LoginData,
-} from '@/api/user';
-import { setToken, clearToken } from '@/utils/auth';
-import { removeRouteListener } from '@/utils/route-listener';
-import { UserState } from './types';
-import useAppStore from '../app';
+} from "@/api/user";
+import { setToken, clearToken } from "@/utils/auth";
+import { removeRouteListener } from "@/utils/route-listener";
+import { UserState } from "./types";
+import useAppStore from "../app";
 
-const useUserStore = defineStore('user', {
+const useUserStore = defineStore("user", {
   state: (): UserState => ({
     name: undefined,
     avatar: undefined,
@@ -27,7 +27,7 @@ const useUserStore = defineStore('user', {
     registrationDate: undefined,
     accountId: undefined,
     certification: undefined,
-    role: '',
+    role: "",
   }),
 
   getters: {
@@ -39,7 +39,7 @@ const useUserStore = defineStore('user', {
   actions: {
     switchRoles() {
       return new Promise((resolve) => {
-        this.role = this.role === 'user' ? 'admin' : 'user';
+        this.role = this.role === "user" ? "admin" : "user";
         resolve(this.role);
       });
     },
@@ -64,8 +64,10 @@ const useUserStore = defineStore('user', {
     async login(loginForm: LoginData) {
       try {
         const res = await userLogin(loginForm);
-        setToken(res.data.token);
+        setToken(res.data);
       } catch (err) {
+        console.error(err, 1);
+
         clearToken();
         throw err;
       }
