@@ -37,12 +37,6 @@ const useUserStore = defineStore("user", {
   },
 
   actions: {
-    switchRoles() {
-      return new Promise((resolve) => {
-        this.role = this.role === "user" ? "admin" : "user";
-        resolve(this.role);
-      });
-    },
     // Set user's information
     setInfo(partial: Partial<UserState>) {
       this.$patch(partial);
@@ -57,7 +51,7 @@ const useUserStore = defineStore("user", {
     async info() {
       const res = await getUserInfo();
 
-      this.setInfo(res.data);
+      this.setInfo(res.data.user);
     },
 
     // Login

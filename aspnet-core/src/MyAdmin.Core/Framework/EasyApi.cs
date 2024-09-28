@@ -1058,26 +1058,26 @@ public class EasyApi
                 result = $"{left} LIKE '%{right}%'";
                 break;
             case ConstStrings.WhereConfitionType.NotEqual:
-                result = $"{left} != {rightValue}";
+                result = $"{left} != '{rightValue}'";
                 break;
             case ConstStrings.WhereConfitionType.In:
                 result = $"{left} IN {rightValue}";
                 break;
             case ConstStrings.WhereConfitionType.LessThan:
-                result = $"{left} < {rightValue}";
+                result = $"{left} < '{rightValue}'";
                 break;
             case ConstStrings.WhereConfitionType.GreaterThan:
-                result = $"{left} > {rightValue}";
+                result = $"{left} > '{rightValue}'";
                 break;
             case ConstStrings.WhereConfitionType.LessThanOrEqual:
-                result = $"{left} <= {rightValue}";
+                result = $"{left} <= '{rightValue}'";
                 break;
             case ConstStrings.WhereConfitionType.GreaterThanOrEqual:
-                result = $"{left} >= {rightValue}";
+                result = $"{left} >= '{rightValue}'";
                 break;
             case ConstStrings.WhereConfitionType.Equal:
             default:
-                result = $"{left}={rightValue}";
+                result = $"{left} = '{rightValue}'";
                 break;
         }
 

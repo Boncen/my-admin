@@ -14,6 +14,12 @@ export default function setupUserLoginInfoGuard(router: Router) {
       } else {
         try {
           await userStore.info();
+          // 已经登录，回到首页
+          next({
+            name: 'Workplace',
+            query: {
+            } as LocationQueryRaw,
+          });
           next();
         } catch (error) {
           await userStore.logout();

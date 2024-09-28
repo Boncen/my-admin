@@ -393,4 +393,11 @@ http://localhost:5066/easy?target=TestEasy&id=17
 - $CURRENT_USER_ID$
 - $DATE_NOW$
 - $DATETIME_NOW$
+- $TODAY$
+- $YESTERDAY$
+- $TOMORROW$
+- $THIS_MONTH$
+- $LAST_7_DAYS$
+- $LAST_6_MONTH$
+- $THIS_YEAR$
 

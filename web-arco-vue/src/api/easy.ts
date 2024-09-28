@@ -2,14 +2,14 @@ import axios from "axios";
 
 const easyUrl = "/api/easy";
 
-interface JoinCondition {
+export interface JoinCondition {
   targetJoin: string;
   joinField: string;
   onField: string;
   targetOn?: string; // 可选字段
 }
 
-interface WhereConditionValue {
+export interface WhereConditionValue {
   type?:
     | "contains"
     | "in"
@@ -22,19 +22,19 @@ interface WhereConditionValue {
   value: any; // 条件值，可以是任何类型
 }
 
-interface OrderCondition {
+export interface OrderCondition {
   field: string;
   type?: "ASC" | "DESC"; // 排序类型，只允许 asc 或 desc
 }
 
-interface AndCondition {
+export interface AndCondition {
   [key: string]: WhereConditionValue;
 }
 interface OrCondition {
   [key: string]: WhereConditionValue;
 }
 
-interface ChildrenCondition {
+export interface ChildrenCondition {
   target?: string;
   targetField: string;
   parentField: string;
@@ -44,11 +44,11 @@ interface ChildrenCondition {
   columns?: string;
 }
 
-interface PostQuery {
+export interface PostQuery {
   "@page"?: number; // 当前页码
   "@count"?: number; // 每页数量
   "@total"?: 0; // 是否返回total
-  "@columns?": string; // 查询列名，以逗号分隔
+  "@columns"?: string; // 查询列名，以逗号分隔
   "@join"?: JoinCondition[]; // 联表条件数组
   "@where"?:
     | { "@and"?: AndCondition; "@or"?: OrCondition }
@@ -57,7 +57,7 @@ interface PostQuery {
   "@children"?: ChildrenCondition;
 }
 
-interface QueryObject {
+export interface QueryObject {
   [key: string]: PostQuery;
 }
 /**

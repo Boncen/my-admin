@@ -1,5 +1,4 @@
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.RateLimiting;
@@ -47,7 +46,7 @@ public static class MaFrameworkBuilder
         service.AddSingleton<Core.MaFrameworkBuilder>(builder);
         builderAction?.Invoke(builder);
         AddFrameworkService(service);
-        // service.AddSingleton(builder);
+        
         AddOptions(service, configuration);
         if (config.UseBuildInDbContext == true)
         {
@@ -65,16 +64,18 @@ public static class MaFrameworkBuilder
         {
             AddCache(service, config);
         }
+        service.TryAddTransient<TokenBlackList>();
         AddController(service);
         AddSwagger(service);
         AddRepository(service);
         AutoRegisterService(service, assemblies);
         AddDapper(service);
         AddEasyApi(service);
-        
 
         return service;
     }
+
+    
 
     private static void AddEasyApi(this IServiceCollection service)
     {
@@ -97,6 +98,7 @@ public static class MaFrameworkBuilder
 
     private static void AddFrameworkService(IServiceCollection service)
     {
+        
         service.AddHttpContextAccessor();
         service.AddSingleton<JwtHelper>();
         service.TryAddSingleton<ILogger, MyAdmin.Core.Logger.Logger>();
@@ -124,6 +126,9 @@ public static class MaFrameworkBuilder
                     Convert.ToInt16(configuration["Jwt:ExpireHour"])), //过期时间容错值，解决服务器端时间不同步问题（秒）
                 RequireExpirationTime = true,
             };
+            
+            // options.TokenHandlers.Add(service.BuildServiceProvider().GetRequiredService<CustomTokenHandler>()); // not working 
+            
         });
         service.AddAuthorization(options =>
         {

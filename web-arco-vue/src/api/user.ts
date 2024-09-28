@@ -1,7 +1,6 @@
 import axios from 'axios';
 import type { RouteRecordNormalized } from 'vue-router';
-import { UserState } from '@/store/modules/user/types';
-import { RequestResult } from '@/types/global';
+import { postQuery, QueryObject } from './easy';
 
 export interface LoginData {
   account: string;
@@ -12,7 +11,7 @@ export interface LoginRes {
   token: string;
 }
 export function login(data: LoginData) {
-  return axios.post('/api/login', data);
+  return axios.post('/api/user/login', data);
 }
 
 export function logout() {
@@ -20,7 +19,34 @@ export function logout() {
 }
 
 export function getUserInfo() {
-  return axios.post<UserState>('/api/user/info');
+  const data: QueryObject = {
+    "user": {
+      "@page": 1,
+      "@count": 1,
+      "@columns": "MaUser.*, MaRole.Name as role",
+      "@join":[
+        {
+          targetJoin:"UserRole",
+          joinField: "UserId",
+          onField: "Id",
+          targetOn: "MaUser"
+        },
+        {
+          targetJoin:"MaRole",
+          joinField: "Id",
+          onField: "RoleId",
+          targetOn: "UserRole"
+        }
+      ],
+      "@where": {
+        "id":{
+          value: "$CURRENT_USER_ID$"
+        }
+      }
+    }
+  }
+  return postQuery(data);
+  // return axios.post('/api/user/info');
 }
 
 export function getMenuList() {

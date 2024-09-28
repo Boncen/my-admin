@@ -48,8 +48,10 @@ public static class WebApplicationSetup
             app.UseMiddleware<ErrorHandlerMiddleware>();
         }
 
+
         if (config.UseJwtBearer == true)
         {
+            app.UseMiddleware<JwtValidateMiddleware>();
             app.UseAuthentication();
             app.UseAuthorization();
         }
