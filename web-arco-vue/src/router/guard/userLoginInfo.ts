@@ -16,7 +16,7 @@ export default function setupUserLoginInfoGuard(router: Router) {
           await userStore.info();
           // 已经登录，回到首页
           next({
-            name: 'Workplace',
+            name: 'home',
             query: {
             } as LocationQueryRaw,
           });

@@ -1,6 +1,6 @@
 <template>
   <div class="container">
-    {{ $t('workplace.welcome') }}
+    HHHH
   </div>
 </template>
 

@@ -7,7 +7,6 @@ import localeWorkplace from '@/views/dashboard/workplace/locale/en-US';
 import localeSearchTable from '@/views/list/search-table/locale/en-US';
 
 
-import localeBasicProfile from '@/views/profile/basic/locale/en-US';
 
 
 
@@ -17,20 +16,10 @@ import locale500 from '@/views/exception/500/locale/en-US';
 
 /** simple end */
 import localeSettings from './en-US/settings';
+import localeMenus from './en-US/menus';
 
 export default {
-  'menu.dashboard': 'Dashboard',
-  'menu.server.dashboard': 'Dashboard-Server',
-  'menu.server.workplace': 'Workplace-Server',
-  'menu.server.monitor': 'Monitor-Server',
-  'menu.list': 'List',
-  'menu.result': 'Result',
-  'menu.exception': 'Exception',
-  'menu.form': 'Form',
-  'menu.profile': 'Profile',
-  'menu.visualization': 'Data Visualization',
-  'menu.user': 'User Center',
-  'menu.arcoWebsite': 'Arco Design',
+
   'navbar.docs': 'Docs',
   'navbar.action.locale': 'Switch to English',
   ...localeSettings,
@@ -39,9 +28,9 @@ export default {
   ...localeWorkplace,
   /** simple */
   ...localeSearchTable,
-  ...localeBasicProfile,
   ...locale403,
   ...locale404,
   ...locale500,
+  ...localeMenus,
   /** simple end */
 };

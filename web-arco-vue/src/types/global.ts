@@ -42,3 +42,17 @@ export interface RequestResult {
   errCode: number;
   data?: unknown;
 }
+
+export type MenuMeta = {
+  locale?: string;
+  requiresAuth?: boolean;
+  icon?: string;
+  order?: number;
+}
+
+export type Menu = {
+  path: string;
+  name: string;
+  meta?: MenuMeta;
+  children?: Menu[];
+}

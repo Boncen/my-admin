@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
+using MyAdmin.Core.Exception;
 
 namespace MyAdmin.Core.Identity;
 
@@ -15,6 +16,10 @@ public class CurrentUser:ICurrentUser
         var user = _httpContextAccessor.HttpContext?.User;
         if (user == null || user.Claims.Count() < 1)
         {
+            if (throwIfNotFound)
+            {
+                throw new MAException("用户不存在");
+            }
             return null;
         }
         var claims = user.Claims;

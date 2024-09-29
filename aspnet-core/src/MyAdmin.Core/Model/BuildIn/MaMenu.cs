@@ -14,26 +14,27 @@ public class MaMenu:FullAuditedEntity<Guid>,  ITenantObject<Guid?>,IEntity<Guid>
     public Guid Id { get; set; }
 
     public Guid? ParentId { get; set; }
+     [Comment("路由名称")]
     public required string Name { get; set; }
     [Comment("路由路径")]
-    public string? Url { get; set; }
+    public string? Path { get; set; }
 
     public string? Icon { get; set; }
     public int Order { get; set; } = 0;
     public MenuType MenuType { get; set; } = MenuType.Page;
-    public int Level { get; set; } = 0;
-    public required string Code { get; set; }
-    
-    // public ICollection<RoleMenu> RoleMenus { get; set; }
-    // public MaUser? Creator { get; set; }
-    // public MaUser? LastModifier { get; set; }
-    // public MaUser? Deleter { get; set; }
-    // public MaTenant? Tenant { get; set; }
+    // public int Level { get; set; } = 0;
+    // public required string Code { get; set; }
+    // public bool RequiresAuth { get; set; }
+    public string? Locale { get; set; }
+    public string? Label { get; set; }
 }
 
 public enum MenuType
 {
     Page = 1,
     Button = 2,
+    /// <summary>
+    /// 
+    /// </summary>
     Category = 3,
 }

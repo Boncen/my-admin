@@ -1,5 +1,4 @@
 import axios from 'axios';
-import type { RouteRecordNormalized } from 'vue-router';
 import { postQuery, QueryObject } from './easy';
 
 export interface LoginData {
@@ -50,5 +49,6 @@ export function getUserInfo() {
 }
 
 export function getMenuList() {
-  return axios.post<RouteRecordNormalized[]>('/api/user/menu');
+  return axios.get('/api/user/menus');
+  // return axios.post<RouteRecordNormalized[]>('/api/user/menus');
 }

@@ -68,16 +68,17 @@ namespace MyAdmin.ApiHost.Migrations
                     Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
                     TenantId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
                     ParentId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
-                    Name = table.Column<string>(type: "longtext", nullable: false)
+                    Name = table.Column<string>(type: "longtext", nullable: false, comment: "路由名称")
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    Url = table.Column<string>(type: "longtext", nullable: true, comment: "路由路径")
+                    Path = table.Column<string>(type: "longtext", nullable: true, comment: "路由路径")
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Icon = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Order = table.Column<int>(type: "int", nullable: false),
                     MenuType = table.Column<int>(type: "int", nullable: false),
-                    Level = table.Column<int>(type: "int", nullable: false),
-                    Code = table.Column<string>(type: "longtext", nullable: false)
+                    Locale = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Label = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     CreationTime = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     CreatorId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
@@ -104,7 +105,7 @@ namespace MyAdmin.ApiHost.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Description = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    Code = table.Column<string>(type: "longtext", nullable: false, comment: "角色编码")
+                    Code = table.Column<string>(type: "longtext", nullable: true, comment: "角色编码")
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     CreationTime = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     CreatorId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
@@ -117,6 +118,29 @@ namespace MyAdmin.ApiHost.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_MaRole", x => x.Id);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "MaTenant",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    Name = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    IsEnabled = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    ExpirationDate = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    CreationTime = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    CreatorId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    LastModificationTime = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    LastModifierId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    IsDeleted = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    DeleterId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    DeletionTime = table.Column<DateTime>(type: "datetime(6)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_MaTenant", x => x.Id);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
@@ -161,7 +185,7 @@ namespace MyAdmin.ApiHost.Migrations
                     OrderNo = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Amount = table.Column<decimal>(type: "decimal(65,30)", nullable: false),
-                    DescBody = table.Column<string>(type: "longtext", nullable: false)
+                    DescBody = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     TenantId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
                     CreationTime = table.Column<DateTime>(type: "datetime(6)", nullable: false),
@@ -206,24 +230,28 @@ namespace MyAdmin.ApiHost.Migrations
 
             migrationBuilder.InsertData(
                 table: "MaMenu",
-                columns: new[] { "Id", "Code", "CreationTime", "CreatorId", "DeleterId", "DeletionTime", "Icon", "IsDeleted", "LastModificationTime", "LastModifierId", "Level", "MenuType", "Name", "Order", "ParentId", "TenantId", "Url" },
+                columns: new[] { "Id", "CreationTime", "CreatorId", "DeleterId", "DeletionTime", "Icon", "IsDeleted", "Label", "LastModificationTime", "LastModifierId", "Locale", "MenuType", "Name", "Order", "ParentId", "Path", "TenantId" },
                 values: new object[,]
                 {
-                    { new Guid("15893413-9f8d-4160-89bd-fb18565a95ef"), "RoleManager-Add", new DateTime(2024, 9, 11, 11, 54, 45, 123, DateTimeKind.Local).AddTicks(8788), new Guid("00000000-0000-0000-0000-000000000000"), new Guid("00000000-0000-0000-0000-000000000000"), null, null, false, null, new Guid("1d5b1109-e8fe-4ecc-81c7-02d6e23220b0"), 1, 2, "角色管理-新增", 2, null, null, null },
-                    { new Guid("24f1dcbd-0f97-4735-a235-ad0d8712e37b"), "UserManager-Add", new DateTime(2024, 9, 11, 11, 54, 45, 123, DateTimeKind.Local).AddTicks(8719), new Guid("00000000-0000-0000-0000-000000000000"), new Guid("00000000-0000-0000-0000-000000000000"), null, null, false, null, new Guid("1d5b1109-e8fe-4ecc-81c7-02d6e23220b0"), 1, 2, "用户管理-新增", 1, null, null, null },
-                    { new Guid("26a43341-1169-4af4-bc01-ec06cca006d0"), "TenantManager", new DateTime(2024, 9, 11, 11, 54, 45, 123, DateTimeKind.Local).AddTicks(8794), new Guid("00000000-0000-0000-0000-000000000000"), new Guid("00000000-0000-0000-0000-000000000000"), null, null, false, null, new Guid("1d5b1109-e8fe-4ecc-81c7-02d6e23220b0"), 1, 1, "租户管理", 3, null, null, "/sys/tenant/index" },
-                    { new Guid("69aa45fd-960a-4667-8da8-9fa9580f5494"), "SystemManager", new DateTime(2024, 9, 11, 11, 54, 45, 123, DateTimeKind.Local).AddTicks(8532), new Guid("00000000-0000-0000-0000-000000000000"), new Guid("00000000-0000-0000-0000-000000000000"), null, null, false, null, new Guid("1d5b1109-e8fe-4ecc-81c7-02d6e23220b0"), 0, 3, "系统管理", 2, null, null, null },
-                    { new Guid("82ff097f-c90a-4126-a543-0f6afafd39c1"), "TenantManager-Update", new DateTime(2024, 9, 11, 11, 54, 45, 123, DateTimeKind.Local).AddTicks(8798), new Guid("00000000-0000-0000-0000-000000000000"), new Guid("00000000-0000-0000-0000-000000000000"), null, null, false, null, new Guid("1d5b1109-e8fe-4ecc-81c7-02d6e23220b0"), 1, 2, "租户管理-更新", 3, null, null, null },
-                    { new Guid("8e1cca08-5121-4d1c-b618-3292a2f83a3b"), "UserManager-Delete", new DateTime(2024, 9, 11, 11, 54, 45, 123, DateTimeKind.Local).AddTicks(8784), new Guid("00000000-0000-0000-0000-000000000000"), new Guid("00000000-0000-0000-0000-000000000000"), null, null, false, null, new Guid("1d5b1109-e8fe-4ecc-81c7-02d6e23220b0"), 1, 2, "用户管理-删除", 1, null, null, null },
-                    { new Guid("a07929c4-5aa6-469b-b43a-62e325dce72c"), "Log", new DateTime(2024, 9, 11, 11, 54, 45, 123, DateTimeKind.Local).AddTicks(8802), new Guid("00000000-0000-0000-0000-000000000000"), new Guid("00000000-0000-0000-0000-000000000000"), null, null, false, null, new Guid("1d5b1109-e8fe-4ecc-81c7-02d6e23220b0"), 0, 1, "系统日志", 3, null, null, null },
-                    { new Guid("a706e070-05ef-4ad3-a71a-93cc470ff124"), "RoleManager-Update", new DateTime(2024, 9, 11, 11, 54, 45, 123, DateTimeKind.Local).AddTicks(8790), new Guid("00000000-0000-0000-0000-000000000000"), new Guid("00000000-0000-0000-0000-000000000000"), null, null, false, null, new Guid("1d5b1109-e8fe-4ecc-81c7-02d6e23220b0"), 1, 2, "角色管理-更新", 2, null, null, null },
-                    { new Guid("ace5e6ea-b855-4e48-9623-1d8373f49671"), "UserManager-Update", new DateTime(2024, 9, 11, 11, 54, 45, 123, DateTimeKind.Local).AddTicks(8724), new Guid("00000000-0000-0000-0000-000000000000"), new Guid("00000000-0000-0000-0000-000000000000"), null, null, false, null, new Guid("1d5b1109-e8fe-4ecc-81c7-02d6e23220b0"), 1, 2, "用户管理-更新", 1, null, null, null },
-                    { new Guid("c32e142e-8576-4ab3-bb0e-7f3920da8886"), "UserManager", new DateTime(2024, 9, 11, 11, 54, 45, 123, DateTimeKind.Local).AddTicks(8540), new Guid("00000000-0000-0000-0000-000000000000"), new Guid("00000000-0000-0000-0000-000000000000"), null, null, false, null, new Guid("1d5b1109-e8fe-4ecc-81c7-02d6e23220b0"), 1, 1, "用户管理", 1, null, null, "/sys/user/index" },
-                    { new Guid("cc8d7fc5-f53d-405d-9912-0034e7c8296a"), "RoleManager", new DateTime(2024, 9, 11, 11, 54, 45, 123, DateTimeKind.Local).AddTicks(8786), new Guid("00000000-0000-0000-0000-000000000000"), new Guid("00000000-0000-0000-0000-000000000000"), null, null, false, null, new Guid("1d5b1109-e8fe-4ecc-81c7-02d6e23220b0"), 1, 1, "角色管理", 2, null, null, "/sys/role/index" },
-                    { new Guid("f25f4e3d-112f-4ba6-b3b3-a15de282baa8"), "RoleManager-Delete", new DateTime(2024, 9, 11, 11, 54, 45, 123, DateTimeKind.Local).AddTicks(8793), new Guid("00000000-0000-0000-0000-000000000000"), new Guid("00000000-0000-0000-0000-000000000000"), null, null, false, null, new Guid("1d5b1109-e8fe-4ecc-81c7-02d6e23220b0"), 1, 2, "角色管理-删除", 2, null, null, null },
-                    { new Guid("f2d0fa1a-635a-4e63-a6e5-0371fcdbac47"), "Home", new DateTime(2024, 9, 11, 11, 54, 45, 123, DateTimeKind.Local).AddTicks(7455), new Guid("00000000-0000-0000-0000-000000000000"), new Guid("00000000-0000-0000-0000-000000000000"), null, null, false, null, new Guid("1d5b1109-e8fe-4ecc-81c7-02d6e23220b0"), 0, 1, "首页", 1, null, null, null },
-                    { new Guid("f9fd2a4d-b549-408d-834f-679addd3886b"), "TenantManager-Delete", new DateTime(2024, 9, 11, 11, 54, 45, 123, DateTimeKind.Local).AddTicks(8800), new Guid("00000000-0000-0000-0000-000000000000"), new Guid("00000000-0000-0000-0000-000000000000"), null, null, false, null, new Guid("1d5b1109-e8fe-4ecc-81c7-02d6e23220b0"), 1, 2, "租户管理-删除", 3, null, null, null },
-                    { new Guid("fcf206e7-4635-4e77-bfae-a4680e151acd"), "TenantManager-Add", new DateTime(2024, 9, 11, 11, 54, 45, 123, DateTimeKind.Local).AddTicks(8796), new Guid("00000000-0000-0000-0000-000000000000"), new Guid("00000000-0000-0000-0000-000000000000"), null, null, false, null, new Guid("1d5b1109-e8fe-4ecc-81c7-02d6e23220b0"), 1, 2, "租户管理-新增", 3, null, null, null }
+                    { new Guid("08a917b6-8964-4d98-86e6-851ebc83a4ea"), new DateTime(2024, 9, 29, 14, 17, 15, 522, DateTimeKind.Local).AddTicks(3612), new Guid("00000000-0000-0000-0000-000000000000"), new Guid("00000000-0000-0000-0000-000000000000"), null, null, false, "删除角色", null, new Guid("dd07176d-c210-41d6-bf0d-31182ec9c1b1"), "menu.server.deleterole", 2, "delete_role", 2, new Guid("52620b9b-ee0a-4153-b7b5-a58299756fe6"), null, null },
+                    { new Guid("19bac5dc-0b43-4809-ab3a-53be906de0e4"), new DateTime(2024, 9, 29, 14, 17, 15, 522, DateTimeKind.Local).AddTicks(3623), new Guid("00000000-0000-0000-0000-000000000000"), new Guid("00000000-0000-0000-0000-000000000000"), null, null, false, "菜单管理", null, new Guid("dd07176d-c210-41d6-bf0d-31182ec9c1b1"), "menu.server.menus", 1, "menus", 4, new Guid("32bb7608-ceff-4e7c-8c67-ff3892625e17"), "/sys/menu/index", null },
+                    { new Guid("262e8351-96a0-45c0-a536-d99a278ddd8b"), new DateTime(2024, 9, 29, 14, 17, 15, 522, DateTimeKind.Local).AddTicks(3608), new Guid("00000000-0000-0000-0000-000000000000"), new Guid("00000000-0000-0000-0000-000000000000"), null, null, false, "添加角色", null, new Guid("dd07176d-c210-41d6-bf0d-31182ec9c1b1"), "menu.server.addrole", 2, "add_role", 2, new Guid("52620b9b-ee0a-4153-b7b5-a58299756fe6"), "/sys/role/index", null },
+                    { new Guid("32bb7608-ceff-4e7c-8c67-ff3892625e17"), new DateTime(2024, 9, 29, 14, 17, 15, 522, DateTimeKind.Local).AddTicks(3079), new Guid("00000000-0000-0000-0000-000000000000"), new Guid("00000000-0000-0000-0000-000000000000"), null, null, false, "系统管理", null, new Guid("dd07176d-c210-41d6-bf0d-31182ec9c1b1"), "menu.server.sysmanager", 3, "SysManager", 2, null, null, null },
+                    { new Guid("368a7827-0377-48ec-a335-59e49451b2c9"), new DateTime(2024, 9, 29, 14, 17, 15, 522, DateTimeKind.Local).AddTicks(3619), new Guid("00000000-0000-0000-0000-000000000000"), new Guid("00000000-0000-0000-0000-000000000000"), null, null, false, "更新租户", null, new Guid("dd07176d-c210-41d6-bf0d-31182ec9c1b1"), "menu.server.updatetenant", 2, "update_tenant", 3, new Guid("95ca7b1b-55dc-48e9-9317-7d67da1bec78"), null, null },
+                    { new Guid("4f15068a-62a7-4e73-8cc3-31501643f699"), new DateTime(2024, 9, 29, 14, 17, 15, 522, DateTimeKind.Local).AddTicks(3603), new Guid("00000000-0000-0000-0000-000000000000"), new Guid("00000000-0000-0000-0000-000000000000"), null, null, false, "删除用户", null, new Guid("dd07176d-c210-41d6-bf0d-31182ec9c1b1"), "menu.server.deleteuser", 2, "delete_user", 1, new Guid("a39e28a9-9da9-48ee-a89d-5071ccf854fc"), null, null },
+                    { new Guid("52620b9b-ee0a-4153-b7b5-a58299756fe6"), new DateTime(2024, 9, 29, 14, 17, 15, 522, DateTimeKind.Local).AddTicks(3605), new Guid("00000000-0000-0000-0000-000000000000"), new Guid("00000000-0000-0000-0000-000000000000"), null, null, false, "角色管理", null, new Guid("dd07176d-c210-41d6-bf0d-31182ec9c1b1"), "menu.server.roles", 1, "roles", 2, new Guid("32bb7608-ceff-4e7c-8c67-ff3892625e17"), "/sys/role/index", null },
+                    { new Guid("5a7b38b6-b162-40ac-98e9-821660821a5e"), new DateTime(2024, 9, 29, 14, 17, 15, 522, DateTimeKind.Local).AddTicks(3594), new Guid("00000000-0000-0000-0000-000000000000"), new Guid("00000000-0000-0000-0000-000000000000"), null, null, false, "添加用户", null, new Guid("dd07176d-c210-41d6-bf0d-31182ec9c1b1"), "menu.server.adduser", 2, "add_user", 1, new Guid("a39e28a9-9da9-48ee-a89d-5071ccf854fc"), null, null },
+                    { new Guid("95ca7b1b-55dc-48e9-9317-7d67da1bec78"), new DateTime(2024, 9, 29, 14, 17, 15, 522, DateTimeKind.Local).AddTicks(3614), new Guid("00000000-0000-0000-0000-000000000000"), new Guid("00000000-0000-0000-0000-000000000000"), null, null, false, "租户管理", null, new Guid("dd07176d-c210-41d6-bf0d-31182ec9c1b1"), "menu.server.tenants", 1, "tenants", 3, new Guid("32bb7608-ceff-4e7c-8c67-ff3892625e17"), "/sys/tenant/index", null },
+                    { new Guid("9ad04f5c-4fec-40e0-be8d-3f359a058024"), new DateTime(2024, 9, 29, 14, 17, 15, 522, DateTimeKind.Local).AddTicks(3601), new Guid("00000000-0000-0000-0000-000000000000"), new Guid("00000000-0000-0000-0000-000000000000"), null, null, false, "更新用户", null, new Guid("dd07176d-c210-41d6-bf0d-31182ec9c1b1"), "menu.server.updateuser", 2, "update_user", 1, new Guid("a39e28a9-9da9-48ee-a89d-5071ccf854fc"), null, null },
+                    { new Guid("9f857d8d-8558-47e3-9bda-119e0e63500c"), new DateTime(2024, 9, 29, 14, 17, 15, 522, DateTimeKind.Local).AddTicks(3628), new Guid("00000000-0000-0000-0000-000000000000"), new Guid("00000000-0000-0000-0000-000000000000"), null, null, false, "更新菜单", null, new Guid("dd07176d-c210-41d6-bf0d-31182ec9c1b1"), "menu.server.updatemenu", 2, "update_menu", 4, new Guid("19bac5dc-0b43-4809-ab3a-53be906de0e4"), null, null },
+                    { new Guid("a39e28a9-9da9-48ee-a89d-5071ccf854fc"), new DateTime(2024, 9, 29, 14, 17, 15, 522, DateTimeKind.Local).AddTicks(3086), new Guid("00000000-0000-0000-0000-000000000000"), new Guid("00000000-0000-0000-0000-000000000000"), null, null, false, "用户管理", null, new Guid("dd07176d-c210-41d6-bf0d-31182ec9c1b1"), "menu.server.users", 1, "users", 1, new Guid("32bb7608-ceff-4e7c-8c67-ff3892625e17"), "/sys/user/index", null },
+                    { new Guid("a454a788-4231-4d96-8e98-8ce426ea4acc"), new DateTime(2024, 9, 29, 14, 17, 15, 522, DateTimeKind.Local).AddTicks(1927), new Guid("00000000-0000-0000-0000-000000000000"), new Guid("00000000-0000-0000-0000-000000000000"), null, null, false, "首页", null, new Guid("dd07176d-c210-41d6-bf0d-31182ec9c1b1"), "menu.server.home", 1, "home", 1, null, null, null },
+                    { new Guid("ae4f9eed-3e20-45c8-89ea-204c68000a06"), new DateTime(2024, 9, 29, 14, 17, 15, 522, DateTimeKind.Local).AddTicks(3633), new Guid("00000000-0000-0000-0000-000000000000"), new Guid("00000000-0000-0000-0000-000000000000"), null, null, false, "系统日志", null, new Guid("dd07176d-c210-41d6-bf0d-31182ec9c1b1"), "menu.server.syslog", 1, "sys_log", 5, new Guid("32bb7608-ceff-4e7c-8c67-ff3892625e17"), null, null },
+                    { new Guid("b479f220-bbb6-4878-a184-619292efacd3"), new DateTime(2024, 9, 29, 14, 17, 15, 522, DateTimeKind.Local).AddTicks(3621), new Guid("00000000-0000-0000-0000-000000000000"), new Guid("00000000-0000-0000-0000-000000000000"), null, null, false, "删除租户", null, new Guid("dd07176d-c210-41d6-bf0d-31182ec9c1b1"), "menu.server.deletetenant", 2, "delete_tenant", 3, new Guid("95ca7b1b-55dc-48e9-9317-7d67da1bec78"), null, null },
+                    { new Guid("bc5c7271-8b77-43f1-9937-d3bebf85d3ed"), new DateTime(2024, 9, 29, 14, 17, 15, 522, DateTimeKind.Local).AddTicks(3610), new Guid("00000000-0000-0000-0000-000000000000"), new Guid("00000000-0000-0000-0000-000000000000"), null, null, false, "更新角色", null, new Guid("dd07176d-c210-41d6-bf0d-31182ec9c1b1"), "menu.server.updaterole", 2, "update_role", 2, new Guid("52620b9b-ee0a-4153-b7b5-a58299756fe6"), null, null },
+                    { new Guid("bf8559c0-b3cd-40a8-8465-8c46778f63bc"), new DateTime(2024, 9, 29, 14, 17, 15, 522, DateTimeKind.Local).AddTicks(3630), new Guid("00000000-0000-0000-0000-000000000000"), new Guid("00000000-0000-0000-0000-000000000000"), null, null, false, "删除菜单", null, new Guid("dd07176d-c210-41d6-bf0d-31182ec9c1b1"), "menu.server.deletemenu", 2, "delete_menu", 4, new Guid("19bac5dc-0b43-4809-ab3a-53be906de0e4"), null, null },
+                    { new Guid("e8b21899-0105-42a5-8b12-b3cd291e81e5"), new DateTime(2024, 9, 29, 14, 17, 15, 522, DateTimeKind.Local).AddTicks(3626), new Guid("00000000-0000-0000-0000-000000000000"), new Guid("00000000-0000-0000-0000-000000000000"), null, null, false, "添加菜单", null, new Guid("dd07176d-c210-41d6-bf0d-31182ec9c1b1"), "menu.server.addmenu", 2, "add_menu", 4, new Guid("19bac5dc-0b43-4809-ab3a-53be906de0e4"), null, null },
+                    { new Guid("ecdf8af6-c987-41ad-8c60-48da796bf278"), new DateTime(2024, 9, 29, 14, 17, 15, 522, DateTimeKind.Local).AddTicks(3616), new Guid("00000000-0000-0000-0000-000000000000"), new Guid("00000000-0000-0000-0000-000000000000"), null, null, false, "添加租户", null, new Guid("dd07176d-c210-41d6-bf0d-31182ec9c1b1"), "menu.server.addtenant", 2, "add_tenant", 3, new Guid("95ca7b1b-55dc-48e9-9317-7d67da1bec78"), null, null }
                 });
 
             migrationBuilder.InsertData(
@@ -231,8 +259,8 @@ namespace MyAdmin.ApiHost.Migrations
                 columns: new[] { "Id", "Code", "CreationTime", "CreatorId", "DeleterId", "DeletionTime", "Description", "IsDeleted", "IsEnabled", "LastModificationTime", "LastModifierId", "Name", "TenantId" },
                 values: new object[,]
                 {
-                    { new Guid("3486d760-d9a1-4a68-82dc-bf827590ad03"), "Dev", new DateTime(2024, 9, 11, 11, 54, 45, 123, DateTimeKind.Local).AddTicks(6569), new Guid("85e67805-3d92-4199-9cc3-347a66855f06"), new Guid("00000000-0000-0000-0000-000000000000"), null, "dev role", false, true, null, new Guid("1d5b1109-e8fe-4ecc-81c7-02d6e23220b0"), "dev", null },
-                    { new Guid("7e349556-e2fe-40fc-8d30-40aba7ab5390"), "Admin", new DateTime(2024, 9, 11, 11, 54, 45, 123, DateTimeKind.Local).AddTicks(4724), new Guid("85e67805-3d92-4199-9cc3-347a66855f06"), new Guid("00000000-0000-0000-0000-000000000000"), null, "admin role", false, true, null, new Guid("1d5b1109-e8fe-4ecc-81c7-02d6e23220b0"), "admin", null }
+                    { new Guid("530da417-da46-492a-9f40-7840823f697f"), "Admin", new DateTime(2024, 9, 29, 14, 17, 15, 521, DateTimeKind.Local).AddTicks(9292), new Guid("dcf2696e-8364-4559-b6ad-720eba834af7"), new Guid("00000000-0000-0000-0000-000000000000"), null, "admin role", false, true, null, new Guid("dd07176d-c210-41d6-bf0d-31182ec9c1b1"), "admin", null },
+                    { new Guid("8c9f0746-f181-4f43-81b3-6bc087ad2b56"), "Dev", new DateTime(2024, 9, 29, 14, 17, 15, 522, DateTimeKind.Local).AddTicks(966), new Guid("dcf2696e-8364-4559-b6ad-720eba834af7"), new Guid("00000000-0000-0000-0000-000000000000"), null, "dev role", false, true, null, new Guid("dd07176d-c210-41d6-bf0d-31182ec9c1b1"), "dev", null }
                 });
 
             migrationBuilder.InsertData(
@@ -240,8 +268,8 @@ namespace MyAdmin.ApiHost.Migrations
                 columns: new[] { "Id", "Account", "CreationTime", "CreatorId", "DeleterId", "DeletionTime", "Email", "IsDeleted", "IsEnabled", "LastModificationTime", "LastModifierId", "Mobile", "Name", "Password", "Salt", "TenantId" },
                 values: new object[,]
                 {
-                    { new Guid("1d5b1109-e8fe-4ecc-81c7-02d6e23220b0"), "admin", new DateTime(2024, 9, 11, 11, 54, 45, 111, DateTimeKind.Local).AddTicks(7838), new Guid("00000000-0000-0000-0000-000000000000"), new Guid("00000000-0000-0000-0000-000000000000"), null, null, false, true, null, new Guid("00000000-0000-0000-0000-000000000000"), null, "admin", "73470577544c7293365739ab3c5037b2313d3a353e190cd04aebf760bd2bb8f2", "7894561230", null },
-                    { new Guid("85e67805-3d92-4199-9cc3-347a66855f06"), "dev", new DateTime(2024, 9, 11, 11, 54, 45, 123, DateTimeKind.Local).AddTicks(4216), new Guid("00000000-0000-0000-0000-000000000000"), new Guid("00000000-0000-0000-0000-000000000000"), null, null, false, true, null, new Guid("00000000-0000-0000-0000-000000000000"), null, "dev", "73470577544c7293365739ab3c5037b2313d3a353e190cd04aebf760bd2bb8f2", "7894561230", null }
+                    { new Guid("dcf2696e-8364-4559-b6ad-720eba834af7"), "dev", new DateTime(2024, 9, 29, 14, 17, 15, 521, DateTimeKind.Local).AddTicks(8767), new Guid("00000000-0000-0000-0000-000000000000"), new Guid("00000000-0000-0000-0000-000000000000"), null, null, false, true, null, new Guid("00000000-0000-0000-0000-000000000000"), null, "dev", "73470577544c7293365739ab3c5037b2313d3a353e190cd04aebf760bd2bb8f2", "7894561230", null },
+                    { new Guid("dd07176d-c210-41d6-bf0d-31182ec9c1b1"), "admin", new DateTime(2024, 9, 29, 14, 17, 15, 512, DateTimeKind.Local).AddTicks(2957), new Guid("00000000-0000-0000-0000-000000000000"), new Guid("00000000-0000-0000-0000-000000000000"), null, null, false, true, null, new Guid("00000000-0000-0000-0000-000000000000"), null, "admin", "73470577544c7293365739ab3c5037b2313d3a353e190cd04aebf760bd2bb8f2", "7894561230", null }
                 });
 
             migrationBuilder.InsertData(
@@ -249,8 +277,8 @@ namespace MyAdmin.ApiHost.Migrations
                 columns: new[] { "RoleId", "UserId" },
                 values: new object[,]
                 {
-                    { new Guid("7e349556-e2fe-40fc-8d30-40aba7ab5390"), new Guid("1d5b1109-e8fe-4ecc-81c7-02d6e23220b0") },
-                    { new Guid("3486d760-d9a1-4a68-82dc-bf827590ad03"), new Guid("85e67805-3d92-4199-9cc3-347a66855f06") }
+                    { new Guid("8c9f0746-f181-4f43-81b3-6bc087ad2b56"), new Guid("dcf2696e-8364-4559-b6ad-720eba834af7") },
+                    { new Guid("530da417-da46-492a-9f40-7840823f697f"), new Guid("dd07176d-c210-41d6-bf0d-31182ec9c1b1") }
                 });
         }
 
@@ -265,6 +293,9 @@ namespace MyAdmin.ApiHost.Migrations
 
             migrationBuilder.DropTable(
                 name: "MaRole");
+
+            migrationBuilder.DropTable(
+                name: "MaTenant");
 
             migrationBuilder.DropTable(
                 name: "MaUser");

@@ -16,20 +16,25 @@ public class SystemInitial
     public static Guid MenuId_user_add = Guid.NewGuid();
     public static Guid MenuId_user_delete = Guid.NewGuid();
     public static Guid MenuId_user_update = Guid.NewGuid();
-    
+
     public static Guid MenuId_role = Guid.NewGuid();
     public static Guid MenuId_role_add = Guid.NewGuid();
     public static Guid MenuId_role_delete = Guid.NewGuid();
     public static Guid MenuId_role_update = Guid.NewGuid();
-    
+
     public static Guid MenuId_tenant = Guid.NewGuid();
     public static Guid MenuId_tenant_add = Guid.NewGuid();
     public static Guid MenuId_tenant_delete = Guid.NewGuid();
     public static Guid MenuId_tenant_update = Guid.NewGuid();
-    
+
+    public static Guid MenuId_menu = Guid.NewGuid();
+    public static Guid MenuId_menu_add = Guid.NewGuid();
+    public static Guid MenuId_menu_delete = Guid.NewGuid();
+    public static Guid MenuId_menu_update = Guid.NewGuid();
+
     public static Guid MenuId_log = Guid.NewGuid();
     public static Guid MenuId_log_delete = Guid.NewGuid();
-    
+
     public static MaUser[] Users = new[]
     {
         new MaUser()
@@ -99,12 +104,13 @@ public class SystemInitial
         new MaMenu()
         {
             Id = MenuId_home,
-            Name = "首页",
-            Code = "Home",
+            Name = "home",
+            Label = "首页",
+            Path = "/",
             MenuType = MenuType.Page,
-            Level = 0,
             Order = 1,
             LastModifierId = AdminUserId,
+            Locale = "menu.server.home"
         },
 
         #endregion
@@ -114,10 +120,11 @@ public class SystemInitial
         new MaMenu()
         {
             Id = MenuId_sys_manager,
-            Name = "系统管理",
-            Code = "SystemManager",
+            Name = "SysManager",
+            Label = "系统管理",
+            Path = "/sys",
+            Locale = "menu.server.sysmanager",
             MenuType = MenuType.Category,
-            Level = 0,
             Order = 2,
             LastModifierId = AdminUserId
         },
@@ -127,43 +134,47 @@ public class SystemInitial
         new MaMenu()
         {
             Id = MenuId_user,
-            Name = "用户管理",
-            Code = "UserManager",
-            Url = "/sys/user/index",
+            Name = "users",
+            Label = "用户管理",
+            Locale = "menu.server.users",
+            Path = "/sys/user/index",
             MenuType = MenuType.Page,
-            Level = 1,
             Order = 1,
-            LastModifierId = AdminUserId
+            LastModifierId = AdminUserId,
+            ParentId = MenuId_sys_manager,
         },
         new MaMenu()
         {
             Id = MenuId_user_add,
-            Name = "用户管理-新增",
-            Code = "UserManager-Add",
+            Name = "add_user",
+            Label = "添加用户",
+            Locale = "menu.server.adduser",
             MenuType = MenuType.Button,
-            Level = 1,
             Order = 1,
-            LastModifierId = AdminUserId
+            LastModifierId = AdminUserId,
+            ParentId = MenuId_user
         },
         new MaMenu()
         {
             Id = MenuId_user_update,
-            Name = "用户管理-更新",
-            Code = "UserManager-Update",
+            Name = "update_user",
+            Label = "更新用户",
+            Locale = "menu.server.updateuser",
             MenuType = MenuType.Button,
-            Level = 1,
             Order = 1,
-            LastModifierId = AdminUserId
+            LastModifierId = AdminUserId,
+            ParentId = MenuId_user
         },
         new MaMenu()
         {
             Id = MenuId_user_delete,
-            Name = "用户管理-删除",
-            Code = "UserManager-Delete",
+            Name = "delete_user",
+            Label = "删除用户",
+            Locale = "menu.server.deleteuser",
             MenuType = MenuType.Button,
-            Level = 1,
             Order = 1,
-            LastModifierId = AdminUserId
+            LastModifierId = AdminUserId,
+            ParentId = MenuId_user
         },
 
         #endregion
@@ -173,43 +184,47 @@ public class SystemInitial
         new MaMenu()
         {
             Id = MenuId_role,
-            Name = "角色管理",
-            Code = "RoleManager",
-            Url = "/sys/role/index",
+            Name = "roles",
+            Label = "角色管理",
+            Locale = "menu.server.roles",
+            Path = "/sys/role/index",
             MenuType = MenuType.Page,
-            Level = 1,
             Order = 2,
-            LastModifierId = AdminUserId
+            LastModifierId = AdminUserId,
+            ParentId = MenuId_sys_manager
         },
         new MaMenu()
         {
             Id = MenuId_role_add,
-            Name = "角色管理-新增",
-            Code = "RoleManager-Add",
+            Name = "add_role",
+            Label = "添加角色",
+            Locale = "menu.server.addrole",
             MenuType = MenuType.Button,
-            Level = 1,
             Order = 2,
-            LastModifierId = AdminUserId
+            LastModifierId = AdminUserId,
+            ParentId = MenuId_role
         },
         new MaMenu()
         {
             Id = MenuId_role_update,
-            Name = "角色管理-更新",
-            Code = "RoleManager-Update",
+            Name = "update_role",
+            Label = "更新角色",
+            Locale = "menu.server.updaterole",
             MenuType = MenuType.Button,
-            Level = 1,
             Order = 2,
-            LastModifierId = AdminUserId
+            LastModifierId = AdminUserId,
+            ParentId = MenuId_role
         },
         new MaMenu()
         {
             Id = MenuId_role_delete,
-            Name = "角色管理-删除",
-            Code = "RoleManager-Delete",
+            Name = "delete_role",
+            Label = "删除角色",
+            Locale = "menu.server.deleterole",
             MenuType = MenuType.Button,
-            Level = 1,
             Order = 2,
-            LastModifierId = AdminUserId
+            LastModifierId = AdminUserId,
+            ParentId = MenuId_role
         },
 
         #endregion
@@ -219,55 +234,110 @@ public class SystemInitial
         new MaMenu()
         {
             Id = MenuId_tenant,
-            Name = "租户管理",
-            Code = "TenantManager",
-            Url = "/sys/tenant/index",
+            Name = "tenants",
+            Label = "租户管理",
+            Locale = "menu.server.tenants",
+            Path = "/sys/tenant/index",
             MenuType = MenuType.Page,
-            Level = 1,
             Order = 3,
-            LastModifierId = AdminUserId
+            LastModifierId = AdminUserId,
+            ParentId = MenuId_sys_manager
         },
         new MaMenu()
         {
             Id = MenuId_tenant_add,
-            Name = "租户管理-新增",
-            Code = "TenantManager-Add",
+            Name = "add_tenant",
+            Label = "添加租户",
+            Locale = "menu.server.addtenant",
             MenuType = MenuType.Button,
-            Level = 1,
             Order = 3,
-            LastModifierId = AdminUserId
+            LastModifierId = AdminUserId,
+            ParentId = MenuId_tenant
         },
         new MaMenu()
         {
             Id = MenuId_tenant_update,
-            Name = "租户管理-更新",
-            Code = "TenantManager-Update",
+            Name = "update_tenant",
+            Label = "更新租户",
+            Locale = "menu.server.updatetenant",
             MenuType = MenuType.Button,
-            Level = 1,
             Order = 3,
-            LastModifierId = AdminUserId
+            LastModifierId = AdminUserId,
+            ParentId = MenuId_tenant
         },
         new MaMenu()
         {
             Id = MenuId_tenant_delete,
-            Name = "租户管理-删除",
-            Code = "TenantManager-Delete",
+            Name = "delete_tenant",
+            Label = "删除租户",
+            Locale = "menu.server.deletetenant",
             MenuType = MenuType.Button,
-            Level = 1,
             Order = 3,
-            LastModifierId = AdminUserId
+            LastModifierId = AdminUserId,
+            ParentId = MenuId_tenant
+        },
+
+        #endregion
+
+        #region 菜单管理
+
+        new MaMenu()
+        {
+            Id = MenuId_menu,
+            Name = "menus",
+            Label = "菜单管理",
+            Locale = "menu.server.menus",
+            Path = "/sys/menu/index",
+            MenuType = MenuType.Page,
+            Order = 4,
+            LastModifierId = AdminUserId,
+            ParentId = MenuId_sys_manager
+        },
+        new MaMenu()
+        {
+            Id = MenuId_menu_add,
+            Name = "add_menu",
+            Label = "添加菜单",
+            Locale = "menu.server.addmenu",
+            MenuType = MenuType.Button,
+            Order = 4,
+            LastModifierId = AdminUserId,
+            ParentId = MenuId_menu
+        },
+        new MaMenu()
+        {
+            Id = MenuId_menu_update,
+            Name = "update_menu",
+            Label = "更新菜单",
+            Locale = "menu.server.updatemenu",
+            MenuType = MenuType.Button,
+            Order = 4,
+            LastModifierId = AdminUserId,
+            ParentId = MenuId_menu
+        },
+        new MaMenu()
+        {
+            Id = MenuId_menu_delete,
+            Name = "delete_menu",
+            Label = "删除菜单",
+            Locale = "menu.server.deletemenu",
+            MenuType = MenuType.Button,
+            Order = 4,
+            LastModifierId = AdminUserId,
+            ParentId = MenuId_menu
         },
 
         #endregion
         new MaMenu()
         {
             Id = MenuId_log,
-            Name = "系统日志",
-            Code = "Log",
+            Name = "sys_log",
+            Label = "系统日志",
+            Locale = "menu.server.syslog",
             MenuType = MenuType.Page,
-            Level = 0,
-            Order = 3,
-            LastModifierId = AdminUserId
+            Order = 5,
+            LastModifierId = AdminUserId,
+            ParentId = MenuId_sys_manager
         },
 
         #endregion

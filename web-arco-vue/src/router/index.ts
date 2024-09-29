@@ -13,7 +13,7 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      redirect: 'Workplace',
+      redirect: 'home',
     },
     {
       path: '/login',

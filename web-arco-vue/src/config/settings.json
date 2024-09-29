@@ -1,3 +1,4 @@
+
 {
   "theme": "light",
   "colorWeak": false,
@@ -6,12 +7,16 @@
   "topMenu": false,
   "hideMenu": false,
   "menuCollapse": false,
-  "footer": true,
-  "themeColor": "#165DFF",
+  "footer": false,
+  "themeColor": "#F9548F",
   "menuWidth": 220,
-  "globalSettings": false,
+  "globalSettings": true,
   "device": "desktop",
-  "tabBar": false,
-  "menuFromServer": false,
-  "serverMenu": []
+  "tabBar": true,
+  "menuFromServer": true,
+  "serverMenu": {
+    "meta": {
+      "requiresAuth": true
+    }
+  }
 }

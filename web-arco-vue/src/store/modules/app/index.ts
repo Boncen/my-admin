@@ -5,6 +5,8 @@ import type { RouteRecordNormalized } from 'vue-router';
 import defaultSettings from '@/config/settings.json';
 import { getMenuList } from '@/api/user';
 import { AppState } from './types';
+import HOME from '@/router/routes/modules/home';
+import { toMenuItem } from '@/utils';
 
 const useAppStore = defineStore('app', {
   state: (): AppState => ({ ...defaultSettings }),
@@ -52,18 +54,26 @@ const useAppStore = defineStore('app', {
           content: 'loading',
           closable: true,
         });
-        const { data } = await getMenuList();
+        let { data } = await getMenuList();
+
+        // 转换格式
+        for (let index = 0; index < data.length; index++) {
+          data[index] = toMenuItem(data[index]);
+        }
+        // if (!data || data.length < 1) {
+        //   data = [HOME];
+        // }
+
         this.serverMenu = data;
-        notifyInstance = Notification.success({
-          id: 'menuNotice',
-          content: 'success',
-          closable: true,
-        });
+        // notifyInstance = Notification.success({
+        //   id: 'menuNotice',
+        //   content: '成功',
+        //   closable: true,
+        // });
       } catch (error) {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         notifyInstance = Notification.error({
           id: 'menuNotice',
-          content: 'error',
+          content: '从服务器获取菜单发生错误',
           closable: true,
         });
       }

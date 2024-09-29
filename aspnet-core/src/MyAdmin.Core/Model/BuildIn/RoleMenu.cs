@@ -1,12 +1,12 @@
-using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using MyAdmin.Core.Entity;
 using MyAdmin.Core.Framework.Attribute;
 
 namespace MyAdmin.Core.Model.BuildIn;
 
 [BuiltIn]
 [Table("RoleMenu")]
-public class RoleMenu
+public class RoleMenu:IEntity
 {
     public Guid RoleId { get; set; }
     public Guid MenuId { get; set; }

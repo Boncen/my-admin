@@ -44,7 +44,6 @@ namespace MyAdmin.ApiHost.Migrations
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("DescBody")
-                        .IsRequired()
                         .HasColumnType("longtext");
 
                     b.Property<bool>("IsDeleted")
@@ -142,10 +141,6 @@ namespace MyAdmin.ApiHost.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("char(36)");
 
-                    b.Property<string>("Code")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
                     b.Property<DateTime>("CreationTime")
                         .HasColumnType("datetime(6)");
 
@@ -164,21 +159,25 @@ namespace MyAdmin.ApiHost.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("tinyint(1)");
 
+                    b.Property<string>("Label")
+                        .HasColumnType("longtext");
+
                     b.Property<DateTime?>("LastModificationTime")
                         .HasColumnType("datetime(6)");
 
                     b.Property<Guid>("LastModifierId")
                         .HasColumnType("char(36)");
 
-                    b.Property<int>("Level")
-                        .HasColumnType("int");
+                    b.Property<string>("Locale")
+                        .HasColumnType("longtext");
 
                     b.Property<int>("MenuType")
                         .HasColumnType("int");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("longtext")
+                        .HasComment("路由名称");
 
                     b.Property<int>("Order")
                         .HasColumnType("int");
@@ -186,12 +185,12 @@ namespace MyAdmin.ApiHost.Migrations
                     b.Property<Guid?>("ParentId")
                         .HasColumnType("char(36)");
 
-                    b.Property<Guid?>("TenantId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<string>("Url")
+                    b.Property<string>("Path")
                         .HasColumnType("longtext")
                         .HasComment("路由路径");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("char(36)");
 
                     b.HasKey("Id");
 
@@ -200,216 +199,291 @@ namespace MyAdmin.ApiHost.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("f2d0fa1a-635a-4e63-a6e5-0371fcdbac47"),
-                            Code = "Home",
-                            CreationTime = new DateTime(2024, 9, 11, 11, 54, 45, 123, DateTimeKind.Local).AddTicks(7455),
+                            Id = new Guid("a454a788-4231-4d96-8e98-8ce426ea4acc"),
+                            CreationTime = new DateTime(2024, 9, 29, 14, 17, 15, 522, DateTimeKind.Local).AddTicks(1927),
                             CreatorId = new Guid("00000000-0000-0000-0000-000000000000"),
                             DeleterId = new Guid("00000000-0000-0000-0000-000000000000"),
                             IsDeleted = false,
-                            LastModifierId = new Guid("1d5b1109-e8fe-4ecc-81c7-02d6e23220b0"),
-                            Level = 0,
+                            Label = "首页",
+                            LastModifierId = new Guid("dd07176d-c210-41d6-bf0d-31182ec9c1b1"),
+                            Locale = "menu.server.home",
                             MenuType = 1,
-                            Name = "首页",
+                            Name = "home",
                             Order = 1
                         },
                         new
                         {
-                            Id = new Guid("69aa45fd-960a-4667-8da8-9fa9580f5494"),
-                            Code = "SystemManager",
-                            CreationTime = new DateTime(2024, 9, 11, 11, 54, 45, 123, DateTimeKind.Local).AddTicks(8532),
+                            Id = new Guid("32bb7608-ceff-4e7c-8c67-ff3892625e17"),
+                            CreationTime = new DateTime(2024, 9, 29, 14, 17, 15, 522, DateTimeKind.Local).AddTicks(3079),
                             CreatorId = new Guid("00000000-0000-0000-0000-000000000000"),
                             DeleterId = new Guid("00000000-0000-0000-0000-000000000000"),
                             IsDeleted = false,
-                            LastModifierId = new Guid("1d5b1109-e8fe-4ecc-81c7-02d6e23220b0"),
-                            Level = 0,
+                            Label = "系统管理",
+                            LastModifierId = new Guid("dd07176d-c210-41d6-bf0d-31182ec9c1b1"),
+                            Locale = "menu.server.sysmanager",
                             MenuType = 3,
-                            Name = "系统管理",
+                            Name = "SysManager",
                             Order = 2
                         },
                         new
                         {
-                            Id = new Guid("c32e142e-8576-4ab3-bb0e-7f3920da8886"),
-                            Code = "UserManager",
-                            CreationTime = new DateTime(2024, 9, 11, 11, 54, 45, 123, DateTimeKind.Local).AddTicks(8540),
+                            Id = new Guid("a39e28a9-9da9-48ee-a89d-5071ccf854fc"),
+                            CreationTime = new DateTime(2024, 9, 29, 14, 17, 15, 522, DateTimeKind.Local).AddTicks(3086),
                             CreatorId = new Guid("00000000-0000-0000-0000-000000000000"),
                             DeleterId = new Guid("00000000-0000-0000-0000-000000000000"),
                             IsDeleted = false,
-                            LastModifierId = new Guid("1d5b1109-e8fe-4ecc-81c7-02d6e23220b0"),
-                            Level = 1,
+                            Label = "用户管理",
+                            LastModifierId = new Guid("dd07176d-c210-41d6-bf0d-31182ec9c1b1"),
+                            Locale = "menu.server.users",
                             MenuType = 1,
-                            Name = "用户管理",
+                            Name = "users",
                             Order = 1,
-                            Url = "/sys/user/index"
+                            ParentId = new Guid("32bb7608-ceff-4e7c-8c67-ff3892625e17"),
+                            Path = "/sys/user/index"
                         },
                         new
                         {
-                            Id = new Guid("24f1dcbd-0f97-4735-a235-ad0d8712e37b"),
-                            Code = "UserManager-Add",
-                            CreationTime = new DateTime(2024, 9, 11, 11, 54, 45, 123, DateTimeKind.Local).AddTicks(8719),
+                            Id = new Guid("5a7b38b6-b162-40ac-98e9-821660821a5e"),
+                            CreationTime = new DateTime(2024, 9, 29, 14, 17, 15, 522, DateTimeKind.Local).AddTicks(3594),
                             CreatorId = new Guid("00000000-0000-0000-0000-000000000000"),
                             DeleterId = new Guid("00000000-0000-0000-0000-000000000000"),
                             IsDeleted = false,
-                            LastModifierId = new Guid("1d5b1109-e8fe-4ecc-81c7-02d6e23220b0"),
-                            Level = 1,
+                            Label = "添加用户",
+                            LastModifierId = new Guid("dd07176d-c210-41d6-bf0d-31182ec9c1b1"),
+                            Locale = "menu.server.adduser",
                             MenuType = 2,
-                            Name = "用户管理-新增",
-                            Order = 1
+                            Name = "add_user",
+                            Order = 1,
+                            ParentId = new Guid("a39e28a9-9da9-48ee-a89d-5071ccf854fc")
                         },
                         new
                         {
-                            Id = new Guid("ace5e6ea-b855-4e48-9623-1d8373f49671"),
-                            Code = "UserManager-Update",
-                            CreationTime = new DateTime(2024, 9, 11, 11, 54, 45, 123, DateTimeKind.Local).AddTicks(8724),
+                            Id = new Guid("9ad04f5c-4fec-40e0-be8d-3f359a058024"),
+                            CreationTime = new DateTime(2024, 9, 29, 14, 17, 15, 522, DateTimeKind.Local).AddTicks(3601),
                             CreatorId = new Guid("00000000-0000-0000-0000-000000000000"),
                             DeleterId = new Guid("00000000-0000-0000-0000-000000000000"),
                             IsDeleted = false,
-                            LastModifierId = new Guid("1d5b1109-e8fe-4ecc-81c7-02d6e23220b0"),
-                            Level = 1,
+                            Label = "更新用户",
+                            LastModifierId = new Guid("dd07176d-c210-41d6-bf0d-31182ec9c1b1"),
+                            Locale = "menu.server.updateuser",
                             MenuType = 2,
-                            Name = "用户管理-更新",
-                            Order = 1
+                            Name = "update_user",
+                            Order = 1,
+                            ParentId = new Guid("a39e28a9-9da9-48ee-a89d-5071ccf854fc")
                         },
                         new
                         {
-                            Id = new Guid("8e1cca08-5121-4d1c-b618-3292a2f83a3b"),
-                            Code = "UserManager-Delete",
-                            CreationTime = new DateTime(2024, 9, 11, 11, 54, 45, 123, DateTimeKind.Local).AddTicks(8784),
+                            Id = new Guid("4f15068a-62a7-4e73-8cc3-31501643f699"),
+                            CreationTime = new DateTime(2024, 9, 29, 14, 17, 15, 522, DateTimeKind.Local).AddTicks(3603),
                             CreatorId = new Guid("00000000-0000-0000-0000-000000000000"),
                             DeleterId = new Guid("00000000-0000-0000-0000-000000000000"),
                             IsDeleted = false,
-                            LastModifierId = new Guid("1d5b1109-e8fe-4ecc-81c7-02d6e23220b0"),
-                            Level = 1,
+                            Label = "删除用户",
+                            LastModifierId = new Guid("dd07176d-c210-41d6-bf0d-31182ec9c1b1"),
+                            Locale = "menu.server.deleteuser",
                             MenuType = 2,
-                            Name = "用户管理-删除",
-                            Order = 1
+                            Name = "delete_user",
+                            Order = 1,
+                            ParentId = new Guid("a39e28a9-9da9-48ee-a89d-5071ccf854fc")
                         },
                         new
                         {
-                            Id = new Guid("cc8d7fc5-f53d-405d-9912-0034e7c8296a"),
-                            Code = "RoleManager",
-                            CreationTime = new DateTime(2024, 9, 11, 11, 54, 45, 123, DateTimeKind.Local).AddTicks(8786),
+                            Id = new Guid("52620b9b-ee0a-4153-b7b5-a58299756fe6"),
+                            CreationTime = new DateTime(2024, 9, 29, 14, 17, 15, 522, DateTimeKind.Local).AddTicks(3605),
                             CreatorId = new Guid("00000000-0000-0000-0000-000000000000"),
                             DeleterId = new Guid("00000000-0000-0000-0000-000000000000"),
                             IsDeleted = false,
-                            LastModifierId = new Guid("1d5b1109-e8fe-4ecc-81c7-02d6e23220b0"),
-                            Level = 1,
+                            Label = "角色管理",
+                            LastModifierId = new Guid("dd07176d-c210-41d6-bf0d-31182ec9c1b1"),
+                            Locale = "menu.server.roles",
                             MenuType = 1,
-                            Name = "角色管理",
+                            Name = "roles",
                             Order = 2,
-                            Url = "/sys/role/index"
+                            ParentId = new Guid("32bb7608-ceff-4e7c-8c67-ff3892625e17"),
+                            Path = "/sys/role/index"
                         },
                         new
                         {
-                            Id = new Guid("15893413-9f8d-4160-89bd-fb18565a95ef"),
-                            Code = "RoleManager-Add",
-                            CreationTime = new DateTime(2024, 9, 11, 11, 54, 45, 123, DateTimeKind.Local).AddTicks(8788),
+                            Id = new Guid("262e8351-96a0-45c0-a536-d99a278ddd8b"),
+                            CreationTime = new DateTime(2024, 9, 29, 14, 17, 15, 522, DateTimeKind.Local).AddTicks(3608),
                             CreatorId = new Guid("00000000-0000-0000-0000-000000000000"),
                             DeleterId = new Guid("00000000-0000-0000-0000-000000000000"),
                             IsDeleted = false,
-                            LastModifierId = new Guid("1d5b1109-e8fe-4ecc-81c7-02d6e23220b0"),
-                            Level = 1,
+                            Label = "添加角色",
+                            LastModifierId = new Guid("dd07176d-c210-41d6-bf0d-31182ec9c1b1"),
+                            Locale = "menu.server.addrole",
                             MenuType = 2,
-                            Name = "角色管理-新增",
-                            Order = 2
+                            Name = "add_role",
+                            Order = 2,
+                            ParentId = new Guid("52620b9b-ee0a-4153-b7b5-a58299756fe6"),
+                            Path = "/sys/role/index"
                         },
                         new
                         {
-                            Id = new Guid("a706e070-05ef-4ad3-a71a-93cc470ff124"),
-                            Code = "RoleManager-Update",
-                            CreationTime = new DateTime(2024, 9, 11, 11, 54, 45, 123, DateTimeKind.Local).AddTicks(8790),
+                            Id = new Guid("bc5c7271-8b77-43f1-9937-d3bebf85d3ed"),
+                            CreationTime = new DateTime(2024, 9, 29, 14, 17, 15, 522, DateTimeKind.Local).AddTicks(3610),
                             CreatorId = new Guid("00000000-0000-0000-0000-000000000000"),
                             DeleterId = new Guid("00000000-0000-0000-0000-000000000000"),
                             IsDeleted = false,
-                            LastModifierId = new Guid("1d5b1109-e8fe-4ecc-81c7-02d6e23220b0"),
-                            Level = 1,
+                            Label = "更新角色",
+                            LastModifierId = new Guid("dd07176d-c210-41d6-bf0d-31182ec9c1b1"),
+                            Locale = "menu.server.updaterole",
                             MenuType = 2,
-                            Name = "角色管理-更新",
-                            Order = 2
+                            Name = "update_role",
+                            Order = 2,
+                            ParentId = new Guid("52620b9b-ee0a-4153-b7b5-a58299756fe6")
                         },
                         new
                         {
-                            Id = new Guid("f25f4e3d-112f-4ba6-b3b3-a15de282baa8"),
-                            Code = "RoleManager-Delete",
-                            CreationTime = new DateTime(2024, 9, 11, 11, 54, 45, 123, DateTimeKind.Local).AddTicks(8793),
+                            Id = new Guid("08a917b6-8964-4d98-86e6-851ebc83a4ea"),
+                            CreationTime = new DateTime(2024, 9, 29, 14, 17, 15, 522, DateTimeKind.Local).AddTicks(3612),
                             CreatorId = new Guid("00000000-0000-0000-0000-000000000000"),
                             DeleterId = new Guid("00000000-0000-0000-0000-000000000000"),
                             IsDeleted = false,
-                            LastModifierId = new Guid("1d5b1109-e8fe-4ecc-81c7-02d6e23220b0"),
-                            Level = 1,
+                            Label = "删除角色",
+                            LastModifierId = new Guid("dd07176d-c210-41d6-bf0d-31182ec9c1b1"),
+                            Locale = "menu.server.deleterole",
                             MenuType = 2,
-                            Name = "角色管理-删除",
-                            Order = 2
+                            Name = "delete_role",
+                            Order = 2,
+                            ParentId = new Guid("52620b9b-ee0a-4153-b7b5-a58299756fe6")
                         },
                         new
                         {
-                            Id = new Guid("26a43341-1169-4af4-bc01-ec06cca006d0"),
-                            Code = "TenantManager",
-                            CreationTime = new DateTime(2024, 9, 11, 11, 54, 45, 123, DateTimeKind.Local).AddTicks(8794),
+                            Id = new Guid("95ca7b1b-55dc-48e9-9317-7d67da1bec78"),
+                            CreationTime = new DateTime(2024, 9, 29, 14, 17, 15, 522, DateTimeKind.Local).AddTicks(3614),
                             CreatorId = new Guid("00000000-0000-0000-0000-000000000000"),
                             DeleterId = new Guid("00000000-0000-0000-0000-000000000000"),
                             IsDeleted = false,
-                            LastModifierId = new Guid("1d5b1109-e8fe-4ecc-81c7-02d6e23220b0"),
-                            Level = 1,
+                            Label = "租户管理",
+                            LastModifierId = new Guid("dd07176d-c210-41d6-bf0d-31182ec9c1b1"),
+                            Locale = "menu.server.tenants",
                             MenuType = 1,
-                            Name = "租户管理",
+                            Name = "tenants",
                             Order = 3,
-                            Url = "/sys/tenant/index"
+                            ParentId = new Guid("32bb7608-ceff-4e7c-8c67-ff3892625e17"),
+                            Path = "/sys/tenant/index"
                         },
                         new
                         {
-                            Id = new Guid("fcf206e7-4635-4e77-bfae-a4680e151acd"),
-                            Code = "TenantManager-Add",
-                            CreationTime = new DateTime(2024, 9, 11, 11, 54, 45, 123, DateTimeKind.Local).AddTicks(8796),
+                            Id = new Guid("ecdf8af6-c987-41ad-8c60-48da796bf278"),
+                            CreationTime = new DateTime(2024, 9, 29, 14, 17, 15, 522, DateTimeKind.Local).AddTicks(3616),
                             CreatorId = new Guid("00000000-0000-0000-0000-000000000000"),
                             DeleterId = new Guid("00000000-0000-0000-0000-000000000000"),
                             IsDeleted = false,
-                            LastModifierId = new Guid("1d5b1109-e8fe-4ecc-81c7-02d6e23220b0"),
-                            Level = 1,
+                            Label = "添加租户",
+                            LastModifierId = new Guid("dd07176d-c210-41d6-bf0d-31182ec9c1b1"),
+                            Locale = "menu.server.addtenant",
                             MenuType = 2,
-                            Name = "租户管理-新增",
-                            Order = 3
+                            Name = "add_tenant",
+                            Order = 3,
+                            ParentId = new Guid("95ca7b1b-55dc-48e9-9317-7d67da1bec78")
                         },
                         new
                         {
-                            Id = new Guid("82ff097f-c90a-4126-a543-0f6afafd39c1"),
-                            Code = "TenantManager-Update",
-                            CreationTime = new DateTime(2024, 9, 11, 11, 54, 45, 123, DateTimeKind.Local).AddTicks(8798),
+                            Id = new Guid("368a7827-0377-48ec-a335-59e49451b2c9"),
+                            CreationTime = new DateTime(2024, 9, 29, 14, 17, 15, 522, DateTimeKind.Local).AddTicks(3619),
                             CreatorId = new Guid("00000000-0000-0000-0000-000000000000"),
                             DeleterId = new Guid("00000000-0000-0000-0000-000000000000"),
                             IsDeleted = false,
-                            LastModifierId = new Guid("1d5b1109-e8fe-4ecc-81c7-02d6e23220b0"),
-                            Level = 1,
+                            Label = "更新租户",
+                            LastModifierId = new Guid("dd07176d-c210-41d6-bf0d-31182ec9c1b1"),
+                            Locale = "menu.server.updatetenant",
                             MenuType = 2,
-                            Name = "租户管理-更新",
-                            Order = 3
+                            Name = "update_tenant",
+                            Order = 3,
+                            ParentId = new Guid("95ca7b1b-55dc-48e9-9317-7d67da1bec78")
                         },
                         new
                         {
-                            Id = new Guid("f9fd2a4d-b549-408d-834f-679addd3886b"),
-                            Code = "TenantManager-Delete",
-                            CreationTime = new DateTime(2024, 9, 11, 11, 54, 45, 123, DateTimeKind.Local).AddTicks(8800),
+                            Id = new Guid("b479f220-bbb6-4878-a184-619292efacd3"),
+                            CreationTime = new DateTime(2024, 9, 29, 14, 17, 15, 522, DateTimeKind.Local).AddTicks(3621),
                             CreatorId = new Guid("00000000-0000-0000-0000-000000000000"),
                             DeleterId = new Guid("00000000-0000-0000-0000-000000000000"),
                             IsDeleted = false,
-                            LastModifierId = new Guid("1d5b1109-e8fe-4ecc-81c7-02d6e23220b0"),
-                            Level = 1,
+                            Label = "删除租户",
+                            LastModifierId = new Guid("dd07176d-c210-41d6-bf0d-31182ec9c1b1"),
+                            Locale = "menu.server.deletetenant",
                             MenuType = 2,
-                            Name = "租户管理-删除",
-                            Order = 3
+                            Name = "delete_tenant",
+                            Order = 3,
+                            ParentId = new Guid("95ca7b1b-55dc-48e9-9317-7d67da1bec78")
                         },
                         new
                         {
-                            Id = new Guid("a07929c4-5aa6-469b-b43a-62e325dce72c"),
-                            Code = "Log",
-                            CreationTime = new DateTime(2024, 9, 11, 11, 54, 45, 123, DateTimeKind.Local).AddTicks(8802),
+                            Id = new Guid("19bac5dc-0b43-4809-ab3a-53be906de0e4"),
+                            CreationTime = new DateTime(2024, 9, 29, 14, 17, 15, 522, DateTimeKind.Local).AddTicks(3623),
                             CreatorId = new Guid("00000000-0000-0000-0000-000000000000"),
                             DeleterId = new Guid("00000000-0000-0000-0000-000000000000"),
                             IsDeleted = false,
-                            LastModifierId = new Guid("1d5b1109-e8fe-4ecc-81c7-02d6e23220b0"),
-                            Level = 0,
+                            Label = "菜单管理",
+                            LastModifierId = new Guid("dd07176d-c210-41d6-bf0d-31182ec9c1b1"),
+                            Locale = "menu.server.menus",
                             MenuType = 1,
-                            Name = "系统日志",
-                            Order = 3
+                            Name = "menus",
+                            Order = 4,
+                            ParentId = new Guid("32bb7608-ceff-4e7c-8c67-ff3892625e17"),
+                            Path = "/sys/menu/index"
+                        },
+                        new
+                        {
+                            Id = new Guid("e8b21899-0105-42a5-8b12-b3cd291e81e5"),
+                            CreationTime = new DateTime(2024, 9, 29, 14, 17, 15, 522, DateTimeKind.Local).AddTicks(3626),
+                            CreatorId = new Guid("00000000-0000-0000-0000-000000000000"),
+                            DeleterId = new Guid("00000000-0000-0000-0000-000000000000"),
+                            IsDeleted = false,
+                            Label = "添加菜单",
+                            LastModifierId = new Guid("dd07176d-c210-41d6-bf0d-31182ec9c1b1"),
+                            Locale = "menu.server.addmenu",
+                            MenuType = 2,
+                            Name = "add_menu",
+                            Order = 4,
+                            ParentId = new Guid("19bac5dc-0b43-4809-ab3a-53be906de0e4")
+                        },
+                        new
+                        {
+                            Id = new Guid("9f857d8d-8558-47e3-9bda-119e0e63500c"),
+                            CreationTime = new DateTime(2024, 9, 29, 14, 17, 15, 522, DateTimeKind.Local).AddTicks(3628),
+                            CreatorId = new Guid("00000000-0000-0000-0000-000000000000"),
+                            DeleterId = new Guid("00000000-0000-0000-0000-000000000000"),
+                            IsDeleted = false,
+                            Label = "更新菜单",
+                            LastModifierId = new Guid("dd07176d-c210-41d6-bf0d-31182ec9c1b1"),
+                            Locale = "menu.server.updatemenu",
+                            MenuType = 2,
+                            Name = "update_menu",
+                            Order = 4,
+                            ParentId = new Guid("19bac5dc-0b43-4809-ab3a-53be906de0e4")
+                        },
+                        new
+                        {
+                            Id = new Guid("bf8559c0-b3cd-40a8-8465-8c46778f63bc"),
+                            CreationTime = new DateTime(2024, 9, 29, 14, 17, 15, 522, DateTimeKind.Local).AddTicks(3630),
+                            CreatorId = new Guid("00000000-0000-0000-0000-000000000000"),
+                            DeleterId = new Guid("00000000-0000-0000-0000-000000000000"),
+                            IsDeleted = false,
+                            Label = "删除菜单",
+                            LastModifierId = new Guid("dd07176d-c210-41d6-bf0d-31182ec9c1b1"),
+                            Locale = "menu.server.deletemenu",
+                            MenuType = 2,
+                            Name = "delete_menu",
+                            Order = 4,
+                            ParentId = new Guid("19bac5dc-0b43-4809-ab3a-53be906de0e4")
+                        },
+                        new
+                        {
+                            Id = new Guid("ae4f9eed-3e20-45c8-89ea-204c68000a06"),
+                            CreationTime = new DateTime(2024, 9, 29, 14, 17, 15, 522, DateTimeKind.Local).AddTicks(3633),
+                            CreatorId = new Guid("00000000-0000-0000-0000-000000000000"),
+                            DeleterId = new Guid("00000000-0000-0000-0000-000000000000"),
+                            IsDeleted = false,
+                            Label = "系统日志",
+                            LastModifierId = new Guid("dd07176d-c210-41d6-bf0d-31182ec9c1b1"),
+                            Locale = "menu.server.syslog",
+                            MenuType = 1,
+                            Name = "sys_log",
+                            Order = 5,
+                            ParentId = new Guid("32bb7608-ceff-4e7c-8c67-ff3892625e17")
                         });
                 });
 
@@ -420,7 +494,6 @@ namespace MyAdmin.ApiHost.Migrations
                         .HasColumnType("char(36)");
 
                     b.Property<string>("Code")
-                        .IsRequired()
                         .HasColumnType("longtext")
                         .HasComment("角色编码");
 
@@ -465,30 +538,72 @@ namespace MyAdmin.ApiHost.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("7e349556-e2fe-40fc-8d30-40aba7ab5390"),
+                            Id = new Guid("530da417-da46-492a-9f40-7840823f697f"),
                             Code = "Admin",
-                            CreationTime = new DateTime(2024, 9, 11, 11, 54, 45, 123, DateTimeKind.Local).AddTicks(4724),
-                            CreatorId = new Guid("85e67805-3d92-4199-9cc3-347a66855f06"),
+                            CreationTime = new DateTime(2024, 9, 29, 14, 17, 15, 521, DateTimeKind.Local).AddTicks(9292),
+                            CreatorId = new Guid("dcf2696e-8364-4559-b6ad-720eba834af7"),
                             DeleterId = new Guid("00000000-0000-0000-0000-000000000000"),
                             Description = "admin role",
                             IsDeleted = false,
                             IsEnabled = true,
-                            LastModifierId = new Guid("1d5b1109-e8fe-4ecc-81c7-02d6e23220b0"),
+                            LastModifierId = new Guid("dd07176d-c210-41d6-bf0d-31182ec9c1b1"),
                             Name = "admin"
                         },
                         new
                         {
-                            Id = new Guid("3486d760-d9a1-4a68-82dc-bf827590ad03"),
+                            Id = new Guid("8c9f0746-f181-4f43-81b3-6bc087ad2b56"),
                             Code = "Dev",
-                            CreationTime = new DateTime(2024, 9, 11, 11, 54, 45, 123, DateTimeKind.Local).AddTicks(6569),
-                            CreatorId = new Guid("85e67805-3d92-4199-9cc3-347a66855f06"),
+                            CreationTime = new DateTime(2024, 9, 29, 14, 17, 15, 522, DateTimeKind.Local).AddTicks(966),
+                            CreatorId = new Guid("dcf2696e-8364-4559-b6ad-720eba834af7"),
                             DeleterId = new Guid("00000000-0000-0000-0000-000000000000"),
                             Description = "dev role",
                             IsDeleted = false,
                             IsEnabled = true,
-                            LastModifierId = new Guid("1d5b1109-e8fe-4ecc-81c7-02d6e23220b0"),
+                            LastModifierId = new Guid("dd07176d-c210-41d6-bf0d-31182ec9c1b1"),
                             Name = "dev"
                         });
+                });
+
+            modelBuilder.Entity("MyAdmin.Core.Model.BuildIn.MaTenant", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid>("CreatorId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("DeleterId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime?>("DeletionTime")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("ExpirationDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("IsEnabled")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid>("LastModifierId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("MaTenant");
                 });
 
             modelBuilder.Entity("MyAdmin.Core.Model.BuildIn.MaUser", b =>
@@ -552,9 +667,9 @@ namespace MyAdmin.ApiHost.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("1d5b1109-e8fe-4ecc-81c7-02d6e23220b0"),
+                            Id = new Guid("dd07176d-c210-41d6-bf0d-31182ec9c1b1"),
                             Account = "admin",
-                            CreationTime = new DateTime(2024, 9, 11, 11, 54, 45, 111, DateTimeKind.Local).AddTicks(7838),
+                            CreationTime = new DateTime(2024, 9, 29, 14, 17, 15, 512, DateTimeKind.Local).AddTicks(2957),
                             CreatorId = new Guid("00000000-0000-0000-0000-000000000000"),
                             DeleterId = new Guid("00000000-0000-0000-0000-000000000000"),
                             IsDeleted = false,
@@ -566,9 +681,9 @@ namespace MyAdmin.ApiHost.Migrations
                         },
                         new
                         {
-                            Id = new Guid("85e67805-3d92-4199-9cc3-347a66855f06"),
+                            Id = new Guid("dcf2696e-8364-4559-b6ad-720eba834af7"),
                             Account = "dev",
-                            CreationTime = new DateTime(2024, 9, 11, 11, 54, 45, 123, DateTimeKind.Local).AddTicks(4216),
+                            CreationTime = new DateTime(2024, 9, 29, 14, 17, 15, 521, DateTimeKind.Local).AddTicks(8767),
                             CreatorId = new Guid("00000000-0000-0000-0000-000000000000"),
                             DeleterId = new Guid("00000000-0000-0000-0000-000000000000"),
                             IsDeleted = false,
@@ -608,13 +723,13 @@ namespace MyAdmin.ApiHost.Migrations
                     b.HasData(
                         new
                         {
-                            UserId = new Guid("1d5b1109-e8fe-4ecc-81c7-02d6e23220b0"),
-                            RoleId = new Guid("7e349556-e2fe-40fc-8d30-40aba7ab5390")
+                            UserId = new Guid("dd07176d-c210-41d6-bf0d-31182ec9c1b1"),
+                            RoleId = new Guid("530da417-da46-492a-9f40-7840823f697f")
                         },
                         new
                         {
-                            UserId = new Guid("85e67805-3d92-4199-9cc3-347a66855f06"),
-                            RoleId = new Guid("3486d760-d9a1-4a68-82dc-bf827590ad03")
+                            UserId = new Guid("dcf2696e-8364-4559-b6ad-720eba834af7"),
+                            RoleId = new Guid("8c9f0746-f181-4f43-81b3-6bc087ad2b56")
                         });
                 });
 #pragma warning restore 612, 618
