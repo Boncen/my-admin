@@ -35,6 +35,7 @@
   const tagList = computed(() => {
     return tabBarStore.getTabList;
   });
+  
   const offsetTop = computed(() => {
     return appStore.navbar ? 60 : 0;
   });

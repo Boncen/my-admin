@@ -7,7 +7,8 @@
         :key="route.fullPath"
       />
       <keep-alive v-else :include="cacheList">
-        <component :is="Component" :key="route.fullPath" />
+        <component v-if="Component" :is="Component" :key="route.fullPath" />
+        <Home v-else />
       </keep-alive>
     </transition>
   </router-view>
@@ -16,6 +17,7 @@
 <script lang="ts" setup>
   import { computed } from 'vue';
   import { useTabBarStore } from '@/store';
+  import Home from '@/views/home/index.vue'
 
   const tabBarStore = useTabBarStore();
 

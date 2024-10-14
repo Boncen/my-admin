@@ -49,27 +49,12 @@ const useAppStore = defineStore('app', {
     async fetchServerMenuConfig() {
       let notifyInstance: NotificationReturn | null = null;
       try {
-        notifyInstance = Notification.info({
-          id: 'menuNotice', // Keep the instance id the same
-          content: 'loading',
-          closable: true,
-        });
         let { data } = await getMenuList();
-
         // 转换格式
         for (let index = 0; index < data.length; index++) {
           data[index] = toMenuItem(data[index]);
         }
-        // if (!data || data.length < 1) {
-        //   data = [HOME];
-        // }
-
         this.serverMenu = data;
-        // notifyInstance = Notification.success({
-        //   id: 'menuNotice',
-        //   content: '成功',
-        //   closable: true,
-        // });
       } catch (error) {
         notifyInstance = Notification.error({
           id: 'menuNotice',

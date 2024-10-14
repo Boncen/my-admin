@@ -14,9 +14,7 @@
   "device": "desktop",
   "tabBar": true,
   "menuFromServer": true,
-  "serverMenu": {
-    "meta": {
-      "requiresAuth": true
-    }
-  }
+  "serverMenu": [
+     
+]
 }

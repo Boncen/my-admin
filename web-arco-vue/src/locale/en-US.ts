@@ -1,7 +1,6 @@
 import localeMessageBox from '@/components/message-box/locale/en-US';
 import localeLogin from '@/views/login/locale/en-US';
 
-import localeWorkplace from '@/views/dashboard/workplace/locale/en-US';
 /** simple */
 
 import localeSearchTable from '@/views/list/search-table/locale/en-US';
@@ -25,7 +24,6 @@ export default {
   ...localeSettings,
   ...localeMessageBox,
   ...localeLogin,
-  ...localeWorkplace,
   /** simple */
   ...localeSearchTable,
   ...locale403,

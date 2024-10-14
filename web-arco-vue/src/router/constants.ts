@@ -14,5 +14,5 @@ export const DEFAULT_ROUTE_NAME = 'home';
 export const DEFAULT_ROUTE = {
   title: 'menu.server.home',
   name: DEFAULT_ROUTE_NAME,
-  fullPath: '/',
+  fullPath: '/home',
 };
